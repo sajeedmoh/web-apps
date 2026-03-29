@@ -16,7 +16,7 @@ web-apps/
 ├── dashboard.html           ← Project hub (auth required)
 ├── todo-list.html           ← To-Do app (auth required)
 ├── prayer-times.html        ← Islamic prayer times (auth required)
-├── utilities.html           ← Gold, silver & FX rates (auth required)
+├── rates-tracker.html           ← Gold, silver & FX rates (auth required)
 ├── electricity-tracker.html ← KSEB usage tracker (auth required)
 ├── admin.html               ← User management (admin only)
 ├── session-guard.js         ← 30-min inactivity auto-logout
@@ -103,7 +103,7 @@ Log out and back in — the new JWT will carry `role: admin` and the Admin tile 
 - GPS auto-detect or manual city input
 - Hijri date display
 
-### `utilities.html`
+### `rates-tracker.html`
 - Live USD/INR, AED/INR exchange rates with converters
 - Gold (22K, per gram & pavan) and silver (999) Kerala rates with converters
 
