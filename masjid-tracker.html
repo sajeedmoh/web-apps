@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Salafi Masjid Tracker</title>
+  <script>if (!localStorage.getItem('auth_session')) window.location.replace('login.html');</script>
+  <script src="config.js"></script>
+
+  <!-- Leaflet map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f1117;
+      --surface:   #1a1d27;
+      --surface2:  #22263a;
+      --border:    rgba(255,255,255,0.08);
+      --accent:    #6c8ef7;
+      --accent-h:  #8aa4ff;
+      --text:      #e8eaf0;
+      --muted:     #6b7280;
+      --danger:    #ef4444;
+      --success:   #22c55e;
+      --gold:      #c9a84c;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Back bar ─────────────────────────────────── */
+    .back-bar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 1000;
+      background: rgba(15,17,23,0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      height: 48px;
+      flex-shrink: 0;
+    }
+
+    .back-link {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.18s;
+    }
+    .back-link:hover { color: var(--text); }
+
+    .page-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    /* ── Main layout ──────────────────────────────── */
+    .layout {
+      display: flex;
+      height: calc(100vh - 48px);
+      margin-top: 48px;
+    }
+
+    /* ── Sidebar ──────────────────────────────────── */
+    .sidebar {
+      width: 360px;
+      flex-shrink: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sidebar-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-header h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+
+    .locate-btn {
+      width: 100%;
+      padding: 9px 14px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.2s;
+    }
+    .locate-btn:hover { background: var(--accent-h); }
+    .locate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Tabs ─────────────────────────────────────── */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tab {
+      flex: 1;
+      padding: 10px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    /* ── List panel ───────────────────────────────── */
+    .list-panel {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+
+    .list-panel::-webkit-scrollbar { width: 4px; }
+    .list-panel::-webkit-scrollbar-track { background: transparent; }
+    .list-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    .masjid-item {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .masjid-item:hover { background: var(--surface2); }
+    .masjid-item.highlighted { background: var(--surface2); border-left: 3px solid var(--accent); }
+
+    .masjid-name {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 3px;
+    }
+
+    .masjid-meta {
+      font-size: 0.78rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .masjid-dist {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .badge {
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+
+    .badge-osm    { background: rgba(34,197,94,0.15);  color: var(--success); }
+    .badge-local  { background: rgba(108,142,247,0.15); color: var(--accent); }
+
+    .delete-btn {
+      margin-left: auto;
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.85rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: color 0.15s;
+    }
+    .delete-btn:hover { color: var(--danger); }
+
+    .status-msg {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+      padding: 32px 16px;
+    }
+
+    /* ── Add form ─────────────────────────────────── */
+    .add-panel {
+      padding: 16px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .add-panel h3 {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+
+    .form-group {
+      margin-bottom: 10px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 8px 10px;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.85rem;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus { border-color: var(--accent); }
+
+    .form-group input::placeholder { color: var(--muted); }
+
+    .form-group select option { background: var(--surface); }
+
+    .coord-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .coord-row .form-group { flex: 1; }
+
+    .coord-hint {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 9px;
+      background: var(--gold);
+      color: #1a1a1a;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .btn-submit:hover { opacity: 0.9; }
+    .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .error-msg {
+      font-size: 0.78rem;
+      color: var(--danger);
+      background: rgba(239,68,68,0.1);
+      border-radius: 6px;
+      padding: 6px 10px;
+      margin-bottom: 8px;
+      display: none;
+    }
+
+    /* ── Map ──────────────────────────────────────── */
+    #map {
+      flex: 1;
+      background: #1a1d27;
+    }
+
+    /* Dark map tiles overlay */
+    .leaflet-tile { filter: brightness(0.85) saturate(0.8); }
+
+    /* ── Responsive ───────────────────────────────── */
+    @media (max-width: 768px) {
+      .layout { flex-direction: column; }
+
+      .sidebar {
+        width: 100%;
+        height: 55vh;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+
+      #map { flex: 1; min-height: 45vh; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="back-bar">
+    <a href="dashboard.html" class="back-link">&#8592; Back to Dashboard</a>
+    <span class="page-title">&#128205; Salafi Masjid Tracker</span>
+    <span></span>
+  </nav>
+
+  <div class="layout">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h2>Salafi Masjids</h2>
+        <button class="locate-btn" id="locateBtn">&#127757; Use My Location</button>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" data-tab="nearby">Nearby</button>
+        <button class="tab" data-tab="saved">Saved</button>
+        <button class="tab" data-tab="add">+ Add</button>
+      </div>
+
+      <!-- Nearby list -->
+      <div class="list-panel" id="nearbyPanel">
+        <div class="status-msg">Click "Use My Location" to find nearby masjids.</div>
+      </div>
+
+      <!-- Saved list -->
+      <div class="list-panel" id="savedPanel" style="display:none">
+        <div class="status-msg">Loading saved masjids...</div>
+      </div>
+
+      <!-- Add form -->
+      <div class="list-panel" id="addPanel" style="display:none; overflow-y:auto;">
+        <div style="padding:16px;">
+          <div class="error-msg" id="formError"></div>
+          <p class="coord-hint">&#128161; Click anywhere on the map to auto-fill coordinates, or use your location.</p>
+
+          <div class="form-group">
+            <label>Masjid Name *</label>
+            <input type="text" id="fName" placeholder="e.g. Salafi Masjid Kozhikode" maxlength="100" />
+          </div>
+
+          <div class="form-group">
+            <label>Address</label>
+            <input type="text" id="fAddress" placeholder="Street, area..." maxlength="200" />
+          </div>
+
+          <div class="form-group">
+            <label>District</label>
+            <select id="fDistrict">
+              <option value="">Select district</option>
+              <option>Thiruvananthapuram</option>
+              <option>Kollam</option>
+              <option>Pathanamthitta</option>
+              <option>Alappuzha</option>
+              <option>Kottayam</option>
+              <option>Idukki</option>
+              <option>Ernakulam</option>
+              <option>Thrissur</option>
+              <option>Palakkad</option>
+              <option>Malappuram</option>
+              <option>Kozhikode</option>
+              <option>Wayanad</option>
+              <option>Kannur</option>
+              <option>Kasaragod</option>
+            </select>
+          </div>
+
+          <div class="coord-row">
+            <div class="form-group">
+              <label>Latitude *</label>
+              <input type="number" id="fLat" placeholder="11.2588" step="0.000001" />
+            </div>
+            <div class="form-group">
+              <label>Longitude *</label>
+              <input type="number" id="fLng" placeholder="75.7804" step="0.000001" />
+            </div>
+          </div>
+
+          <button class="btn-submit" id="submitBtn">Save Masjid</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Map -->
+    <div id="map"></div>
+  </div>
+
+  <script>
+    const session = JSON.parse(localStorage.getItem('auth_session') || 'null');
+    if (!session) window.location.replace('login.html');
+
+    const token   = localStorage.getItem('auth_token');
+    const BASE    = window.API_BASE;
+    const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+
+    let userLat = null, userLng = null;
+    let savedMasjids = [];
+    let nearbyMarkers = [];
+    let savedMarkers  = [];
+    let userMarker    = null;
+    let clickMarker   = null;
+
+    // ── Map setup ─────────────────────────────────────
+    const map = L.map('map', { zoomControl: true }).setView([10.85, 76.27], 8);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 19,
+    }).addTo(map);
+
+    // Custom marker icons
+    function makeIcon(color) {
+      return L.divIcon({
+        html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.5)"></div>`,
+        className: '',
+        iconSize: [14, 14],
+        iconAnchor: [7, 7],
+      });
+    }
+
+    const iconNearby = makeIcon('#22c55e');
+    const iconSaved  = makeIcon('#6c8ef7');
+    const iconUser   = makeIcon('#f59e0b');
+    const iconClick  = makeIcon('#c9a84c');
+
+    // Click on map → fill lat/lng in form
+    map.on('click', e => {
+      const { lat, lng } = e.latlng;
+      document.getElementById('fLat').value = lat.toFixed(6);
+      document.getElementById('fLng').value = lng.toFixed(6);
+
+      if (clickMarker) map.removeLayer(clickMarker);
+      clickMarker = L.marker([lat, lng], { icon: iconClick })
+        .addTo(map)
+        .bindPopup('📍 New masjid location')
+        .openPopup();
+
+      // Switch to Add tab
+      switchTab('add');
+    });
+
+    // ── Tabs ──────────────────────────────────────────
+    function switchTab(name) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+      document.getElementById('nearbyPanel').style.display = name === 'nearby' ? '' : 'none';
+      document.getElementById('savedPanel').style.display  = name === 'saved'  ? '' : 'none';
+      document.getElementById('addPanel').style.display    = name === 'add'    ? '' : 'none';
+    }
+
+    document.querySelectorAll('.tab').forEach(btn => {
+      btn.onclick = () => switchTab(btn.dataset.tab);
+    });
+
+    // ── Locate user ───────────────────────────────────
+    document.getElementById('locateBtn').onclick = locate;
+
+    function locate() {
+      const btn = document.getElementById('locateBtn');
+      btn.disabled = true;
+      btn.textContent = '⏳ Locating...';
+
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          userLat = pos.coords.latitude;
+          userLng = pos.coords.longitude;
+          btn.disabled = false;
+          btn.innerHTML = '&#127757; Use My Location';
+          map.setView([userLat, userLng], 13);
+
+          if (userMarker) map.removeLayer(userMarker);
+          userMarker = L.marker([userLat, userLng], { icon: iconUser })
+            .addTo(map)
+            .bindPopup('📍 You are here')
+            .openPopup();
+
+          fetchNearby(userLat, userLng);
+          prefillCoords(userLat, userLng);
+        },
+        err => {
+          btn.disabled = false;
+          btn.innerHTML = '&#127757; Use My Location';
+          alert('Could not get location: ' + err.message);
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+
+    function prefillCoords(lat, lng) {
+      document.getElementById('fLat').value = lat.toFixed(6);
+      document.getElementById('fLng').value = lng.toFixed(6);
+    }
+
+    // ── Overpass API — nearby salafi masjids ──────────
+    async function fetchNearby(lat, lng) {
+      const panel = document.getElementById('nearbyPanel');
+      panel.innerHTML = '<div class="status-msg">🔍 Searching nearby masjids...</div>';
+
+      // Clear old markers
+      nearbyMarkers.forEach(m => map.removeLayer(m));
+      nearbyMarkers = [];
+
+      const radius = 50000; // 50km
+      const query = `[out:json][timeout:25];
+(
+  node["amenity"="place_of_worship"]["religion"="islam"]["name"~"salafi",i](around:${radius},${lat},${lng});
+  node["amenity"="place_of_worship"]["name"~"salafi",i](around:${radius},${lat},${lng});
+  node["amenity"="place_of_worship"]["name"~"ahl.*hadith",i](around:${radius},${lat},${lng});
+  node["amenity"="place_of_worship"]["name"~"islahi",i](around:${radius},${lat},${lng});
+);
+out body;`;
+
+      try {
+        const res  = await fetch('https://overpass-api.de/api/interpreter', {
+          method: 'POST',
+          body: `data=${encodeURIComponent(query)}`,
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        });
+        const data = await res.json();
+        const items = data.elements || [];
+
+        if (items.length === 0) {
+          panel.innerHTML = '<div class="status-msg">No Salafi masjids found within 50 km.<br>You can add one using the Add tab.</div>';
+          return;
+        }
+
+        panel.innerHTML = '';
+        items.forEach(el => {
+          const name = el.tags?.name || el.tags?.['name:en'] || 'Unknown Masjid';
+          const dist = distKm(lat, lng, el.lat, el.lon);
+          const item = buildListItem({ name, dist: dist.toFixed(1), type: 'osm' });
+
+          item.onclick = () => {
+            map.setView([el.lat, el.lon], 16);
+            highlightItem(panel, item);
+          };
+
+          panel.appendChild(item);
+
+          const marker = L.marker([el.lat, el.lon], { icon: iconNearby })
+            .addTo(map)
+            .bindPopup(`<b>${name}</b><br>${dist.toFixed(1)} km away`);
+          nearbyMarkers.push(marker);
+        });
+
+        switchTab('nearby');
+      } catch {
+        panel.innerHTML = '<div class="status-msg" style="color:#ef4444">Failed to load nearby masjids. Check your connection.</div>';
+      }
+    }
+
+    // ── Saved masjids (DynamoDB) ──────────────────────
+    async function loadSaved() {
+      const panel = document.getElementById('savedPanel');
+      try {
+        const res  = await fetch(BASE + '/api/masjids', { headers });
+        const data = await res.json();
+        savedMasjids = data.masjids || [];
+        renderSaved();
+      } catch {
+        panel.innerHTML = '<div class="status-msg" style="color:#ef4444">Failed to load saved masjids.</div>';
+      }
+    }
+
+    function renderSaved() {
+      const panel = document.getElementById('savedPanel');
+
+      // Clear old saved markers
+      savedMarkers.forEach(m => map.removeLayer(m));
+      savedMarkers = [];
+
+      if (savedMasjids.length === 0) {
+        panel.innerHTML = '<div class="status-msg">No saved masjids yet.<br>Add the first one!</div>';
+        return;
+      }
+
+      panel.innerHTML = '';
+      savedMasjids.forEach(m => {
+        const dist = (userLat !== null) ? distKm(userLat, userLng, m.lat, m.lng).toFixed(1) : null;
+        const item = buildListItem({
+          name: m.name,
+          dist,
+          sub: m.district || m.address || '',
+          type: 'local',
+          canDelete: m.addedBy === session.email || session.role === 'admin',
+          onDelete: () => deleteMasjid(m.id),
+        });
+
+        item.onclick = e => {
+          if (e.target.classList.contains('delete-btn')) return;
+          map.setView([m.lat, m.lng], 16);
+          highlightItem(panel, item);
+        };
+
+        panel.appendChild(item);
+
+        const marker = L.marker([m.lat, m.lng], { icon: iconSaved })
+          .addTo(map)
+          .bindPopup(`<b>${m.name}</b>${m.district ? '<br>' + m.district : ''}${dist ? '<br>' + dist + ' km away' : ''}`);
+        savedMarkers.push(marker);
+      });
+    }
+
+    // ── Delete saved masjid ───────────────────────────
+    async function deleteMasjid(id) {
+      if (!confirm('Delete this masjid?')) return;
+      try {
+        const res = await fetch(`${BASE}/api/masjids/${id}`, { method: 'DELETE', headers });
+        if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
+        savedMasjids = savedMasjids.filter(m => m.id !== id);
+        renderSaved();
+      } catch (e) {
+        alert('Failed to delete: ' + e.message);
+      }
+    }
+
+    // ── Add masjid form ───────────────────────────────
+    document.getElementById('submitBtn').onclick = async () => {
+      const name    = document.getElementById('fName').value.trim();
+      const lat     = parseFloat(document.getElementById('fLat').value);
+      const lng     = parseFloat(document.getElementById('fLng').value);
+      const address = document.getElementById('fAddress').value.trim();
+      const district= document.getElementById('fDistrict').value;
+      const errEl   = document.getElementById('formError');
+
+      errEl.style.display = 'none';
+
+      if (!name) { errEl.textContent = 'Masjid name is required.'; errEl.style.display = 'block'; return; }
+      if (isNaN(lat) || isNaN(lng)) { errEl.textContent = 'Valid coordinates are required. Click on the map or use location.'; errEl.style.display = 'block'; return; }
+
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+
+      try {
+        const res  = await fetch(BASE + '/api/masjids', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ name, lat, lng, address, district }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+
+        savedMasjids.unshift(data.masjid);
+        renderSaved();
+
+        // Clear form
+        ['fName','fAddress','fLat','fLng'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('fDistrict').value = '';
+        if (clickMarker) { map.removeLayer(clickMarker); clickMarker = null; }
+
+        switchTab('saved');
+        map.setView([lat, lng], 15);
+      } catch (e) {
+        errEl.textContent = 'Failed to save: ' + e.message;
+        errEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Save Masjid';
+      }
+    };
+
+    // ── Helpers ───────────────────────────────────────
+    function distKm(lat1, lng1, lat2, lng2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLng = (lng2 - lng1) * Math.PI / 180;
+      const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    function buildListItem({ name, dist, sub, type, canDelete, onDelete }) {
+      const li = document.createElement('div');
+      li.className = 'masjid-item';
+
+      li.innerHTML = `
+        <div class="masjid-name">${name}</div>
+        <div class="masjid-meta">
+          ${dist ? `<span class="masjid-dist">${dist} km</span>` : ''}
+          ${sub  ? `<span>${sub}</span>` : ''}
+          <span class="badge badge-${type === 'osm' ? 'osm' : 'local'}">${type === 'osm' ? 'OpenStreetMap' : 'Saved'}</span>
+          ${canDelete ? `<button class="delete-btn" title="Delete">🗑</button>` : ''}
+        </div>`;
+
+      if (canDelete && onDelete) {
+        li.querySelector('.delete-btn').onclick = e => { e.stopPropagation(); onDelete(); };
+      }
+
+      return li;
+    }
+
+    function highlightItem(panel, item) {
+      panel.querySelectorAll('.masjid-item').forEach(el => el.classList.remove('highlighted'));
+      item.classList.add('highlighted');
+    }
+
+    // ── Init ──────────────────────────────────────────
+    loadSaved();
+  </script>
+  <script src="session-guard.js"></script>
+</body>
+</html>
