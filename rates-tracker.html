@@ -436,7 +436,7 @@
     document.getElementById('aedUnit').textContent = `1 AED = ₹${fmt(rates.aed)}`;
 
     if (goldUSDPerOz != null) {
-      const goldPerGram     = (goldUSDPerOz / TROY_OZ_TO_GRAM) * rates.usd * (22 / 24) * GOLD_DUTY * GOLD_GST;
+      const goldPerGram     = (goldUSDPerOz / TROY_OZ_TO_GRAM) * rates.usd * (22 / 24) * GOLD_DUTY * GOLD_GST - 348;
       const pavanRate       = goldPerGram * PAVAN_GRAMS;
       rates.goldPerGram     = goldPerGram;
       setEl('goldGramRate',  `₹${fmt(goldPerGram)}`);
