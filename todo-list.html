@@ -5,82 +5,124 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>To-Do List</title>
   <script>if (!localStorage.getItem('auth_session')) window.location.replace('login.html');</script>
+  <script src="config.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    :root {
+      --bg:        #0f1117;
+      --surface:   #1a1d27;
+      --border:    rgba(255,255,255,0.08);
+      --accent:    #6c8ef7;
+      --accent-h:  #8aa4ff;
+      --text:      #e8eaf0;
+      --muted:     #6b7280;
+      --done-col:  #4b5563;
+      --danger:    #ef4444;
+      --success:   #22c55e;
+    }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #f0f2f5;
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
       display: flex;
       justify-content: center;
-      padding: 40px 16px;
+      padding: 72px 16px 40px;
     }
 
+    /* ── Back bar ─────────────────────────────────── */
+    .back-bar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      background: rgba(15,17,23,0.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      height: 48px;
+    }
+
+    .back-link {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.18s;
+    }
+    .back-link:hover { color: var(--text); }
+
+    /* ── App card ─────────────────────────────────── */
     .app {
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
       width: 100%;
-      max-width: 520px;
-      padding: 32px;
+      max-width: 560px;
+      padding: 28px;
       height: fit-content;
     }
 
     .app-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
       margin-bottom: 24px;
     }
 
-    h1 {
-      font-size: 1.6rem;
+    .app-header h1 {
+      font-size: 1.5rem;
       font-weight: 700;
-      color: #1a1a2e;
-      margin-bottom: 0;
+      color: var(--text);
     }
 
+    .app-header .subtitle {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
 
-
+    /* ── Input row ────────────────────────────────── */
     .input-row {
       display: flex;
       gap: 8px;
-      margin-bottom: 8px;
+      margin-bottom: 16px;
     }
 
     .input-row input {
       flex: 1;
-      padding: 10px 14px;
-      border: 1.5px solid #e0e0e0;
-      border-radius: 8px;
+      padding: 11px 14px;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
       font-size: 0.95rem;
+      color: var(--text);
       outline: none;
       transition: border-color 0.2s;
     }
 
-    .input-row input:focus { border-color: #4f8ef7; }
-
-    .btn {
-      padding: 10px 16px;
-      border: none;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s, transform 0.1s;
-    }
-
-    .btn:active { transform: scale(0.97); }
+    .input-row input::placeholder { color: var(--muted); }
+    .input-row input:focus { border-color: var(--accent); }
 
     .btn-add {
-      background: #4f8ef7;
+      padding: 11px 18px;
+      background: var(--accent);
       color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
       white-space: nowrap;
+      transition: background 0.2s, transform 0.1s;
     }
+    .btn-add:hover { background: var(--accent-h); }
+    .btn-add:active { transform: scale(0.97); }
+    .btn-add:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    .btn-add:hover { background: #3a7ae0; }
-
+    /* ── Filters ──────────────────────────────────── */
     .filters {
       display: flex;
       gap: 6px;
@@ -88,34 +130,38 @@
     }
 
     .filter-btn {
-      padding: 5px 12px;
-      border: 1.5px solid #e0e0e0;
+      padding: 5px 14px;
+      border: 1.5px solid var(--border);
       border-radius: 20px;
       background: none;
       font-size: 0.82rem;
       cursor: pointer;
-      color: #666;
+      color: var(--muted);
       transition: all 0.2s;
     }
 
     .filter-btn.active {
-      background: #4f8ef7;
-      border-color: #4f8ef7;
+      background: var(--accent);
+      border-color: var(--accent);
       color: #fff;
     }
 
+    /* ── Task list ────────────────────────────────── */
     .task-list { list-style: none; }
 
     .task-item {
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 12px 10px;
-      border-bottom: 1px solid #f0f0f0;
+      padding: 13px 10px;
+      border-bottom: 1px solid var(--border);
       animation: fadeIn 0.2s ease;
     }
 
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
 
     .task-item:last-child { border-bottom: none; }
 
@@ -123,28 +169,31 @@
       width: 18px;
       height: 18px;
       cursor: pointer;
-      accent-color: #4f8ef7;
+      accent-color: var(--accent);
       flex-shrink: 0;
     }
 
     .task-text {
       flex: 1;
       font-size: 0.95rem;
-      color: #2c2c2c;
+      color: var(--text);
       word-break: break-word;
+      line-height: 1.4;
     }
 
     .task-text.done {
       text-decoration: line-through;
-      color: #aaa;
+      color: var(--done-col);
     }
 
     .task-edit-input {
       flex: 1;
-      padding: 4px 8px;
-      border: 1.5px solid #4f8ef7;
-      border-radius: 6px;
+      padding: 6px 10px;
+      background: var(--bg);
+      border: 1.5px solid var(--accent);
+      border-radius: 8px;
       font-size: 0.95rem;
+      color: var(--text);
       outline: none;
     }
 
@@ -154,31 +203,51 @@
       background: none;
       border: none;
       cursor: pointer;
-      padding: 4px 6px;
-      border-radius: 6px;
+      padding: 5px 7px;
+      border-radius: 7px;
       font-size: 1rem;
       line-height: 1;
       transition: background 0.15s;
+      color: var(--muted);
     }
 
-    .icon-btn:hover { background: #f0f2f5; }
+    .icon-btn:hover { background: rgba(255,255,255,0.07); }
+    .icon-btn.save   { color: var(--success); }
+    .icon-btn.edit   { color: var(--accent); }
+    .icon-btn.delete { color: var(--danger); }
+    .icon-btn.cancel { color: var(--muted); }
 
-    .icon-btn.save { color: #22c55e; }
-    .icon-btn.edit { color: #4f8ef7; }
-    .icon-btn.delete { color: #ef4444; }
-    .icon-btn.cancel { color: #888; }
-
+    /* ── Empty state ──────────────────────────────── */
     .empty {
       text-align: center;
-      color: #bbb;
+      color: var(--muted);
       font-size: 0.9rem;
-      padding: 32px 0;
+      padding: 36px 0;
     }
 
+    /* ── Loading / error ──────────────────────────── */
+    .status-msg {
+      text-align: center;
+      font-size: 0.85rem;
+      padding: 20px 0;
+      color: var(--muted);
+    }
+
+    .error-msg {
+      color: var(--danger);
+      font-size: 0.82rem;
+      margin-bottom: 10px;
+      padding: 8px 12px;
+      background: rgba(239,68,68,0.1);
+      border-radius: 8px;
+      display: none;
+    }
+
+    /* ── Footer ───────────────────────────────────── */
     .footer {
       margin-top: 16px;
       font-size: 0.8rem;
-      color: #aaa;
+      color: var(--muted);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -187,63 +256,22 @@
     .clear-btn {
       background: none;
       border: none;
-      color: #ef4444;
+      color: var(--danger);
       font-size: 0.8rem;
       cursor: pointer;
+      opacity: 0.8;
     }
 
-    .clear-btn:hover { text-decoration: underline; }
+    .clear-btn:hover { opacity: 1; text-decoration: underline; }
 
-    /* ── Back to dashboard bar ─────────────────── */
-    .back-bar {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      z-index: 100;
-      background: rgba(15,17,23,0.92);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-      display: flex;
-      align-items: center;
-      padding: 0 20px;
-      height: 44px;
-    }
-
-    .back-link {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      font-size: 0.82rem;
-      color: rgba(240,240,240,0.55);
-      text-decoration: none;
-      transition: color 0.18s;
-    }
-
-    .back-link:hover { color: #f0f0f0; }
-
-    .back-link .chevron {
-      font-size: 0.85rem;
-      line-height: 1;
-    }
-
-    body { padding-top: 44px; }
-
-    /* ── Responsive ────────────────────────────── */
+    /* ── Responsive ───────────────────────────────── */
     @media (max-width: 480px) {
-      body { padding: 56px 12px 24px; }
-
+      body { padding: 64px 12px 24px; }
       .app { padding: 20px 16px; }
-
-      /* Stack input + button vertically */
       .input-row { flex-direction: column; }
-      .input-row input { font-size: 1rem; }
       .btn-add { width: 100%; }
-
-      /* Smaller filter buttons */
       .filter-btn { padding: 5px 10px; font-size: 0.8rem; }
-
-      /* Always-visible task actions (no hover needed on touch) */
-      .icon-btn { padding: 6px 8px; font-size: 1.1rem; }
-
+      .icon-btn { padding: 6px 8px; font-size: 1.05rem; }
       .task-item { padding: 12px 6px; }
     }
   </style>
@@ -251,19 +279,21 @@
 <body>
   <nav class="back-bar">
     <a href="dashboard.html" class="back-link">
-      <span class="chevron">&#8592;</span> Back to Dashboard
+      <span>&#8592;</span> Back to Dashboard
     </a>
   </nav>
 
   <div class="app">
     <div class="app-header">
       <h1>To-Do List</h1>
-
+      <div class="subtitle" id="greeting"></div>
     </div>
+
+    <div class="error-msg" id="errorMsg"></div>
 
     <div class="input-row">
       <input type="text" id="taskInput" placeholder="Add a new task..." maxlength="200" />
-      <button class="btn btn-add" id="addBtn">Add</button>
+      <button class="btn-add" id="addBtn">Add</button>
     </div>
 
     <div class="filters">
@@ -272,7 +302,9 @@
       <button class="filter-btn" data-filter="done">Done</button>
     </div>
 
-    <ul class="task-list" id="taskList"></ul>
+    <ul class="task-list" id="taskList">
+      <li class="status-msg">Loading tasks...</li>
+    </ul>
 
     <div class="footer">
       <span id="taskCount"></span>
@@ -281,27 +313,52 @@
   </div>
 
   <script>
-    // Auth guard — redirect to login if no session
     const session = JSON.parse(localStorage.getItem('auth_session') || 'null');
-    if (!session) {
-      window.location.replace('login.html');
-    }
+    if (!session) window.location.replace('login.html');
 
+    const token   = localStorage.getItem('auth_token');
+    const BASE    = window.API_BASE;
+    const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
 
-
-    // Scope tasks per user
-    const STORAGE_KEY = `todo_tasks_${session.email}`;
-    let tasks = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    let tasks  = [];
     let filter = 'all';
+    let busy   = false; // prevent double-submit
 
-    const taskInput = document.getElementById('taskInput');
-    const taskList  = document.getElementById('taskList');
-    const taskCount = document.getElementById('taskCount');
+    // ── Greeting ─────────────────────────────────────
+    const name = session.firstName || session.email.split('@')[0];
+    document.getElementById('greeting').textContent = `Hello, ${name}`;
 
-    function save() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    // ── Error helper ──────────────────────────────────
+    const errorEl = document.getElementById('errorMsg');
+    function showError(msg) {
+      errorEl.textContent = msg;
+      errorEl.style.display = 'block';
+      setTimeout(() => { errorEl.style.display = 'none'; }, 4000);
     }
 
+    // ── API helpers ───────────────────────────────────
+    async function apiFetch(path, opts = {}) {
+      const res = await fetch(BASE + path, { headers, ...opts });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || `HTTP ${res.status}`);
+      }
+      return res.json();
+    }
+
+    // ── Load tasks ────────────────────────────────────
+    async function loadTasks() {
+      try {
+        const data = await apiFetch('/api/todos');
+        tasks = data.tasks || [];
+        render();
+      } catch (e) {
+        document.getElementById('taskList').innerHTML =
+          '<li class="status-msg" style="color:#ef4444">Failed to load tasks.</li>';
+      }
+    }
+
+    // ── Render ────────────────────────────────────────
     function render() {
       const filtered = tasks.filter(t => {
         if (filter === 'active') return !t.done;
@@ -309,18 +366,18 @@
         return true;
       });
 
+      const taskList = document.getElementById('taskList');
       taskList.innerHTML = '';
 
       if (filtered.length === 0) {
         taskList.innerHTML = '<li class="empty">No tasks here.</li>';
       } else {
-        filtered.forEach(task => {
-          taskList.appendChild(buildItem(task));
-        });
+        filtered.forEach(t => taskList.appendChild(buildItem(t)));
       }
 
       const remaining = tasks.filter(t => !t.done).length;
-      taskCount.textContent = `${remaining} task${remaining !== 1 ? 's' : ''} left`;
+      document.getElementById('taskCount').textContent =
+        `${remaining} task${remaining !== 1 ? 's' : ''} left`;
     }
 
     function buildItem(task) {
@@ -328,8 +385,7 @@
       li.className = 'task-item';
       li.dataset.id = task.id;
 
-      if (task.editing) {
-        // Edit mode
+      if (task._editing) {
         const input = document.createElement('input');
         input.className = 'task-edit-input';
         input.value = task.text;
@@ -348,18 +404,16 @@
         cancelBtn.onclick = () => cancelEdit(task.id);
 
         input.onkeydown = e => {
-          if (e.key === 'Enter') commitEdit(task.id, input.value);
+          if (e.key === 'Enter')  commitEdit(task.id, input.value);
           if (e.key === 'Escape') cancelEdit(task.id);
         };
 
         const actions = document.createElement('div');
         actions.className = 'task-actions';
         actions.append(saveBtn, cancelBtn);
-
         li.append(input, actions);
         setTimeout(() => { input.focus(); input.select(); }, 0);
       } else {
-        // View mode
         const cb = document.createElement('input');
         cb.type = 'checkbox';
         cb.className = 'task-checkbox';
@@ -374,7 +428,7 @@
         const editBtn = document.createElement('button');
         editBtn.className = 'icon-btn edit';
         editBtn.title = 'Edit';
-        editBtn.textContent = '✎';
+        editBtn.innerHTML = '&#9998;';
         editBtn.onclick = () => startEdit(task.id);
 
         const delBtn = document.createElement('button');
@@ -386,59 +440,119 @@
         const actions = document.createElement('div');
         actions.className = 'task-actions';
         actions.append(editBtn, delBtn);
-
         li.append(cb, span, actions);
       }
 
       return li;
     }
 
-    function addTask() {
-      const text = taskInput.value.trim();
-      if (!text) return;
-      tasks.push({ id: Date.now(), text, done: false, editing: false });
-      taskInput.value = '';
-      save();
-      render();
+    // ── Actions ───────────────────────────────────────
+    async function addTask() {
+      const input = document.getElementById('taskInput');
+      const text  = input.value.trim();
+      if (!text || busy) return;
+      busy = true;
+      document.getElementById('addBtn').disabled = true;
+      try {
+        const data = await apiFetch('/api/todos', {
+          method: 'POST',
+          body: JSON.stringify({ text })
+        });
+        tasks.unshift(data.task);
+        input.value = '';
+        render();
+      } catch (e) {
+        showError('Failed to add task: ' + e.message);
+      } finally {
+        busy = false;
+        document.getElementById('addBtn').disabled = false;
+      }
     }
 
-    function toggleDone(id) {
+    async function toggleDone(id) {
       const t = tasks.find(t => t.id === id);
-      if (t) { t.done = !t.done; save(); render(); }
+      if (!t) return;
+      const newDone = !t.done;
+      t.done = newDone; // optimistic
+      render();
+      try {
+        await apiFetch(`/api/todos/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify({ done: newDone })
+        });
+      } catch (e) {
+        t.done = !newDone; // revert
+        render();
+        showError('Failed to update task.');
+      }
     }
 
-    function deleteTask(id) {
-      tasks = tasks.filter(t => t.id !== id);
-      save();
+    async function deleteTask(id) {
+      const prev = [...tasks];
+      tasks = tasks.filter(t => t.id !== id); // optimistic
       render();
+      try {
+        await apiFetch(`/api/todos/${id}`, { method: 'DELETE' });
+      } catch (e) {
+        tasks = prev; // revert
+        render();
+        showError('Failed to delete task.');
+      }
     }
 
     function startEdit(id) {
-      tasks.forEach(t => t.editing = false);
+      tasks.forEach(t => t._editing = false);
       const t = tasks.find(t => t.id === id);
-      if (t) { t.editing = true; render(); }
+      if (t) { t._editing = true; render(); }
     }
 
-    function commitEdit(id, value) {
+    async function commitEdit(id, value) {
       const text = value.trim();
+      if (!text) return;
       const t = tasks.find(t => t.id === id);
-      if (t) {
-        if (text) t.text = text;
-        t.editing = false;
-        save();
+      if (!t) return;
+      const prev = t.text;
+      t.text = text;
+      t._editing = false;
+      render();
+      try {
+        await apiFetch(`/api/todos/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify({ text })
+        });
+      } catch (e) {
+        t.text = prev; // revert
         render();
+        showError('Failed to save edit.');
       }
     }
 
     function cancelEdit(id) {
       const t = tasks.find(t => t.id === id);
-      if (t) { t.editing = false; render(); }
+      if (t) { t._editing = false; render(); }
     }
 
-    // Event listeners
-    document.getElementById('addBtn').onclick = addTask;
+    async function clearDone() {
+      const doneTasks = tasks.filter(t => t.done);
+      if (doneTasks.length === 0) return;
+      const prev = [...tasks];
+      tasks = tasks.filter(t => !t.done); // optimistic
+      render();
+      try {
+        await Promise.all(doneTasks.map(t =>
+          apiFetch(`/api/todos/${t.id}`, { method: 'DELETE' })
+        ));
+      } catch (e) {
+        tasks = prev; // revert
+        render();
+        showError('Failed to clear completed tasks.');
+      }
+    }
 
-    taskInput.onkeydown = e => { if (e.key === 'Enter') addTask(); };
+    // ── Event listeners ───────────────────────────────
+    document.getElementById('addBtn').onclick = addTask;
+    document.getElementById('taskInput').onkeydown = e => { if (e.key === 'Enter') addTask(); };
+    document.getElementById('clearDoneBtn').onclick = clearDone;
 
     document.querySelectorAll('.filter-btn').forEach(btn => {
       btn.onclick = () => {
@@ -449,14 +563,9 @@
       };
     });
 
-    document.getElementById('clearDoneBtn').onclick = () => {
-      tasks = tasks.filter(t => !t.done);
-      save();
-      render();
-    };
-
-    render();
+    // ── Init ──────────────────────────────────────────
+    loadTasks();
   </script>
-<script src="session-guard.js"></script>
+  <script src="session-guard.js"></script>
 </body>
 </html>
