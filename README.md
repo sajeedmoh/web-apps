@@ -1,89 +1,214 @@
 # web-apps
 
-A personal web portal built and maintained by **Muhammed Sajeed** — Multi Cloud Solution Architect & PeopleSoft DBA based in Kochi, Kerala, India.
+A personal web portal with a public profile landing page, multiple mini-apps, JWT authentication, role-based access control, and a serverless AWS backend.
 
-The project consists of a public-facing profile/landing page and a private portal of personal productivity tools, all served as static HTML files on AWS infrastructure.
-
-**Live site:** https://sajeed.online
+**Live:** [sajeed.online](https://sajeed.online)
 
 ---
 
-## Project Overview
+## Project Structure
 
-The portal is split into two parts:
+```
+web-apps/
+├── index.html               ← Public profile / landing page
+├── login.html               ← Portal entry point
+├── register.html            ← Create account
+├── dashboard.html           ← Project hub (auth required)
+├── todo-list.html           ← To-Do app (auth required)
+├── prayer-times.html        ← Islamic prayer times (auth required)
+├── utilities.html           ← Gold, silver & FX rates (auth required)
+├── electricity-tracker.html ← KSEB usage tracker (auth required)
+├── admin.html               ← User management (admin only)
+├── session-guard.js         ← 30-min inactivity auto-logout
+├── config.js                ← API base URL (auto-generated)
+└── assets/
+    └── profile.jpeg         ← Profile photo for landing page
+```
 
-- **Public landing page** (`index.html`) — A professional profile page showcasing experience, skills, certifications, and a contact form. Accessible to anyone at `https://sajeed.online`.
-- **Private portal** — A set of personal tools and trackers accessible only to logged-in users. Authentication is handled via AWS API Gateway + Lambda.
+---
+
+## Auth & Roles
+
+Every user record has:
+- `role` — `"admin"` or `"developer"` (default: `"developer"`)
+- `status` — `"active"` or `"locked"` (default: `"active"`)
+- `lastLoginAt` — ISO timestamp, updated on every successful login
+
+JWT payload includes `role`. The frontend uses it to show/hide the Admin tile and section.
+
+**Auth guard:** All protected pages have an early `<script>` in `<head>` that redirects to `login.html` before any content renders — prevents cached pages being viewed without a valid session.
+
+**Auto-logout:** `session-guard.js` tracks inactivity. Shows a warning modal at 28 minutes, logs out at 30 minutes.
+
+**Locked accounts** are rejected at login with a clear error message.
+
+### Bootstrap first admin
+
+```bash
+aws dynamodb update-item \
+  --table-name auth_users \
+  --key '{"email": {"S": "your@email.com"}}' \
+  --update-expression "SET #r = :r, #s = :s" \
+  --expression-attribute-names '{"#r": "role", "#s": "status"}' \
+  --expression-attribute-values '{":r": {"S": "admin"}, ":s": {"S": "active"}}' \
+  --region ap-south-1
+```
+
+Log out and back in — the new JWT will carry `role: admin` and the Admin tile appears.
 
 ---
 
 ## Pages
 
-### Public
-| File | Description |
-|------|-------------|
-| `index.html` | Landing page — profile, skills, experience, certifications, contact form |
+### `index.html` — Public Landing Page
+- Professional profile page for Muhammed Sajeed
+- Sections: Hero, About, Skills, Experience, Certifications
+- Contact form — submissions sent via Lambda + SES to `sajeedmoh@gmail.com`
+- Emails sent from `noreply@sajeed.online` (DKIM verified domain)
+- Portal Login button links to `login.html`
 
-### Portal (requires login)
-| File | Description |
-|------|-------------|
-| `login.html` | User login with portal feature overview |
-| `register.html` | New user registration |
-| `dashboard.html` | Main dashboard — links to all portal tools |
-| `admin.html` | Admin panel |
-| `todo-list.html` | Personal to-do list manager |
-| `prayer-times.html` | Daily prayer times tracker |
-| `electricity-tracker.html` | KSEB electricity usage tracker |
-| `utilities.html` | Live exchange rates (USD/AED → INR) and gold/silver prices |
+### `login.html`
+- Split layout — left panel explains portal features, right panel is the login form
+- Calls `POST /api/auth/login`
+- Redirects already-logged-in users to `dashboard.html`
+- Shows "Account locked" message if status is locked
+- On success: saves `auth_session` + `auth_token` to localStorage, redirects to dashboard
 
-### Assets
-| File | Description |
-|------|-------------|
-| `assets/profile.jpeg` | Profile photo used on landing page |
-| `config.js` | Auto-generated — sets `window.API_BASE` to the API Gateway endpoint |
-| `session-guard.js` | Enforces login session across all portal pages |
+### `register.html`
+- Collects first name, last name, email, password
+- Real-time password strength meter
+- Calls `POST /api/auth/register` — new users get `role: developer`, `status: active`
+
+### `dashboard.html`
+- Personalised greeting (adapts to time of day)
+- Sidebar with project tiles
+- Admin section (tile + nav label) visible only when `session.role === 'admin'`
+- Sidebar role label shows actual role (Admin / Developer)
+
+### `admin.html` _(admin only)_
+- Redirects non-admins to `dashboard.html`
+- User table: Full Name · Email · Role · Status · Last Login · Actions
+- Per-row actions: Lock/Unlock, Change Role (dropdown), Delete
+- Add User form: first name, last name, email, password, role
+
+### `todo-list.html`
+- Add, edit, complete, delete tasks
+- Filter: All / Active / Done
+- Per-user storage in localStorage (keyed by email)
+
+### `prayer-times.html`
+- Fajr, Dhuhr, Asr, Maghrib, Isha with Adhan + Iqama times
+- Live countdown to next prayer / Iqama
+- 16 calculation methods, Hanafi/Standard Asr
+- GPS auto-detect or manual city input
+- Hijri date display
+
+### `utilities.html`
+- Live USD/INR, AED/INR exchange rates with converters
+- Gold (22K, per gram & pavan) and silver (999) Kerala rates with converters
+
+### `electricity-tracker.html`
+- Manual meter reading entries (date, reading, usage, comment, type)
+- Billing cycle tracking — resets on "Bill received" entry
+- Data persisted to DynamoDB via authenticated API
 
 ---
 
-## AWS Architecture
+## Architecture
 
 ```
 User
  │
  ▼
-Route 53 (sajeed.online)
- │  Alias records → CloudFront
+Route 53 (sajeed.online)  ←  Alias records
+ │
  ▼
 CloudFront (E3K41WVH8F6W8U)
- │  HTTPS · HTTP → HTTPS redirect · ACM SSL (us-east-1)
- │  Edge location: ap-south-1 (Mumbai)
+ │  HTTPS · HTTP → HTTPS redirect
+ │  ACM SSL certificate (us-east-1)
  ▼
 S3 Bucket (sajeed.online · ap-south-1)
- │  Static website hosting · index: index.html
- │
- ├── index.html, login.html, dashboard.html ...
+ │  Static website · index: index.html
+ ├── index.html, login.html, dashboard.html …
  └── assets/profile.jpeg
 
 Contact Form
  │
  ▼
-API Gateway (1dcu9kqzz9 · ap-south-1)
- │  POST /contact
+API Gateway (ap-south-1)  POST /contact
  ▼
-Lambda (sajeed-contact-form · ap-south-1)
- │  Python 3.12
+Lambda  sajeed-contact-form  (Python 3.12)
  ▼
 SES (ap-south-1)
  │  From: noreply@sajeed.online (DKIM verified)
- └─→ Delivers to: sajeedmoh@gmail.com
+ └─→ sajeedmoh@gmail.com
 
-Auth API
+Auth & Data API
  │
  ▼
-API Gateway (1dcu9kqzz9 · ap-south-1)
- │  /api/auth/login · /api/auth/register
+API Gateway (ap-south-1)
+ │  /api/auth/*  /api/electricity  /api/admin/*
  ▼
-Lambda (my-test-repo-auth · ap-south-1)
+Lambda  my-test-repo-auth  (nodejs20.x · Express)
+ ▼
+DynamoDB  auth_users  (ap-south-1)
+ └─ PK: email
+    Fields: firstName, lastName, passwordHash,
+            role, status, lastLoginAt, createdAt,
+            electricityEntries[]
 ```
 
+---
 
+## API Endpoints
+
+**Base URL:** `https://1dcu9kqzz9.execute-api.ap-south-1.amazonaws.com`
+
+### Auth
+| Method | Path | Auth |
+|--------|------|------|
+| POST | `/api/auth/register` | — |
+| POST | `/api/auth/login` | — |
+
+### Contact Form
+| Method | Path | Auth |
+|--------|------|------|
+| POST | `/contact` | — |
+
+### Electricity
+| Method | Path | Auth |
+|--------|------|------|
+| GET | `/api/electricity` | JWT |
+| POST | `/api/electricity` | JWT |
+| DELETE | `/api/electricity/:id` | JWT |
+
+### Admin
+| Method | Path | Auth |
+|--------|------|------|
+| GET | `/api/admin/users` | JWT + admin |
+| POST | `/api/admin/users` | JWT + admin |
+| PUT | `/api/admin/users/:email/role` | JWT + admin |
+| PUT | `/api/admin/users/:email/status` | JWT + admin |
+| DELETE | `/api/admin/users/:email` | JWT + admin |
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | HTML, CSS, JavaScript (no frameworks) |
+| Backend | Node.js, Express, serverless-http |
+| Auth | bcryptjs, jsonwebtoken |
+| Database | AWS DynamoDB |
+| Hosting | AWS S3 + CloudFront (frontend), Lambda + API Gateway (backend) |
+| Email | AWS SES — `noreply@sajeed.online` |
+| DNS & SSL | AWS Route 53 + ACM |
+| Prayer times | [Aladhan API](https://aladhan.com) |
+| Exchange rates | [@fawazahmed0/currency-api](https://github.com/fawazahmed0/exchange-api) |
+
+---
+
+## License
+
+Personal project — Muhammed Sajeed.
