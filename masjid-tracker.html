@@ -119,6 +119,56 @@
     .locate-btn:hover { background: var(--accent-h); }
     .locate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+    .search-divider {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 10px 0;
+      color: var(--muted);
+      font-size: 0.72rem;
+    }
+    .search-divider::before,
+    .search-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .place-search-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    .place-search-row input {
+      flex: 1;
+      padding: 8px 10px;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.83rem;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .place-search-row input:focus { border-color: var(--accent); }
+    .place-search-row input::placeholder { color: var(--muted); }
+
+    .place-search-row button {
+      padding: 8px 12px;
+      background: var(--surface2);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.83rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s;
+    }
+    .place-search-row button:hover { background: var(--accent); border-color: var(--accent); }
+    .place-search-row button:disabled { opacity: 0.5; cursor: not-allowed; }
+
     /* ── Tabs ─────────────────────────────────────── */
     .tabs {
       display: flex;
@@ -336,6 +386,11 @@
       <div class="sidebar-header">
         <h2>Salafi Masjids</h2>
         <button class="locate-btn" id="locateBtn">&#127757; Use My Location</button>
+        <div class="search-divider">or search a place</div>
+        <div class="place-search-row">
+          <input type="text" id="placeInput" placeholder="e.g. Kozhikode, Malappuram..." />
+          <button id="placeSearchBtn">Search</button>
+        </div>
       </div>
 
       <div class="tabs">
@@ -516,6 +571,52 @@
       document.getElementById('fLng').value = lng.toFixed(6);
     }
 
+    // ── Place search (geocode → nearby) ───────────────
+    document.getElementById('placeSearchBtn').onclick = searchPlace;
+    document.getElementById('placeInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') searchPlace();
+    });
+
+    async function searchPlace() {
+      const query = document.getElementById('placeInput').value.trim();
+      if (!query) return;
+
+      const btn = document.getElementById('placeSearchBtn');
+      btn.disabled = true;
+      btn.textContent = '...';
+
+      try {
+        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=in`;
+        const res  = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+        const data = await res.json();
+
+        if (!data || data.length === 0) {
+          alert('Place not found. Try a more specific name like "Kozhikode, Kerala".');
+          return;
+        }
+
+        const place = data[0];
+        const lat   = parseFloat(place.lat);
+        const lng   = parseFloat(place.lon);
+
+        map.setView([lat, lng], 14);
+
+        if (userMarker) map.removeLayer(userMarker);
+        userMarker = L.marker([lat, lng], { icon: iconUser })
+          .addTo(map)
+          .bindPopup(`📍 ${place.display_name.split(',')[0]}`)
+          .openPopup();
+
+        fetchNearby(lat, lng);
+        prefillCoords(lat, lng);
+      } catch (e) {
+        alert('Failed to search: ' + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Search';
+      }
+    }
+
     // ── Overpass API — nearby salafi masjids ──────────
     async function fetchNearby(lat, lng) {
       const panel = document.getElementById('nearbyPanel');
@@ -525,7 +626,7 @@
       nearbyMarkers.forEach(m => map.removeLayer(m));
       nearbyMarkers = [];
 
-      const radius = 100000; // 100km
+      const radius = 5000; // 5km
       const query = `[out:json][timeout:30];node["amenity"="place_of_worship"]["name"~"salafi|islahi|mujahid",i](around:${radius},${lat},${lng});out 100;`;
 
       try {
@@ -540,7 +641,7 @@
           .sort((a, b) => a._dist - b._dist);
 
         if (items.length === 0) {
-          panel.innerHTML = '<div class="status-msg">No Salafi masjids found within 50 km.<br>You can add one using the Add tab.</div>';
+          panel.innerHTML = '<div class="status-msg">No Salafi masjids found within 5 km.<br>You can add one using the Add tab.</div>';
           return;
         }
 
