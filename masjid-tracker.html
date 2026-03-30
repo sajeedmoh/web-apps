@@ -627,7 +627,8 @@
       nearbyMarkers = [];
 
       const radius = 5000; // 5km
-      const query = `[out:json][timeout:30];node["amenity"="place_of_worship"]["name"~"salafi|islahi|mujahid",i](around:${radius},${lat},${lng});out 100;`;
+      // nwr = node + way + relation; out center gets lat/lng for polygon-mapped buildings too
+      const query = `[out:json][timeout:30];nwr["amenity"="place_of_worship"]["name"~"salafi|islahi|mujahid|darul.had",i](around:${radius},${lat},${lng});out center 100;`;
 
       try {
         const res  = await fetch('https://overpass-api.de/api/interpreter', {
@@ -637,7 +638,13 @@
         });
         const data = await res.json();
         const items = (data.elements || [])
-          .map(el => ({ ...el, _dist: distKm(lat, lng, el.lat, el.lon) }))
+          .map(el => {
+            // nodes have el.lat/el.lon directly; ways/relations have el.center
+            const elLat = el.lat ?? el.center?.lat;
+            const elLon = el.lon ?? el.center?.lon;
+            return { ...el, _lat: elLat, _lon: elLon, _dist: distKm(lat, lng, elLat, elLon) };
+          })
+          .filter(el => el._lat != null)
           .sort((a, b) => a._dist - b._dist);
 
         if (items.length === 0) {
@@ -652,13 +659,13 @@
           const item = buildListItem({ name, dist: dist.toFixed(1), type: 'osm' });
 
           item.onclick = () => {
-            map.setView([el.lat, el.lon], 16);
+            map.setView([el._lat, el._lon], 16);
             highlightItem(panel, item);
           };
 
           panel.appendChild(item);
 
-          const marker = L.marker([el.lat, el.lon], { icon: iconNearby })
+          const marker = L.marker([el._lat, el._lon], { icon: iconNearby })
             .addTo(map)
             .bindPopup(`<b>${name}</b><br>${dist.toFixed(1)} km away`);
           nearbyMarkers.push(marker);
