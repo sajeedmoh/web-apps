@@ -112,13 +112,6 @@ Log out and back in — the new JWT will carry `role: admin` and the Admin tile 
 - Billing cycle tracking — resets on "Bill received" entry
 - Data persisted to DynamoDB via authenticated API
 
-### `masjid-tracker.html`
-- GPS-based location detect
-- Nearby Salafi masjid search via OpenStreetMap Overpass API (50 km radius)
-- Interactive Leaflet map with markers for nearby and saved masjids
-- Add new masjids with name, address, district, coordinates (click map or GPS)
-- Saved masjids stored in DynamoDB (`salafi_masjids` table), visible to all users
-
 ---
 
 ## API Endpoints
@@ -142,13 +135,6 @@ Log out and back in — the new JWT will carry `role: admin` and the Admin tile 
 | GET | `/api/electricity` | JWT |
 | POST | `/api/electricity` | JWT |
 | DELETE | `/api/electricity/:id` | JWT |
-
-### Masjids
-| Method | Path | Auth |
-|--------|------|------|
-| GET | `/api/masjids` | JWT |
-| POST | `/api/masjids` | JWT |
-| DELETE | `/api/masjids/:id` | JWT |
 
 ### Admin
 | Method | Path | Auth |
