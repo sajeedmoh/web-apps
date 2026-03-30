@@ -525,15 +525,8 @@
       nearbyMarkers.forEach(m => map.removeLayer(m));
       nearbyMarkers = [];
 
-      const radius = 50000; // 50km
-      const query = `[out:json][timeout:25];
-(
-  node["amenity"="place_of_worship"]["religion"="islam"]["name"~"salafi",i](around:${radius},${lat},${lng});
-  node["amenity"="place_of_worship"]["name"~"salafi",i](around:${radius},${lat},${lng});
-  node["amenity"="place_of_worship"]["name"~"ahl.*hadith",i](around:${radius},${lat},${lng});
-  node["amenity"="place_of_worship"]["name"~"islahi",i](around:${radius},${lat},${lng});
-);
-out body;`;
+      const radius = 100000; // 100km
+      const query = `[out:json][timeout:30];node["amenity"="place_of_worship"]["name"~"salafi|islahi|mujahid",i](around:${radius},${lat},${lng});out 100;`;
 
       try {
         const res  = await fetch('https://overpass-api.de/api/interpreter', {
@@ -542,7 +535,9 @@ out body;`;
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         });
         const data = await res.json();
-        const items = data.elements || [];
+        const items = (data.elements || [])
+          .map(el => ({ ...el, _dist: distKm(lat, lng, el.lat, el.lon) }))
+          .sort((a, b) => a._dist - b._dist);
 
         if (items.length === 0) {
           panel.innerHTML = '<div class="status-msg">No Salafi masjids found within 50 km.<br>You can add one using the Add tab.</div>';
@@ -552,7 +547,7 @@ out body;`;
         panel.innerHTML = '';
         items.forEach(el => {
           const name = el.tags?.name || el.tags?.['name:en'] || 'Unknown Masjid';
-          const dist = distKm(lat, lng, el.lat, el.lon);
+          const dist = el._dist;
           const item = buildListItem({ name, dist: dist.toFixed(1), type: 'osm' });
 
           item.onclick = () => {
@@ -569,7 +564,8 @@ out body;`;
         });
 
         switchTab('nearby');
-      } catch {
+      } catch (e) {
+        console.error('Overpass error:', e);
         panel.innerHTML = '<div class="status-msg" style="color:#ef4444">Failed to load nearby masjids. Check your connection.</div>';
       }
     }
