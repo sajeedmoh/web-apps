@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# Android build outputs
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+
+# Capacitor web assets copy (generated from www/)
+android/app/src/main/assets/public/
+
+# www is the mobile build folder, keep it
+!www/

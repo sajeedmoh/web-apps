@@ -1,0 +1,26 @@
+{
+  "name": "web-apps",
+  "version": "1.0.0",
+  "description": "A personal web portal with a public profile landing page, multiple mini-apps, JWT authentication, role-based access control, and a serverless AWS backend.",
+  "main": "config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sajeedmoh/web-apps.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/sajeedmoh/web-apps/issues"
+  },
+  "homepage": "https://github.com/sajeedmoh/web-apps#readme",
+  "dependencies": {
+    "@capacitor/android": "^8.3.0",
+    "@capacitor/cli": "^8.3.0",
+    "@capacitor/core": "^8.3.0"
+  }
+}
