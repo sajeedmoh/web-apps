@@ -200,6 +200,7 @@
     #tile-prayer { --tile-accent: #c9a84c; --tile-icon-bg: rgba(201,168,76,0.12); }
     #tile-utils  { --tile-accent: #a78bfa; --tile-icon-bg: rgba(167,139,250,0.12); }
     #tile-kseb   { --tile-accent: #f59e0b; --tile-icon-bg: rgba(245,158,11,0.12); }
+    #tile-funds  { --tile-accent: #8b5cf6; --tile-icon-bg: rgba(139,92,246,0.12); }
 
 
     /* ══════════════════════════════════════
@@ -463,6 +464,15 @@
       <span class="tile-arrow">&#8599;</span>
     </a>
 
+    <a href="funds.html" id="tile-funds" class="project-tile">
+      <div class="tile-icon">&#128176;</div>
+      <div class="tile-text">
+        <div class="tile-title">Funds</div>
+        <div class="tile-desc">Money management &amp; budgets</div>
+      </div>
+      <span class="tile-arrow">&#8599;</span>
+    </a>
+
   </nav>
 
   <div id="admin-nav-section" style="display:none">
@@ -507,7 +517,7 @@
     <div class="stats-row">
       <div class="stat-card">
         <div class="stat-label">Total Projects</div>
-        <div class="stat-value" id="statProjects">4</div>
+        <div class="stat-value" id="statProjects">5</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Language</div>
@@ -556,7 +566,7 @@
 
     if (role === 'admin') {
       document.getElementById('admin-nav-section').style.display = '';
-      document.getElementById('statProjects').textContent = '5';
+      document.getElementById('statProjects').textContent = '6';
     }
   }
 
