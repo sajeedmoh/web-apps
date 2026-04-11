@@ -597,6 +597,19 @@
     return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
   }
 
+  /* ── XSS prevention ── */
+  function escapeHtml(str) {
+    return String(str == null ? '' : str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  /* ── User table index map (avoids putting emails in onclick) ── */
+  let _tableUsers = [];
+
   /* ── Load users ── */
   async function loadUsers() {
     try {
@@ -620,35 +633,36 @@
       return;
     }
 
-    const rows = users.map(u => {
-      const name       = `${u.firstName || ''} ${u.lastName || ''}`.trim() || '—';
+    _tableUsers = users;
+    const rows = users.map((u, i) => {
+      const name       = escapeHtml(`${u.firstName || ''} ${u.lastName || ''}`.trim() || '—');
       const role       = u.role   || 'developer';
       const status     = u.status || 'active';
       const lastLogin  = u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '—';
       const isSelf     = u.email === session?.email;
 
-      const roleBadge   = `<span class="badge badge-${role}">${role}</span>`;
-      const statusBadge = `<span class="badge badge-${status}">${status}</span>`;
+      const roleBadge   = `<span class="badge badge-${role}">${escapeHtml(role)}</span>`;
+      const statusBadge = `<span class="badge badge-${status}">${escapeHtml(status)}</span>`;
 
       const lockBtn = status === 'locked'
-        ? `<button class="btn-sm unlock" onclick="setStatus('${u.email}','active')">&#128275; Unlock</button>`
-        : `<button class="btn-sm lock"   onclick="setStatus('${u.email}','locked')">&#128274; Lock</button>`;
+        ? `<button class="btn-sm unlock" onclick="setStatusByIdx(${i},'active')">&#128275; Unlock</button>`
+        : `<button class="btn-sm lock"   onclick="setStatusByIdx(${i},'locked')">&#128274; Lock</button>`;
 
-      const roleSelect = `<select class="role-select" onchange="setRole('${u.email}', this.value)">
+      const roleSelect = `<select class="role-select" onchange="setRoleByIdx(${i}, this.value)">
         <option value="developer" ${role === 'developer' ? 'selected' : ''}>Developer</option>
         <option value="admin"     ${role === 'admin'     ? 'selected' : ''}>Admin</option>
       </select>`;
 
       const deleteBtn = isSelf
         ? '<span style="color:var(--muted);font-size:0.75rem">—</span>'
-        : `<button class="btn-sm danger" onclick="deleteUser('${u.email}')">&#128465; Delete</button>`;
+        : `<button class="btn-sm danger" onclick="deleteUserByIdx(${i})">&#128465; Delete</button>`;
 
       return `<tr>
         <td>${name}${isSelf ? ' <span style="font-size:0.7rem;color:var(--muted)">(you)</span>' : ''}</td>
-        <td style="color:var(--muted)">${u.email}</td>
+        <td style="color:var(--muted)">${escapeHtml(u.email)}</td>
         <td>${roleBadge}</td>
         <td>${statusBadge}</td>
-        <td style="color:var(--muted)">${lastLogin}</td>
+        <td style="color:var(--muted)">${escapeHtml(lastLogin)}</td>
         <td><div class="actions">${lockBtn}${roleSelect}${deleteBtn}</div></td>
       </tr>`;
     }).join('');
@@ -719,6 +733,11 @@
       showToast(err.message, 'error');
     }
   }
+
+  /* ── Index-based wrappers (avoids raw user data in onclick attributes) ── */
+  function setStatusByIdx(i, status) { setStatus(_tableUsers[i].email, status); }
+  function setRoleByIdx(i, value)    { setRole(_tableUsers[i].email, value); }
+  function deleteUserByIdx(i)        { deleteUser(_tableUsers[i].email); }
 
   /* ── Add user form toggle ── */
   function toggleAddForm() {

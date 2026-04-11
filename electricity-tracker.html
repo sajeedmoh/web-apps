@@ -339,7 +339,7 @@
       border-top: none;
       padding: 13px 16px;
       display: grid;
-      grid-template-columns: 90px 1fr 70px 70px auto;
+      grid-template-columns: 90px 1fr 70px 70px 65px auto;
       align-items: center;
       gap: 12px;
       transition: background 0.15s;
@@ -378,6 +378,18 @@
       font-variant-numeric: tabular-nums;
       text-align: right;
       color: var(--text);
+    }
+
+    .entry-avg {
+      font-size: 0.78rem;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+      color: var(--muted);
+    }
+
+    .entry-avg .avg-val {
+      color: var(--accent);
+      font-weight: 600;
     }
 
     .entry-usage.bill-reset {
@@ -445,7 +457,7 @@
     /* Table column headers */
     .entry-col-headers {
       display: grid;
-      grid-template-columns: 90px 1fr 70px 70px auto;
+      grid-template-columns: 90px 1fr 70px 70px 65px auto;
       gap: 12px;
       padding: 6px 16px 8px;
       font-size: 0.65rem;
@@ -455,7 +467,8 @@
     }
 
     .entry-col-headers span:nth-child(3),
-    .entry-col-headers span:nth-child(4) { text-align: right; }
+    .entry-col-headers span:nth-child(4),
+    .entry-col-headers span:nth-child(5) { text-align: right; }
 
     /* ── Responsive ───────────────────────────── */
     @media (max-width: 580px) {
@@ -467,7 +480,7 @@
       /* Scroll table horizontally — keep all columns visible */
       .entries-section { overflow-x: auto; -webkit-overflow-scrolling: touch; }
       .entry-row,
-      .entry-col-headers { min-width: 480px; }
+      .entry-col-headers { min-width: 540px; }
 
       .cycle-bar { flex-direction: column; align-items: flex-start; }
       .cycle-bar-right { text-align: left; }
@@ -499,6 +512,14 @@
         <span class="cycle-bar-unit">units</span>
       </div>
       <div class="cycle-bar-meta" id="cycleSince">No entries yet</div>
+    </div>
+    <div>
+      <div class="cycle-bar-label">Avg Daily Usage</div>
+      <div>
+        <span class="cycle-bar-value" id="tillDateAvgVal" style="font-size:1.5rem">—</span>
+        <span class="cycle-bar-unit">units/day</span>
+      </div>
+      <div class="cycle-bar-meta">till date</div>
     </div>
     <div class="cycle-bar-right">
       <div class="last-reading-label">Last meter reading</div>
@@ -683,6 +704,16 @@
     }
   }
 
+  /* ── XSS prevention ──────────────────────────────────────────────── */
+  function escapeHtml(str) {
+    return String(str == null ? '' : str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   /* ── Format date ──────────────────────────────────────────────────── */
   function fmtDate(iso) {
     const d = new Date(iso + 'T00:00:00');
@@ -696,12 +727,30 @@
     previewUsage();
   }
 
+  /* ── Days between two ISO date strings ───────────────────────────── */
+  function daysBetween(iso1, iso2) {
+    return Math.round((new Date(iso2 + 'T00:00:00') - new Date(iso1 + 'T00:00:00')) / 86400000);
+  }
+
+  /* ── Per-entry avg daily usage map ───────────────────────────────── */
+  function computeAvgPerEntry(entries) {
+    const map = {};
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      if (i === 0 || e.usage <= 0) { map[e.id] = null; continue; }
+      const days = daysBetween(entries[i - 1].date, e.date);
+      map[e.id] = days > 0 ? (e.usage / days).toFixed(1) : null;
+    }
+    return map;
+  }
+
   /* ── Cycle bar ────────────────────────────────────────────────────── */
   function updateCycleBar(entries) {
     if (entries.length === 0) {
       document.getElementById('cycleUsageVal').textContent  = '0';
       document.getElementById('cycleSince').textContent     = 'No entries yet';
       document.getElementById('lastReadingVal').textContent = '—';
+      document.getElementById('tillDateAvgVal').textContent = '—';
       return;
     }
     const last = entries[entries.length - 1];
@@ -717,6 +766,12 @@
     document.getElementById('cycleSince').textContent = cycleEntries.length > 0
       ? 'Since ' + fmtDate(cycleEntries[0].date) + ' · ' + cycleEntries.length + ' entr' + (cycleEntries.length === 1 ? 'y' : 'ies')
       : 'New cycle started';
+
+    // Till-date average
+    const totalUsage = entries.reduce((sum, e) => sum + (e.usage > 0 ? e.usage : 0), 0);
+    const totalDays  = daysBetween(entries[0].date, last.date);
+    document.getElementById('tillDateAvgVal').textContent =
+      totalDays > 0 ? (totalUsage / totalDays).toFixed(1) : '—';
   }
 
   /* ── Render entries list ──────────────────────────────────────────── */
@@ -736,6 +791,8 @@
     if (current.length > 0) cycles.push([...current]);
     cycles.reverse();
 
+    const avgMap = computeAvgPerEntry(_entries);
+
     let html = '';
     cycles.forEach((cycle, ci) => {
       const isOpen = ci === 0 && cycle[cycle.length - 1].type !== 'bill';
@@ -744,18 +801,21 @@
       const to     = fmtDate(cycle[cycle.length - 1].date);
 
       html += isOpen
-        ? `<div class="entry-col-headers"><span>Date</span><span>Comment</span><span>Meter</span><span>Usage</span><span></span></div>`
+        ? `<div class="entry-col-headers"><span>Date</span><span>Comment</span><span>Meter</span><span>Usage</span><span>Avg/day</span><span></span></div>`
         : `<div class="cycle-header"><div class="cycle-header-left">&#10003; Billing cycle &nbsp;·&nbsp; ${from} → ${to}</div><div class="cycle-header-right">Total: ${total} units</div></div>`;
 
       [...cycle].reverse().forEach(entry => {
         const isBill   = entry.type === 'bill';
         const usageTxt = (entry.usage === 0 && entry === cycle[0]) ? '—' : (entry.usage >= 0 ? '+' + entry.usage : entry.usage) + ' u';
+        const avg      = avgMap[entry.id];
+        const avgTxt   = avg !== null ? `<span class="avg-val">${avg}</span> u/d` : '—';
         html += `
           <div class="entry-row">
             <span class="entry-date">${fmtDate(entry.date)}</span>
-            <span class="entry-comment ${entry.comment ? '' : 'empty'}">${entry.comment || 'No comment'}</span>
+            <span class="entry-comment ${entry.comment ? '' : 'empty'}">${entry.comment ? escapeHtml(entry.comment) : 'No comment'}</span>
             <span class="entry-meter">${entry.meterReading}</span>
             <span class="entry-usage ${isBill ? 'bill-reset' : ''}">${usageTxt}</span>
+            <span class="entry-avg">${avgTxt}</span>
             <span class="entry-actions">
               <span class="badge ${isBill ? 'badge-bill' : 'badge-entry'}">${isBill ? 'Bill' : 'Entry'}</span>
               <button class="btn-del" onclick="deleteEntry(${entry.id})" title="Delete">&#10005;</button>

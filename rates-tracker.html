@@ -393,36 +393,42 @@
     return res.json();
   }
 
+  function setConvertResult(el, value) {
+    el.textContent = '';
+    if (value === null) return;
+    const span = document.createElement('span');
+    span.className = 'rval';
+    span.textContent = '₹' + fmt(value);
+    el.textContent = '= ';
+    el.appendChild(span);
+  }
+
   function convertUSD() {
     if (!rates.usd) return;
     const amt = parseFloat(document.getElementById('usdInput').value);
     const el  = document.getElementById('usdResult');
-    if (isNaN(amt) || document.getElementById('usdInput').value === '') { el.innerHTML = ''; return; }
-    el.innerHTML = `= <span class="rval">₹${fmt(amt * rates.usd)}</span>`;
+    setConvertResult(el, isNaN(amt) || document.getElementById('usdInput').value === '' ? null : amt * rates.usd);
   }
 
   function convertAED() {
     if (!rates.aed) return;
     const amt = parseFloat(document.getElementById('aedInput').value);
     const el  = document.getElementById('aedResult');
-    if (isNaN(amt) || document.getElementById('aedInput').value === '') { el.innerHTML = ''; return; }
-    el.innerHTML = `= <span class="rval">₹${fmt(amt * rates.aed)}</span>`;
+    setConvertResult(el, isNaN(amt) || document.getElementById('aedInput').value === '' ? null : amt * rates.aed);
   }
 
   function convertGold() {
     if (!rates.goldPerGram) return;
     const grams = parseFloat(document.getElementById('goldInput').value);
     const el    = document.getElementById('goldResult');
-    if (isNaN(grams) || document.getElementById('goldInput').value === '') { el.innerHTML = ''; return; }
-    el.innerHTML = `= <span class="rval">₹${fmt(grams * rates.goldPerGram)}</span>`;
+    setConvertResult(el, isNaN(grams) || document.getElementById('goldInput').value === '' ? null : grams * rates.goldPerGram);
   }
 
   function convertSilver() {
     if (!rates.silverPerGram) return;
     const grams = parseFloat(document.getElementById('silverInput').value);
     const el    = document.getElementById('silverResult');
-    if (isNaN(grams) || document.getElementById('silverInput').value === '') { el.innerHTML = ''; return; }
-    el.innerHTML = `= <span class="rval">₹${fmt(grams * rates.silverPerGram)}</span>`;
+    setConvertResult(el, isNaN(grams) || document.getElementById('silverInput').value === '' ? null : grams * rates.silverPerGram);
   }
 
   function renderRates(usd, goldUSDPerOz, silverUSDPerOz) {
