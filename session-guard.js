@@ -1,17 +1,22 @@
 /**
  * session-guard.js
- * Auto-logout after 30 minutes of inactivity.
+ * Auto-logout after 15 minutes of inactivity.
  * Shows a 2-minute warning modal before logging out.
+ *
+ * Uses localStorage to track last activity time so the timeout
+ * works correctly even when the browser throttles background timers.
  * Include on all protected pages.
  */
 (function () {
-  const INACTIVITY_MS = 30 * 60 * 1000;   // 30 min total timeout
-  const WARNING_MS    =  2 * 60 * 1000;   // warn at 28 min (2 min before logout)
-  const WARN_AT_MS    = INACTIVITY_MS - WARNING_MS;
+  const INACTIVITY_MS    = 15 * 60 * 1000;   // 15 min total
+  const WARNING_MS       =  2 * 60 * 1000;   // 2 min warning before logout
+  const WARN_AT_MS       = INACTIVITY_MS - WARNING_MS; // show warning at 13 min
+  const CHECK_INTERVAL   = 20 * 1000;         // check every 20 s
+  const STORAGE_KEY      = 'last_activity';
 
-  let inactivityTimer   = null;
-  let countdownInterval = null;
-  let warningVisible    = false;
+  let checkTimer         = null;
+  let countdownInterval  = null;
+  let warningVisible     = false;
 
   /* ── Inject modal HTML + styles ─────────────────────────────────── */
   const style = document.createElement('style');
@@ -93,6 +98,16 @@
   `;
   document.body.appendChild(backdrop);
 
+  /* ── Activity tracking (via localStorage) ───────────────────────── */
+  function recordActivity() {
+    localStorage.setItem(STORAGE_KEY, Date.now().toString());
+  }
+
+  function inactiveMs() {
+    const last = parseInt(localStorage.getItem(STORAGE_KEY) || '0');
+    return last > 0 ? Date.now() - last : 0;
+  }
+
   /* ── Countdown display ──────────────────────────────────────────── */
   function setCountdown(seconds) {
     const m = Math.floor(seconds / 60);
@@ -102,11 +117,11 @@
   }
 
   /* ── Show warning modal ─────────────────────────────────────────── */
-  function showWarning() {
+  function showWarning(secondsLeft) {
+    if (warningVisible) return;
     warningVisible = true;
+    clearInterval(checkTimer);
     backdrop.classList.add('visible');
-
-    let secondsLeft = WARNING_MS / 1000;
     setCountdown(secondsLeft);
 
     countdownInterval = setInterval(function () {
@@ -120,11 +135,21 @@
     }, 1000);
   }
 
-  /* ── Reset inactivity timer ─────────────────────────────────────── */
-  function resetTimer() {
+  /* ── Check inactivity (called on interval + tab focus) ──────────── */
+  function checkInactivity() {
     if (warningVisible) return;
-    clearTimeout(inactivityTimer);
-    inactivityTimer = setTimeout(showWarning, WARN_AT_MS);
+    const idle = inactiveMs();
+    if (idle >= INACTIVITY_MS) {
+      doLogout();
+    } else if (idle >= WARN_AT_MS) {
+      showWarning(Math.round((INACTIVITY_MS - idle) / 1000));
+    }
+  }
+
+  /* ── Start polling timer ────────────────────────────────────────── */
+  function startCheckTimer() {
+    clearInterval(checkTimer);
+    checkTimer = setInterval(checkInactivity, CHECK_INTERVAL);
   }
 
   /* ── Stay logged in ─────────────────────────────────────────────── */
@@ -132,26 +157,36 @@
     clearInterval(countdownInterval);
     backdrop.classList.remove('visible');
     warningVisible = false;
-    resetTimer();
+    recordActivity();
+    startCheckTimer();
   }
 
   /* ── Logout ─────────────────────────────────────────────────────── */
   function doLogout() {
-    clearTimeout(inactivityTimer);
+    clearInterval(checkTimer);
     clearInterval(countdownInterval);
     localStorage.removeItem('auth_session');
     localStorage.removeItem('auth_token');
+    localStorage.removeItem(STORAGE_KEY);
     window.location.href = 'login.html?reason=timeout';
   }
 
   /* ── Listen for user activity ───────────────────────────────────── */
   ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click'].forEach(function (evt) {
-    document.addEventListener(evt, resetTimer, { passive: true });
+    document.addEventListener(evt, recordActivity, { passive: true });
+  });
+
+  /* ── Check immediately when tab becomes visible again ───────────── */
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') {
+      checkInactivity();
+    }
   });
 
   /* ── Expose to global scope (for onclick handlers) ──────────────── */
   window.sessionGuard = { stay: stay, logout: doLogout };
 
   /* ── Start ──────────────────────────────────────────────────────── */
-  resetTimer();
+  recordActivity();
+  startCheckTimer();
 })();

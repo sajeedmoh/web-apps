@@ -533,7 +533,7 @@
   function fmtDate(iso) { return new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }); }
   function fmtMonthYear(y, m) { return new Date(y, m, 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }); }
   function escapeHtml(s) {
-    return String(s == null ? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
   function getWalletBalance(w) {
     const t = _transactions.filter(t => t.walletId === w.id);
