@@ -531,7 +531,7 @@
 
   /* ── Utilities ── */
   function getCategory(id) {
-    return [...CATEGORIES.expense, ...CATEGORIES.income, ..._customCategories].find(c => c.id === id) || { id, name: id, icon: '📦', color: '#6b7280' };
+    return [...CATEGORIES.expense, ...CATEGORIES.income, ..._customCategories].find(c => c.id === id) || { id, name: 'Category', icon: '📦', color: '#6b7280' };
   }
   function getWallet(id) { return _wallets.find(w => w.id === id); }
   function sym(currency) { return CURRENCY_SYMBOL[currency] || currency + ' '; }
@@ -574,9 +574,12 @@
     const res = await fetch(API_BASE + '/api/funds', { headers: authHeaders() });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to load');
-    _wallets          = data.wallets      || [];
-    _transactions     = data.transactions || [];
-    _customCategories = data.categories   || [];
+    _wallets      = data.wallets      || [];
+    _transactions = data.transactions || [];
+    const serverCats = data.categories || [];
+    const localCats  = JSON.parse(localStorage.getItem('funds_custom_cats') || '[]');
+    const serverIds  = new Set(serverCats.map(c => c.id));
+    _customCategories = [...serverCats, ...localCats.filter(c => !serverIds.has(c.id))];
   }
   async function apiAddCategory(cat) {
     const res = await fetch(API_BASE + '/api/funds/categories', { method: 'POST', headers: authHeaders(), body: JSON.stringify(cat) });
@@ -1154,14 +1157,12 @@
   fetchData().then(async () => {
     // One-time migration: push any localStorage categories to the server
     const localCats = JSON.parse(localStorage.getItem('funds_custom_cats') || '[]');
-    if (localCats.length > 0 && _customCategories.length === 0) {
+    if (localCats.length > 0) {
       for (const cat of localCats) {
         try { await apiAddCategory(cat); } catch (e) { /* skip duplicates/errors */ }
       }
       localStorage.removeItem('funds_custom_cats');
       await fetchData();
-    } else {
-      localStorage.removeItem('funds_custom_cats');
     }
     renderAll();
   }).catch(err => {
