@@ -34,11 +34,15 @@
     /* ── Back bar ── */
     .back-bar {
       position: fixed;
-      top: 0; left: 0; right: 0;
+      top: 0;
+      left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 480px;
       z-index: 100;
       background: rgba(15,17,23,0.92);
       backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       border-bottom: 1px solid var(--border);
+      border-radius: 0 0 16px 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -383,7 +387,7 @@
       </div>
     </div>
   </nav>
-  <div style="max-width:480px;margin:0 auto;padding:12px 16px 0">
+  <div style="max-width:480px;margin:0 auto;padding:56px 16px 0">
     <div id="walletPanelSummary"></div>
     <div id="walletPanelTxns"></div>
   </div>
@@ -449,7 +453,7 @@
     <span class="back-bar-title" id="moreSubPanelTitle">—</span>
     <div style="width:60px"></div>
   </nav>
-  <div style="max-width:480px;margin:0 auto;padding:12px 16px 0" id="moreSubPanelContent"></div>
+  <div style="max-width:480px;margin:0 auto;padding:56px 16px 0" id="moreSubPanelContent"></div>
 </div>
 
 <script src="config.js"></script>
@@ -519,7 +523,7 @@
   let _wallets = [], _transactions = [];
   let _viewYear = new Date().getFullYear(), _viewMonth = new Date().getMonth();
   let _txnType = 'expense', _selectedCat = null, _selectedColor = WALLET_COLORS[0];
-  let _customCategories = JSON.parse(localStorage.getItem('funds_custom_cats') || '[]');
+  let _customCategories = [];
   let _selectedCatIcon  = ICON_OPTIONS[0];
   let _selectedCatColor = WALLET_COLORS[0];
   let _catFormType      = 'expense';
@@ -533,6 +537,8 @@
   function sym(currency) { return CURRENCY_SYMBOL[currency] || currency + ' '; }
   function fmt(amount, currency) { return sym(currency || 'INR') + Math.abs(amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
   function fmtShort(amount, currency) { return sym(currency || 'INR') + Math.abs(amount).toLocaleString('en-IN', { maximumFractionDigits: 0 }); }
+  function fmtBalance(amount, currency) { return (amount < 0 ? '-' : '') + sym(currency || 'INR') + Math.abs(amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function balColor(amount, walletColor) { return amount < 0 ? 'var(--red)' : walletColor; }
   function fmtDate(iso) { return new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }); }
   function fmtMonthYear(y, m) { return new Date(y, m, 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }); }
   function escapeHtml(s) {
@@ -568,8 +574,20 @@
     const res = await fetch(API_BASE + '/api/funds', { headers: authHeaders() });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to load');
-    _wallets      = data.wallets      || [];
-    _transactions = data.transactions || [];
+    _wallets          = data.wallets      || [];
+    _transactions     = data.transactions || [];
+    _customCategories = data.categories   || [];
+  }
+  async function apiAddCategory(cat) {
+    const res = await fetch(API_BASE + '/api/funds/categories', { method: 'POST', headers: authHeaders(), body: JSON.stringify(cat) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    return data.category;
+  }
+  async function apiDeleteCategory(id) {
+    const res = await fetch(API_BASE + '/api/funds/categories/' + encodeURIComponent(id), { method: 'DELETE', headers: authHeaders() });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
   }
   async function apiAddWallet(w) {
     const res = await fetch(API_BASE + '/api/funds/wallets', { method: 'POST', headers: authHeaders(), body: JSON.stringify(w) });
@@ -637,7 +655,7 @@
             <div class="wallet-list-name">${escapeHtml(w.name)}</div>
             <div class="wallet-list-meta">${w.currency} · ${w.type}</div>
           </div>
-          <div class="wallet-list-balance" style="color:${w.color}">${fmt(bal, w.currency)}</div>
+          <div class="wallet-list-balance" style="color:${balColor(bal, w.color)}">${fmtBalance(bal, w.currency)}</div>
           <span class="wallet-chevron">&#8250;</span>
         </div>`;
       }).join('');
@@ -813,7 +831,7 @@
       <div style="background:linear-gradient(135deg,#1e1b4b,#1a1d27);border:1px solid ${w.color}44;border-radius:16px;padding:20px 16px;margin-bottom:16px;text-align:center">
         <div style="font-size:2rem;margin-bottom:6px">${WALLET_ICONS[w.type] || '📦'}</div>
         <div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Current Balance</div>
-        <div style="font-size:2.2rem;font-weight:800;color:${w.color};font-variant-numeric:tabular-nums;letter-spacing:-0.02em">${fmt(bal, w.currency)}</div>
+        <div style="font-size:2.2rem;font-weight:800;color:${balColor(bal, w.color)};font-variant-numeric:tabular-nums;letter-spacing:-0.02em">${fmtBalance(bal, w.currency)}</div>
         <div style="font-size:0.7rem;color:var(--muted);margin:4px 0 12px">${fmtMonthYear(_viewYear, _viewMonth)}</div>
         <div style="display:flex;gap:8px">
           <div style="flex:1;background:rgba(34,197,94,0.08);border-radius:8px;padding:8px 10px">
@@ -894,29 +912,35 @@
   }
 
   /* ── Add custom category ── */
-  function addCustomCat() {
+  async function addCustomCat() {
     const name = document.getElementById('catName').value.trim();
     if (!name) { alert('Please enter a category name.'); return; }
-    const id = 'custom-' + Date.now();
-    _customCategories.push({ id, name, icon: _selectedCatIcon, color: _selectedCatColor, type: _catFormType });
-    localStorage.setItem('funds_custom_cats', JSON.stringify(_customCategories));
-    document.getElementById('catName').value = '';
-    _selectedCatIcon  = ICON_OPTIONS[0];
-    _selectedCatColor = WALLET_COLORS[0];
-    initCatIconPicker();
-    initCatColorPicker();
-    renderCategoriesTab();
-    renderMoreMenu();
+    const btn = document.getElementById('addCatBtn');
+    btn.disabled = true; btn.textContent = 'Adding…';
+    try {
+      await apiAddCategory({ id: 'custom-' + Date.now(), name, icon: _selectedCatIcon, color: _selectedCatColor, type: _catFormType });
+      await fetchData();
+      document.getElementById('catName').value = '';
+      _selectedCatIcon  = ICON_OPTIONS[0];
+      _selectedCatColor = WALLET_COLORS[0];
+      initCatIconPicker();
+      initCatColorPicker();
+      renderCategoriesTab();
+      renderMoreMenu();
+    } catch (err) { alert('Error: ' + err.message); }
+    finally { btn.disabled = false; btn.textContent = '+ Add Category'; }
   }
 
   /* ── Delete custom category ── */
-  function deleteCustomCat(i) {
+  async function deleteCustomCat(i) {
     const c = _customCategories[i];
     if (!confirm(`Delete category "${c?.name}"?`)) return;
-    _customCategories.splice(i, 1);
-    localStorage.setItem('funds_custom_cats', JSON.stringify(_customCategories));
-    renderCategoriesTab();
-    renderMoreMenu();
+    try {
+      await apiDeleteCategory(c.id);
+      await fetchData();
+      renderCategoriesTab();
+      renderMoreMenu();
+    } catch (err) { alert('Error: ' + err.message); }
   }
 
   /* ── Render all ── */
@@ -1013,7 +1037,7 @@
         <div class="wallet-list-icon" style="background:${w.color}22">${WALLET_ICONS[w.type] || '📦'}</div>
         <div class="wallet-list-info">
           <div class="wallet-list-name">${escapeHtml(w.name)}</div>
-          <div class="wallet-list-meta">${w.currency} · ${fmt(bal, w.currency)}</div>
+          <div class="wallet-list-meta" style="color:${bal < 0 ? 'var(--red)' : ''}">${w.currency} · ${fmtBalance(bal, w.currency)}</div>
         </div>
         <button onclick="deleteWalletFromMore(${w.id})" style="background:none;border:none;color:var(--red);cursor:pointer;padding:6px 10px;border-radius:7px;font-size:0.78rem;font-family:inherit;transition:background 0.15s;flex-shrink:0" onmouseover="this.style.background='rgba(239,68,68,0.1)'" onmouseout="this.style.background='none'">&#128465;</button>
       </div>`;
@@ -1127,7 +1151,20 @@
     }
   });
 
-  fetchData().then(() => renderAll()).catch(err => {
+  fetchData().then(async () => {
+    // One-time migration: push any localStorage categories to the server
+    const localCats = JSON.parse(localStorage.getItem('funds_custom_cats') || '[]');
+    if (localCats.length > 0 && _customCategories.length === 0) {
+      for (const cat of localCats) {
+        try { await apiAddCategory(cat); } catch (e) { /* skip duplicates/errors */ }
+      }
+      localStorage.removeItem('funds_custom_cats');
+      await fetchData();
+    } else {
+      localStorage.removeItem('funds_custom_cats');
+    }
+    renderAll();
+  }).catch(err => {
     console.error('Failed to load:', err.message);
   });
 </script>
