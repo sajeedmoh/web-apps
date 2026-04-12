@@ -8,19 +8,19 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg:            #0f1117;
-      --surface:       #1a1d27;
-      --surface2:      #1f2330;
-      --border:        rgba(255,255,255,0.08);
-      --text:          #f0f0f0;
-      --muted:         rgba(240,240,240,0.45);
+      --bg:            #f4f5f7;
+      --surface:       #ffffff;
+      --surface2:      #f0f1f4;
+      --border:        rgba(0,0,0,0.09);
+      --text:          #1a1a2e;
+      --muted:         rgba(0,0,0,0.42);
       --accent:        #8b5cf6;
       --accent-bg:     rgba(139,92,246,0.10);
-      --accent-border: rgba(139,92,246,0.25);
-      --green:         #22c55e;
-      --green-bg:      rgba(34,197,94,0.10);
-      --red:           #ef4444;
-      --red-bg:        rgba(239,68,68,0.08);
+      --accent-border: rgba(139,92,246,0.30);
+      --green:         #16a34a;
+      --green-bg:      rgba(22,163,74,0.10);
+      --red:           #dc2626;
+      --red-bg:        rgba(220,38,38,0.08);
     }
 
     body {
@@ -38,7 +38,7 @@
       left: 50%; transform: translateX(-50%);
       width: 100%; max-width: 480px;
       z-index: 100;
-      background: rgba(15,17,23,0.92);
+      background: rgba(244,245,247,0.95);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
       border-bottom: 1px solid var(--border);
@@ -79,7 +79,7 @@
       left: 50%; transform: translateX(-50%);
       width: 100%; max-width: 480px;
       z-index: 100; display: flex;
-      background: rgba(15,17,23,0.96);
+      background: rgba(255,255,255,0.96);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
       border-top: 1px solid var(--border);
@@ -123,27 +123,25 @@
     .txn-amount.income  { color: var(--green); }
     .txn-amount.expense { color: var(--red); }
     .txn-row { cursor: pointer; }
-    .txn-chevron { font-size: 0.7rem; color: rgba(240,240,240,0.18); flex-shrink: 0; }
+    .txn-chevron { font-size: 0.7rem; color: rgba(0,0,0,0.18); flex-shrink: 0; }
 
-    /* ── Wallet list ── */
-    .wallet-list-item {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 12px; padding: 13px 15px;
-      display: flex; align-items: center; gap: 12px; margin-bottom: 8px;
-    }
-    .wallet-list-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+    /* ── Wallet list (Spendee style) ── */
+    .wallet-list { display: flex; flex-direction: column; background: var(--surface); border-radius: 14px; overflow: hidden; border: 1px solid var(--border); margin-bottom: 16px; }
+    .wallet-list-item { display: flex; align-items: center; gap: 13px; padding: 13px 16px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.12s; }
+    .wallet-list-item:last-child { border-bottom: none; }
+    .wallet-list-item:active { background: var(--surface2); }
+    .wallet-list-icon { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0; }
     .wallet-list-info { flex: 1; min-width: 0; }
-    .wallet-list-name { font-size: 0.9rem; font-weight: 600; }
-    .wallet-list-meta { font-size: 0.71rem; color: var(--muted); margin-top: 2px; }
-    .wallet-list-balance { font-size: 0.98rem; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
-    .wallet-list-item { cursor: pointer; }
-    .wallet-chevron { font-size: 0.7rem; color: rgba(240,240,240,0.18); flex-shrink: 0; margin-left: 4px; }
+    .wallet-list-name { font-size: 0.92rem; font-weight: 600; color: var(--text); }
+    .wallet-list-balance { font-size: 0.78rem; font-weight: 600; font-variant-numeric: tabular-nums; margin-top: 2px; }
+    .wallet-eye-btn { width: 34px; height: 34px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; transition: transform 0.15s; background: var(--accent); color: #fff; }
+    .wallet-eye-btn:active { transform: scale(0.92); }
 
     /* ── Detail sheet ── */
     .detail-icon-wrap { width: 64px; height: 64px; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin: 0 auto 12px; }
     .detail-amount { font-size: 2rem; font-weight: 800; font-variant-numeric: tabular-nums; text-align: center; margin-bottom: 4px; letter-spacing: -0.02em; }
     .detail-meta { font-size: 0.8rem; color: var(--muted); text-align: center; margin-bottom: 20px; }
-    .detail-rows { background: rgba(255,255,255,0.03); border-radius: 12px; overflow: hidden; margin-bottom: 20px; }
+    .detail-rows { background: rgba(0,0,0,0.03); border-radius: 12px; overflow: hidden; margin-bottom: 20px; }
     .detail-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 14px; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
     .detail-row:last-child { border-bottom: none; }
     .detail-row-label { color: var(--muted); }
@@ -161,21 +159,21 @@
     .field label { display: block; font-size: 0.75rem; color: var(--muted); margin-bottom: 5px; font-weight: 500; }
     .field input, .field select {
       width: 100%; padding: 10px 12px;
-      background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+      background: rgba(0,0,0,0.04); border: 1px solid var(--border);
       border-radius: 9px; color: var(--text); font-size: 0.9rem;
       font-family: inherit; outline: none; transition: border-color 0.15s;
       appearance: none; -webkit-appearance: none;
     }
     .field input:focus, .field select:focus { border-color: var(--accent); }
-    .field input::placeholder { color: rgba(240,240,240,0.2); }
-    .field select option { background: #1a1d27; }
+    .field input::placeholder { color: rgba(0,0,0,0.25); }
+    .field select option { background: #ffffff; color: #1a1a2e; }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
     /* Color picker */
     .color-row { display: flex; gap: 8px; flex-wrap: wrap; }
     .color-swatch { width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: transform 0.15s, border-color 0.15s; }
     .color-swatch:hover { transform: scale(1.15); }
-    .color-swatch.selected { border-color: #fff; transform: scale(1.1); }
+    .color-swatch.selected { border-color: #333; transform: scale(1.1); }
 
     /* ── Buttons ── */
     .btn-primary {
@@ -206,17 +204,17 @@
     }
     .modal-backdrop.open { display: flex; }
     .modal-sheet {
-      background: var(--surface); border-radius: 20px 20px 0 0;
+      background: #ffffff; border-radius: 20px 20px 0 0;
       width: 100%; max-width: 480px; padding: 16px 20px 32px;
       max-height: 92vh; overflow-y: auto;
       animation: slideUp 0.28s ease;
     }
     @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-    .modal-handle { width: 36px; height: 4px; background: rgba(255,255,255,0.15); border-radius: 99px; margin: 0 auto 16px; }
+    .modal-handle { width: 36px; height: 4px; background: rgba(0,0,0,0.12); border-radius: 99px; margin: 0 auto 16px; }
     .modal-title { font-size: 1rem; font-weight: 700; margin-bottom: 16px; text-align: center; }
 
     /* Type toggle */
-    .type-toggle { display: flex; background: rgba(255,255,255,0.04); border-radius: 10px; padding: 4px; gap: 4px; margin-bottom: 14px; }
+    .type-toggle { display: flex; background: rgba(0,0,0,0.05); border-radius: 10px; padding: 4px; gap: 4px; margin-bottom: 14px; }
     .type-toggle-btn { flex: 1; padding: 10px; border: none; border-radius: 7px; font-size: 0.88rem; font-weight: 600; font-family: inherit; cursor: pointer; background: none; color: var(--muted); transition: all 0.15s; }
     .type-toggle-btn.active-income  { background: rgba(34,197,94,0.15);  color: var(--green); }
     .type-toggle-btn.active-expense { background: rgba(239,68,68,0.12);  color: var(--red); }
@@ -224,24 +222,24 @@
     /* Amount input */
     .amount-input-wrap {
       display: flex; align-items: center; gap: 8px;
-      background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+      background: rgba(0,0,0,0.04); border: 1px solid var(--border);
       border-radius: 12px; padding: 12px 16px; margin-bottom: 14px; transition: border-color 0.15s;
     }
     .amount-input-wrap:focus-within { border-color: var(--accent); }
     .amount-currency { font-size: 1.4rem; font-weight: 700; color: var(--muted); flex-shrink: 0; }
     .amount-input { flex: 1; background: none; border: none; outline: none; font-size: 1.8rem; font-weight: 700; color: var(--text); font-family: inherit; font-variant-numeric: tabular-nums; min-width: 0; }
-    .amount-input::placeholder { color: rgba(240,240,240,0.15); }
+    .amount-input::placeholder { color: rgba(0,0,0,0.2); }
 
     /* Category grid */
     .cat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 14px; }
     .cat-pick { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px; border-radius: 10px; border: 1px solid transparent; cursor: pointer; transition: background 0.15s, border-color 0.15s; background: none; font-family: inherit; color: var(--text); }
-    .cat-pick:hover { background: rgba(255,255,255,0.05); }
+    .cat-pick:hover { background: rgba(0,0,0,0.05); }
     .cat-pick.selected { background: var(--accent-bg); border-color: var(--accent-border); }
     .cat-pick-icon { font-size: 1.25rem; }
     .cat-pick-name { font-size: 0.6rem; color: var(--muted); text-align: center; line-height: 1.2; }
 
     /* ── Empty state ── */
-    .empty-state { text-align: center; padding: 36px 24px; color: var(--muted); font-size: 0.88rem; border: 1px dashed rgba(255,255,255,0.1); border-radius: 14px; }
+    .empty-state { text-align: center; padding: 36px 24px; color: var(--muted); font-size: 0.88rem; border: 1px dashed rgba(0,0,0,0.12); border-radius: 14px; }
     .empty-state .icon { font-size: 2rem; margin-bottom: 8px; }
 
     /* ── Tabs ── */
@@ -250,17 +248,24 @@
 
     /* ── Icon picker ── */
     .icon-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; margin-top: 2px; max-height: 220px; overflow-y: auto; padding-right: 2px; }
-    .icon-pick { display: flex; align-items: center; justify-content: center; height: 36px; border-radius: 8px; border: 1px solid transparent; background: rgba(255,255,255,0.04); cursor: pointer; font-size: 1.15rem; transition: background 0.12s, border-color 0.12s; }
-    .icon-pick:hover { background: rgba(255,255,255,0.09); }
+    .icon-pick { display: flex; align-items: center; justify-content: center; height: 36px; border-radius: 8px; border: 1px solid transparent; background: rgba(0,0,0,0.04); cursor: pointer; font-size: 1.15rem; transition: background 0.12s, border-color 0.12s; }
+    .icon-pick:hover { background: rgba(0,0,0,0.08); }
     .icon-pick.selected { background: var(--accent-bg); border-color: var(--accent-border); }
 
-    /* ── Custom category list ── */
-    .custom-cat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
-    .custom-cat-item { display: flex; flex-direction: column; align-items: center; gap: 5px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 8px; position: relative; }
-    .custom-cat-item .ci-icon { font-size: 1.4rem; }
-    .custom-cat-item .ci-name { font-size: 0.72rem; color: var(--muted); text-align: center; word-break: break-word; }
-    .custom-cat-del { position: absolute; top: 5px; right: 5px; background: none; border: none; color: rgba(240,240,240,0.2); cursor: pointer; font-size: 0.65rem; padding: 2px; border-radius: 4px; transition: color 0.15s, background 0.15s; line-height: 1; }
-    .custom-cat-del:hover { color: var(--red); background: var(--red-bg); }
+    /* ── Category list (Spendee style) ── */
+    .cat-list { display: flex; flex-direction: column; }
+    .cat-list-item { display: flex; align-items: center; gap: 14px; padding: 12px 4px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.12s; }
+    .cat-list-item:last-child { border-bottom: none; }
+    .cat-list-item:active { background: var(--surface); }
+    .cat-circle { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.35rem; flex-shrink: 0; }
+    .cat-info { flex: 1; min-width: 0; }
+    .cat-name { font-size: 0.92rem; font-weight: 600; color: var(--text); }
+    .cat-meta { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+    .cat-drag { color: rgba(0,0,0,0.2); font-size: 1rem; flex-shrink: 0; letter-spacing: -1px; }
+    /* Pill-style toggle for categories */
+    .cat-type-toggle { display: flex; background: rgba(0,0,0,0.07); border-radius: 50px; padding: 3px; gap: 0; margin-bottom: 16px; }
+    .cat-type-btn { flex: 1; padding: 9px; border: none; border-radius: 50px; font-size: 0.88rem; font-weight: 600; font-family: inherit; cursor: pointer; background: none; color: var(--muted); transition: all 0.2s; }
+    .cat-type-btn.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,0.35); }
     /* ── More menu items ── */
     .more-section-title {
       font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase;
@@ -282,7 +287,7 @@
     .more-menu-info { flex: 1; min-width: 0; }
     .more-menu-name { font-size: 0.9rem; font-weight: 600; }
     .more-menu-meta { font-size: 0.71rem; color: var(--muted); margin-top: 2px; }
-    .more-menu-chevron { font-size: 0.85rem; color: rgba(240,240,240,0.2); flex-shrink: 0; }
+    .more-menu-chevron { font-size: 0.85rem; color: rgba(0,0,0,0.2); flex-shrink: 0; }
 
     /* ── Responsive ── */
     @media (max-width: 480px) {
@@ -379,10 +384,15 @@
 <div id="walletPanel" style="display:none;position:fixed;inset:0;z-index:150;background:var(--bg);overflow-y:auto;padding-bottom:88px">
   <nav class="back-bar">
     <button onclick="closeWalletPanel()" class="back-link" style="background:none;border:none;cursor:pointer">&#8592; Back</button>
-    <span class="back-bar-title" id="walletPanelName">Wallet</span>
+    <div style="text-align:center;flex:1">
+      <div class="back-bar-title" id="walletPanelName">Wallet</div>
+      <div style="font-size:0.68rem;color:var(--muted);margin-top:1px">Transactions</div>
+    </div>
     <div style="position:relative">
-      <button id="walletPanelMenuBtn" onclick="toggleWalletPanelMenu(event)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.3rem;padding:6px 10px;border-radius:6px;line-height:1;font-family:inherit;transition:color 0.15s" title="Options">&#8942;</button>
-      <div id="walletPanelMenu" style="display:none;position:absolute;right:0;top:calc(100% + 4px);background:var(--surface);border:1px solid var(--border);border-radius:10px;min-width:160px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.5);z-index:10">
+      <button id="walletPanelMenuBtn" onclick="toggleWalletPanelMenu(event)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.3rem;padding:6px 10px;border-radius:6px;line-height:1;font-family:inherit;transition:color 0.15s">&#8942;</button>
+      <div id="walletPanelMenu" style="display:none;position:absolute;right:0;top:calc(100% + 4px);background:var(--surface);border:1px solid var(--border);border-radius:10px;min-width:160px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.12);z-index:10">
+        <button onclick="openWalletEditPanel()" style="width:100%;padding:13px 16px;background:none;border:none;color:var(--text);font-size:0.88rem;cursor:pointer;text-align:left;font-family:inherit;display:flex;align-items:center;gap:8px">&#9998; Edit Wallet</button>
+        <div style="height:1px;background:var(--border);margin:0 12px"></div>
         <button onclick="deleteActiveWallet()" style="width:100%;padding:13px 16px;background:none;border:none;color:var(--red);font-size:0.88rem;cursor:pointer;text-align:left;font-family:inherit;display:flex;align-items:center;gap:8px">&#128465; Delete Wallet</button>
       </div>
     </div>
@@ -392,6 +402,31 @@
     <div id="walletPanelTxns"></div>
   </div>
   <button class="fab" onclick="openTxnModalFromPanel()" title="Add Transaction">+</button>
+</div>
+
+<!-- Category Panel (full-screen) -->
+<div id="categoryPanel" style="display:none;position:fixed;inset:0;z-index:160;background:var(--bg);overflow-y:auto;padding-bottom:88px">
+  <nav class="back-bar">
+    <button onclick="closeCategoryPanel()" class="back-link" style="background:none;border:none;cursor:pointer">&#8592; Back</button>
+    <span class="back-bar-title" id="catPanelTitle">Category</span>
+    <div style="position:relative">
+      <button id="catPanelMenuBtn" onclick="toggleCatPanelMenu(event)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.3rem;padding:6px 10px;border-radius:6px;line-height:1;font-family:inherit;transition:color 0.15s" title="Options">&#8942;</button>
+      <div id="catPanelMenu" style="display:none;position:absolute;right:0;top:calc(100% + 4px);background:var(--surface);border:1px solid var(--border);border-radius:10px;min-width:160px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.12);z-index:10">
+        <button onclick="deleteActiveCategory()" style="width:100%;padding:13px 16px;background:none;border:none;color:var(--red);font-size:0.88rem;cursor:pointer;text-align:left;font-family:inherit;display:flex;align-items:center;gap:8px">&#128465; Delete Category</button>
+      </div>
+    </div>
+  </nav>
+  <div style="max-width:480px;margin:0 auto;padding:56px 16px 0" id="catPanelContent"></div>
+</div>
+
+<!-- Wallet Edit Panel (full-screen, opens from wallet panel ⋮ menu) -->
+<div id="walletEditPanel" style="display:none;position:fixed;inset:0;z-index:170;background:var(--bg);overflow-y:auto;padding-bottom:88px">
+  <nav class="back-bar">
+    <button onclick="closeWalletEditPanel()" class="back-link" style="background:none;border:none;cursor:pointer">&#8592; Back</button>
+    <span class="back-bar-title">Edit Wallet</span>
+    <div style="width:60px"></div>
+  </nav>
+  <div style="max-width:480px;margin:0 auto;padding:56px 16px 0" id="walletEditContent"></div>
 </div>
 
 <!-- Add Transaction Modal -->
@@ -407,7 +442,7 @@
 
     <div class="amount-input-wrap">
       <span class="amount-currency" id="modalCurrencySymbol">&#8377;</span>
-      <input type="number" class="amount-input" id="txnAmount" placeholder="0.00" min="0" step="0.01" />
+      <input type="number" inputmode="decimal" class="amount-input" id="txnAmount" placeholder="0.00" min="0" step="0.01" />
     </div>
 
     <div class="field">
@@ -646,24 +681,21 @@
   /* ── Render wallet list ── */
   function renderWalletList() {
     const el = document.getElementById('walletList');
-    let html = '';
     if (!_wallets.length) {
-      html += '<div class="empty-state" style="margin-bottom:16px"><div class="icon">🏦</div>No wallets yet.<br>Add your first wallet below.</div>';
-    } else {
-      html += _wallets.map(w => {
-        const bal = getWalletBalance(w);
-        return `<div class="wallet-list-item" onclick="openWalletPanel(${w.id})">
-          <div class="wallet-list-icon" style="background:${w.color}22">${WALLET_ICONS[w.type] || '📦'}</div>
-          <div class="wallet-list-info">
-            <div class="wallet-list-name">${escapeHtml(w.name)}</div>
-            <div class="wallet-list-meta">${w.currency} · ${w.type}</div>
-          </div>
-          <div class="wallet-list-balance" style="color:${balColor(bal, w.color)}">${fmtBalance(bal, w.currency)}</div>
-          <span class="wallet-chevron">&#8250;</span>
-        </div>`;
-      }).join('');
+      el.innerHTML = '<div class="empty-state"><div class="icon">🏦</div>No wallets yet.<br>Go to More → Wallets to add one.</div>';
+      return;
     }
-    el.innerHTML = html;
+    el.innerHTML = '<div class="wallet-list">' + _wallets.map(w => {
+      const bal = getWalletBalance(w);
+      return `<div class="wallet-list-item" onclick="openWalletPanel(${w.id})">
+        <div class="wallet-list-icon" style="background:${w.color}22">${WALLET_ICONS[w.type] || '📦'}</div>
+        <div class="wallet-list-info">
+          <div class="wallet-list-name">${escapeHtml(w.name)}</div>
+          <div class="wallet-list-balance" style="color:${balColor(bal, w.color)}">${fmtBalance(bal, w.currency)}</div>
+        </div>
+        <span style="color:rgba(0,0,0,0.2);font-size:0.9rem">&#8250;</span>
+      </div>`;
+    }).join('') + '</div>';
   }
 
   /* ── Color picker ── */
@@ -811,7 +843,6 @@
     document.getElementById('walletPanel').style.display = 'none';
     document.body.style.overflow = '';
     _activeWalletId = null;
-    closeWalletPanelMenu();
   }
   function toggleWalletPanelMenu(e) {
     e.stopPropagation();
@@ -819,37 +850,73 @@
     menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
   }
   function closeWalletPanelMenu() {
-    document.getElementById('walletPanelMenu').style.display = 'none';
+    const m = document.getElementById('walletPanelMenu');
+    if (m) m.style.display = 'none';
   }
   function renderWalletPanel() {
     const w = getWallet(_activeWalletId);
     if (!w) return;
-    const bal = getWalletBalance(w);
+    const bal        = getWalletBalance(w);
     const walletTxns = _transactions.filter(t => t.walletId === w.id);
     const monthTxns  = getMonthTxns(_viewYear, _viewMonth).filter(t => t.walletId === w.id);
-    const income  = monthTxns.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-    const expense = monthTxns.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+    const income     = monthTxns.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+    const expense    = monthTxns.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+    const cashFlow   = income - expense;
     document.getElementById('walletPanelName').textContent = w.name;
+
+    // Summary cards
     document.getElementById('walletPanelSummary').innerHTML = `
-      <div style="background:linear-gradient(135deg,#1e1b4b,#1a1d27);border:1px solid ${w.color}44;border-radius:16px;padding:20px 16px;margin-bottom:16px;text-align:center">
-        <div style="font-size:2rem;margin-bottom:6px">${WALLET_ICONS[w.type] || '📦'}</div>
-        <div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Current Balance</div>
-        <div style="font-size:2.2rem;font-weight:800;color:${balColor(bal, w.color)};font-variant-numeric:tabular-nums;letter-spacing:-0.02em">${fmtBalance(bal, w.currency)}</div>
-        <div style="font-size:0.7rem;color:var(--muted);margin:4px 0 12px">${fmtMonthYear(_viewYear, _viewMonth)}</div>
-        <div style="display:flex;gap:8px">
-          <div style="flex:1;background:rgba(34,197,94,0.08);border-radius:8px;padding:8px 10px">
-            <div style="font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:3px">Income</div>
-            <div style="font-size:0.92rem;font-weight:700;color:var(--green)">${fmtShort(income, w.currency)}</div>
-          </div>
-          <div style="flex:1;background:rgba(239,68,68,0.08);border-radius:8px;padding:8px 10px">
-            <div style="font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:3px">Expenses</div>
-            <div style="font-size:0.92rem;font-weight:700;color:var(--red)">${fmtShort(expense, w.currency)}</div>
-          </div>
+      <div style="display:flex;align-items:stretch;background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:4px;overflow:hidden">
+        <div style="flex:1;padding:16px;text-align:center;border-right:1px solid var(--border)">
+          <div style="font-size:1.45rem;font-weight:800;color:${balColor(bal,w.color)};font-variant-numeric:tabular-nums;letter-spacing:-0.02em">${fmtBalance(bal,w.currency)}</div>
+          <div style="font-size:0.68rem;color:var(--muted);margin-top:4px">Wallet Balance</div>
         </div>
+        <div style="flex:1;padding:16px;text-align:center">
+          <div style="font-size:1.45rem;font-weight:800;color:${cashFlow<0?'var(--red)':'var(--green)'};font-variant-numeric:tabular-nums;letter-spacing:-0.02em">${cashFlow<0?'-':'+'}${sym(w.currency)}${Math.abs(cashFlow).toLocaleString('en-IN',{minimumFractionDigits:0,maximumFractionDigits:0})}</div>
+          <div style="font-size:0.68rem;color:var(--muted);margin-top:4px">Monthly Cash Flow</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:16px;padding:10px 0 6px">
+        <button onclick="shiftMonth(-1);renderWalletPanel()" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;padding:4px 10px;border-radius:6px;line-height:1">&#8249;</button>
+        <span style="font-size:0.88rem;font-weight:600;min-width:130px;text-align:center">${fmtMonthYear(_viewYear,_viewMonth)}</span>
+        <button onclick="shiftMonth(1);renderWalletPanel()" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;padding:4px 10px;border-radius:6px;line-height:1">&#8250;</button>
       </div>`;
-    const sorted = walletTxns.slice().sort((a, b) => b.date.localeCompare(a.date));
+
+    // Transactions for selected month only
+    const sorted = monthTxns.slice().sort((a,b) => b.date.localeCompare(a.date));
     document.getElementById('walletPanelTxns').innerHTML =
-      sorted.length ? renderTxnList(sorted) : '<div class="empty-state"><div class="icon">💸</div>No transactions yet.<br>Tap + to add one.</div>';
+      sorted.length ? renderWalletTxnList(sorted, w) : '<div class="empty-state"><div class="icon">💸</div>No transactions this month.<br>Tap + to add one.</div>';
+  }
+
+  function renderWalletTxnList(txns, w) {
+    const grouped = {};
+    txns.forEach(t => { (grouped[t.date] = grouped[t.date] || []).push(t); });
+    const dates = Object.keys(grouped).sort((a,b) => b.localeCompare(a));
+    let html = '';
+    dates.forEach(date => {
+      const dayTotal = grouped[date].reduce((s,t) => t.type==='expense' ? s-t.amount : s+t.amount, 0);
+      const dayColor = dayTotal < 0 ? 'var(--red)' : 'var(--green)';
+      html += `<div class="txn-group">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 2px 6px">
+          <span class="txn-date-label" style="padding:0">${fmtDate(date)}</span>
+          <span style="font-size:0.75rem;font-weight:700;color:${dayColor};font-variant-numeric:tabular-nums">${dayTotal<0?'-':'+'}${sym(w.currency)}${Math.abs(dayTotal).toLocaleString('en-IN',{minimumFractionDigits:0,maximumFractionDigits:0})}</span>
+        </div>`;
+      grouped[date].forEach(t => {
+        const cat  = getCategory(t.categoryId);
+        const sign = t.type === 'income' ? '+' : '-';
+        html += `<div class="txn-row" onclick="openTxnDetail(${t.id})">
+          <div class="txn-cat-icon" style="background:${cat.color};border-radius:50%;width:38px;height:38px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.1rem">${cat.icon}</div>
+          <div class="txn-info">
+            <div class="txn-title">${escapeHtml(t.note || cat.name)}</div>
+            <div class="txn-sub">${escapeHtml(w.name)}${t.note ? ' · ' + escapeHtml(cat.name) : ''}</div>
+          </div>
+          <span class="txn-amount ${t.type}">${sign}${fmt(t.amount,w.currency)}</span>
+          <span class="txn-chevron">&#8250;</span>
+        </div>`;
+      });
+      html += '</div>';
+    });
+    return html;
   }
   async function deleteActiveWallet() {
     closeWalletPanelMenu();
@@ -857,6 +924,102 @@
     if (!confirm(`Delete "${w?.name}"? All transactions in this wallet will also be removed.`)) return;
     try { await apiDeleteWallet(_activeWalletId); await fetchData(); closeWalletPanel(); renderWalletList(); renderMoreMenu(); }
     catch (err) { alert('Error: ' + err.message); }
+  }
+
+  /* ── Wallet edit panel ── */
+  let _walletEditColor = '';
+
+  function openWalletEditPanel() {
+    renderWalletEditPanel();
+    document.getElementById('walletEditPanel').style.display = 'block';
+  }
+  function closeWalletEditPanel() {
+    document.getElementById('walletEditPanel').style.display = 'none';
+  }
+  function renderWalletEditPanel() {
+    const w = getWallet(_activeWalletId);
+    if (!w) return;
+    _walletEditColor = w.color;
+    document.getElementById('walletEditContent').innerHTML = `
+      <div id="walletEditPreview" style="background:linear-gradient(135deg,#f0f4ff,#e8edf8);border:1px solid ${w.color}44;border-radius:16px;padding:20px 16px;margin-bottom:20px;text-align:center">
+        <div id="walletEditPreviewIcon" style="width:56px;height:56px;border-radius:16px;background:${w.color}33;display:flex;align-items:center;justify-content:center;font-size:2rem;margin:0 auto 10px">${WALLET_ICONS[w.type] || '📦'}</div>
+        <div style="font-size:1.1rem;font-weight:700;color:var(--text)">${escapeHtml(w.name)}</div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:4px">${w.currency} · ${w.type}</div>
+      </div>
+      <p class="section-title">Edit</p>
+      <div class="card" style="padding:16px;margin-bottom:16px;background:var(--surface);border:1px solid var(--border);border-radius:14px">
+        <div class="field" style="margin-bottom:12px">
+          <label>Wallet Name</label>
+          <input class="input" id="weditName" value="${escapeHtml(w.name)}" placeholder="Wallet name" style="width:100%;padding:10px 12px;background:rgba(0,0,0,0.04);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:0.9rem;font-family:inherit;outline:none">
+        </div>
+        <div class="field" style="margin-bottom:12px">
+          <label>Type</label>
+          <select id="weditType" onchange="updateWalletEditPreview()" style="width:100%;padding:10px 12px;background:rgba(0,0,0,0.04);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:0.9rem;font-family:inherit;outline:none;appearance:none">
+            <option value="bank"       ${w.type==='bank'       ?'selected':''}>🏦 Bank Account</option>
+            <option value="cash"       ${w.type==='cash'       ?'selected':''}>💵 Cash</option>
+            <option value="credit"     ${w.type==='credit'     ?'selected':''}>💳 Credit Card</option>
+            <option value="savings"    ${w.type==='savings'    ?'selected':''}>🐖 Savings</option>
+            <option value="investment" ${w.type==='investment' ?'selected':''}>📈 Investment</option>
+            <option value="other"      ${w.type==='other'      ?'selected':''}>📦 Other</option>
+          </select>
+        </div>
+        <div class="field" style="margin-bottom:12px">
+          <label>Initial Balance</label>
+          <input type="number" id="weditBalance" value="${w.initialBalance ?? 0}" step="0.01" style="width:100%;padding:10px 12px;background:rgba(0,0,0,0.04);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:0.9rem;font-family:inherit;outline:none">
+        </div>
+        <div class="field" style="margin-bottom:12px">
+          <label>Currency <span style="color:var(--muted);font-size:0.72rem;font-weight:400">(cannot change after creation)</span></label>
+          <div style="padding:10px 12px;background:rgba(0,0,0,0.03);border:1px solid var(--border);border-radius:9px;color:var(--muted);font-size:0.9rem">${w.currency}</div>
+        </div>
+        <div class="field" style="margin-bottom:16px">
+          <label>Color</label>
+          <div class="color-row" id="weditColorPicker"></div>
+        </div>
+        <button class="btn-primary" id="weditSaveBtn" onclick="saveWallet()">Save Changes</button>
+      </div>`;
+    initWalletEditColorPicker();
+  }
+  function initWalletEditColorPicker() {
+    const el = document.getElementById('weditColorPicker');
+    if (!el) return;
+    el.innerHTML = WALLET_COLORS.map(col =>
+      `<div class="color-swatch ${col === _walletEditColor ? 'selected' : ''}" style="background:${col}" onclick="selectWalletEditColor('${col}')"></div>`
+    ).join('');
+  }
+  function selectWalletEditColor(color) {
+    _walletEditColor = color;
+    initWalletEditColorPicker();
+    const prev = document.getElementById('walletEditPreviewIcon');
+    const card = document.getElementById('walletEditPreview');
+    if (prev) prev.style.background = color + '33';
+    if (card) card.style.borderColor = color + '44';
+  }
+  function updateWalletEditPreview() {
+    const type = document.getElementById('weditType')?.value;
+    const prev = document.getElementById('walletEditPreviewIcon');
+    if (prev && type) prev.textContent = WALLET_ICONS[type] || '📦';
+  }
+  async function saveWallet() {
+    const name         = document.getElementById('weditName').value.trim();
+    const type         = document.getElementById('weditType').value;
+    const initialBalance = parseFloat(document.getElementById('weditBalance').value) || 0;
+    if (!name) { alert('Please enter a wallet name.'); return; }
+    const btn = document.getElementById('weditSaveBtn');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      await apiUpdateWallet(_activeWalletId, { name, type, color: _walletEditColor, initialBalance });
+      await fetchData();
+      closeWalletEditPanel();
+      renderWalletPanel();
+      renderWalletList();
+      renderMoreMenu();
+    } catch (err) { alert('Error: ' + err.message); }
+    finally { btn.disabled = false; btn.textContent = 'Save Changes'; }
+  }
+  async function apiUpdateWallet(id, updates) {
+    const res = await fetch(API_BASE + '/api/funds/wallets/' + id, { method: 'PATCH', headers: authHeaders(), body: JSON.stringify(updates) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to update');
   }
 
   /* ── Category form type toggle ── */
@@ -874,7 +1037,7 @@
       `<button class="icon-pick ${ic === _selectedCatIcon ? 'selected' : ''}" onclick="selectCatIcon('${ic}')" title="${ic}">${ic}</button>`
     ).join('');
   }
-  function selectCatIcon(icon) { _selectedCatIcon = icon; initCatIconPicker(); }
+  function selectCatIcon(icon) { document.activeElement.blur(); _selectedCatIcon = icon; initCatIconPicker(); }
 
   function initCatColorPicker() {
     const el = document.getElementById('catColorPicker');
@@ -883,35 +1046,163 @@
       `<div class="color-swatch ${c === _selectedCatColor ? 'selected' : ''}" style="background:${c}" onclick="selectCatColor('${c}')"></div>`
     ).join('');
   }
-  function selectCatColor(color) { _selectedCatColor = color; initCatColorPicker(); }
+  function selectCatColor(color) { document.activeElement.blur(); _selectedCatColor = color; initCatColorPicker(); }
 
   /* ── Render categories tab ── */
+  let _catListType = 'expense';
+
+  function setCatListType(type) {
+    _catListType = type;
+    document.getElementById('catListBtnExpense').className = 'cat-type-btn' + (type === 'expense' ? ' active' : '');
+    document.getElementById('catListBtnIncome').className  = 'cat-type-btn' + (type === 'income'  ? ' active' : '');
+    _catFormType = type;
+    const fe = document.getElementById('catFormBtnExpense');
+    const fi = document.getElementById('catFormBtnIncome');
+    if (fe) fe.className = 'type-toggle-btn' + (type === 'expense' ? ' active-expense' : '');
+    if (fi) fi.className = 'type-toggle-btn' + (type === 'income'  ? ' active-income'  : '');
+    renderCategoriesTab();
+  }
+
   function renderCategoriesTab() {
     const el = document.getElementById('customCatList');
-    const expenses = _customCategories.filter(c => c.type === 'expense');
-    const incomes  = _customCategories.filter(c => c.type === 'income');
-    if (!_customCategories.length) {
-      el.innerHTML = '<div class="empty-state" style="margin-bottom:16px"><div class="icon">🏷️</div>No custom categories yet.<br>Add one below.</div>';
+    if (!el) return;
+    const list = _customCategories.filter(c => c.type === _catListType);
+    if (!list.length) {
+      el.innerHTML = `<div class="empty-state" style="margin-bottom:16px"><div class="icon">🏷️</div>No ${_catListType === 'expense' ? 'expense' : 'income'} categories yet.<br>Add one below.</div>`;
       return;
     }
-    function renderGroup(list, startOffset) {
-      return list.map((c, i) => {
-        const globalIdx = _customCategories.indexOf(c);
-        return `<div class="custom-cat-item">
-          <button class="custom-cat-del" onclick="deleteCustomCat(${globalIdx})" title="Delete">&#10005;</button>
-          <div style="background:${c.color}22;width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem">${c.icon}</div>
-          <span class="ci-name">${escapeHtml(c.name)}</span>
-        </div>`;
-      }).join('');
-    }
-    let html = '';
-    if (expenses.length) {
-      html += '<p class="section-title">Expense Categories</p><div class="custom-cat-grid">' + renderGroup(expenses) + '</div>';
-    }
-    if (incomes.length) {
-      html += '<p class="section-title">Income Categories</p><div class="custom-cat-grid">' + renderGroup(incomes) + '</div>';
-    }
-    el.innerHTML = html;
+    el.innerHTML = '<div class="cat-list">' + list.map(c => {
+      const txns = _transactions.filter(t => t.categoryId === c.id);
+      const txnCount = txns.length;
+      const walletCount = new Set(txns.map(t => t.walletId)).size;
+      const meta = txnCount === 0
+        ? 'No transactions yet'
+        : `${txnCount} transaction${txnCount !== 1 ? 's' : ''} in ${walletCount} wallet${walletCount !== 1 ? 's' : ''}`;
+      return `<div class="cat-list-item" onclick="openCategoryPanel('${c.id}')">
+        <div class="cat-circle" style="background:${c.color}">${c.icon}</div>
+        <div class="cat-info">
+          <div class="cat-name">${escapeHtml(c.name)}</div>
+          <div class="cat-meta">${meta}</div>
+        </div>
+        <span class="cat-drag">&#8801;</span>
+      </div>`;
+    }).join('') + '</div>';
+  }
+
+  /* ── Category panel ── */
+  let _activeCatId = null;
+  let _catPanelIcon  = '';
+  let _catPanelColor = '';
+
+  function openCategoryPanel(id) {
+    _activeCatId = id;
+    renderCategoryPanel();
+    document.getElementById('categoryPanel').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+  }
+  function closeCategoryPanel() {
+    document.getElementById('categoryPanel').style.display = 'none';
+    document.body.style.overflow = '';
+    _activeCatId = null;
+    closeCatPanelMenu();
+  }
+  function toggleCatPanelMenu(e) {
+    e.stopPropagation();
+    const menu = document.getElementById('catPanelMenu');
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+  }
+  function closeCatPanelMenu() {
+    const menu = document.getElementById('catPanelMenu');
+    if (menu) menu.style.display = 'none';
+  }
+  function renderCategoryPanel() {
+    const c = _customCategories.find(x => x.id === _activeCatId);
+    if (!c) return;
+    _catPanelIcon  = c.icon;
+    _catPanelColor = c.color;
+    document.getElementById('catPanelTitle').textContent = c.name;
+    document.getElementById('catPanelContent').innerHTML = `
+      <div id="catPanelPreview" style="background:linear-gradient(135deg,#f0f4ff,#e8edf8);border:1px solid ${c.color}44;border-radius:16px;padding:20px 16px;margin-bottom:20px;text-align:center">
+        <div id="catPanelPreviewIcon" style="width:56px;height:56px;border-radius:16px;background:${c.color}33;display:flex;align-items:center;justify-content:center;font-size:2rem;margin:0 auto 10px">${c.icon}</div>
+        <div style="font-size:1.1rem;font-weight:700;color:var(--text)">${escapeHtml(c.name)}</div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:0.08em">${c.type === 'expense' ? 'Expense' : 'Income'}</div>
+      </div>
+      <p class="section-title">Edit</p>
+      <div class="card" style="padding:16px;margin-bottom:16px">
+        <div class="field" style="margin-bottom:12px">
+          <label>Name</label>
+          <input class="input" id="catPanelName" value="${escapeHtml(c.name)}" placeholder="Category name">
+        </div>
+        <div class="field" style="margin-bottom:12px">
+          <label>Color</label>
+          <div class="color-row" id="catPanelColorPicker" ontouchstart="document.activeElement.blur()"></div>
+        </div>
+        <div class="field" style="margin-bottom:16px">
+          <label>Icon</label>
+          <div class="icon-grid" id="catPanelIconPicker" ontouchstart="document.activeElement.blur()"></div>
+        </div>
+        <button class="btn-primary" id="catPanelSaveBtn" onclick="saveCategory()">Save Changes</button>
+      </div>`;
+    initCatPanelIconPicker();
+    initCatPanelColorPicker();
+  }
+  function initCatPanelIconPicker() {
+    const el = document.getElementById('catPanelIconPicker');
+    if (!el) return;
+    el.innerHTML = ICON_OPTIONS.map(ic =>
+      `<button class="icon-pick ${ic === _catPanelIcon ? 'selected' : ''}" onclick="selectCatPanelIcon('${ic}')">${ic}</button>`
+    ).join('');
+  }
+  function selectCatPanelIcon(icon) {
+    document.activeElement.blur();
+    _catPanelIcon = icon;
+    initCatPanelIconPicker();
+    const prev = document.getElementById('catPanelPreviewIcon');
+    if (prev) prev.textContent = icon;
+  }
+  function initCatPanelColorPicker() {
+    const el = document.getElementById('catPanelColorPicker');
+    if (!el) return;
+    el.innerHTML = WALLET_COLORS.map(col =>
+      `<div class="color-swatch ${col === _catPanelColor ? 'selected' : ''}" style="background:${col}" onclick="selectCatPanelColor('${col}')"></div>`
+    ).join('');
+  }
+  function selectCatPanelColor(color) {
+    document.activeElement.blur();
+    _catPanelColor = color;
+    initCatPanelColorPicker();
+    const prev = document.getElementById('catPanelPreviewIcon');
+    const card = document.getElementById('catPanelPreview');
+    if (prev) prev.style.background = color + '33';
+    if (card) card.style.borderColor = color + '44';
+  }
+
+  async function saveCategory() {
+    const name = document.getElementById('catPanelName').value.trim();
+    if (!name) { alert('Please enter a category name.'); return; }
+    const btn = document.getElementById('catPanelSaveBtn');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      await apiUpdateCategory(_activeCatId, { name, icon: _catPanelIcon, color: _catPanelColor });
+      await fetchData();
+      renderCategoryPanel();
+      renderCategoriesTab();
+      renderMoreMenu();
+    } catch (err) { alert('Error: ' + err.message); }
+    finally { btn.disabled = false; btn.textContent = 'Save Changes'; }
+  }
+
+  async function deleteActiveCategory() {
+    closeCatPanelMenu();
+    const c = _customCategories.find(x => x.id === _activeCatId);
+    if (!confirm(`Delete category "${c?.name}"?`)) return;
+    try {
+      await apiDeleteCategory(_activeCatId);
+      await fetchData();
+      closeCategoryPanel();
+      renderCategoriesTab();
+      renderMoreMenu();
+    } catch (err) { alert('Error: ' + err.message); }
   }
 
   /* ── Add custom category ── */
@@ -934,16 +1225,10 @@
     finally { btn.disabled = false; btn.textContent = '+ Add Category'; }
   }
 
-  /* ── Delete custom category ── */
-  async function deleteCustomCat(i) {
-    const c = _customCategories[i];
-    if (!confirm(`Delete category "${c?.name}"?`)) return;
-    try {
-      await apiDeleteCategory(c.id);
-      await fetchData();
-      renderCategoriesTab();
-      renderMoreMenu();
-    } catch (err) { alert('Error: ' + err.message); }
+  async function apiUpdateCategory(id, updates) {
+    const res = await fetch(API_BASE + '/api/funds/categories/' + id, { method: 'PATCH', headers: authHeaders(), body: JSON.stringify(updates) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to update');
   }
 
   /* ── Render all ── */
@@ -958,7 +1243,7 @@
     const cEl = document.getElementById('moreCatsMeta');
     const lEl = document.getElementById('moreLabelsMeta');
     if (wEl) wEl.textContent = _wallets.length ? `${_wallets.length} wallet${_wallets.length !== 1 ? 's' : ''}` : 'No wallets yet';
-    if (cEl) cEl.textContent = _customCategories.length ? `${_customCategories.length} custom categor${_customCategories.length !== 1 ? 'ies' : 'y'}` : 'No custom categories';
+    if (cEl) cEl.textContent = _customCategories.length ? `${_customCategories.length} categor${_customCategories.length !== 1 ? 'ies' : 'y'}` : 'No categories yet';
     if (lEl) lEl.textContent = _labels.length ? `${_labels.length} label${_labels.length !== 1 ? 's' : ''}` : 'No labels yet';
   }
 
@@ -1034,26 +1319,55 @@
       el.innerHTML = '<div class="empty-state" style="margin-bottom:16px"><div class="icon">🏦</div>No wallets yet.<br>Add one below.</div>';
       return;
     }
-    el.innerHTML = _wallets.map(w => {
+    el.innerHTML = '<div class="wallet-list">' + _wallets.map(w => {
       const bal = getWalletBalance(w);
-      return `<div class="wallet-list-item">
+      return `<div class="wallet-list-item" onclick="openWalletPanel(${w.id})">
         <div class="wallet-list-icon" style="background:${w.color}22">${WALLET_ICONS[w.type] || '📦'}</div>
         <div class="wallet-list-info">
           <div class="wallet-list-name">${escapeHtml(w.name)}</div>
-          <div class="wallet-list-meta" style="color:${bal < 0 ? 'var(--red)' : ''}">${w.currency} · ${fmtBalance(bal, w.currency)}</div>
+          <div class="wallet-list-balance" style="color:${balColor(bal, w.color)}">${fmtBalance(bal, w.currency)}</div>
         </div>
-        <button onclick="deleteWalletFromMore(${w.id})" style="background:none;border:none;color:var(--red);cursor:pointer;padding:6px 10px;border-radius:7px;font-size:0.78rem;font-family:inherit;transition:background 0.15s;flex-shrink:0" onmouseover="this.style.background='rgba(239,68,68,0.1)'" onmouseout="this.style.background='none'">&#128465;</button>
+        <button class="wallet-eye-btn" style="background:${w.color};flex-shrink:0" onclick="event.stopPropagation();openWalletPanel(${w.id})">👁</button>
+        <div style="position:relative;flex-shrink:0">
+          <button onclick="event.stopPropagation();toggleMoreWalletMenu(event,${w.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.3rem;padding:4px 8px;border-radius:6px;line-height:1;font-family:inherit">&#8942;</button>
+          <div id="moreWalletMenu-${w.id}" style="display:none;position:absolute;right:0;bottom:calc(100% + 4px);background:var(--surface);border:1px solid var(--border);border-radius:10px;min-width:150px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.12);z-index:200">
+            <button onclick="event.stopPropagation();openWalletEditPanelFor(${w.id})" style="width:100%;padding:12px 16px;background:none;border:none;color:var(--text);font-size:0.88rem;cursor:pointer;text-align:left;font-family:inherit;display:flex;align-items:center;gap:8px">&#9998; Edit</button>
+            <div style="height:1px;background:var(--border);margin:0 12px"></div>
+            <button onclick="event.stopPropagation();deleteWalletFromMore(${w.id})" style="width:100%;padding:12px 16px;background:none;border:none;color:var(--red);font-size:0.88rem;cursor:pointer;text-align:left;font-family:inherit;display:flex;align-items:center;gap:8px">&#128465; Delete</button>
+          </div>
+        </div>
       </div>`;
-    }).join('');
+    }).join('') + '</div>';
+  }
+
+  function toggleMoreWalletMenu(e, id) {
+    e.stopPropagation();
+    document.querySelectorAll('[id^="moreWalletMenu-"]').forEach(m => {
+      if (m.id !== 'moreWalletMenu-' + id) m.style.display = 'none';
+    });
+    const menu = document.getElementById('moreWalletMenu-' + id);
+    if (menu) menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+  }
+
+  function openWalletEditPanelFor(id) {
+    document.querySelectorAll('[id^="moreWalletMenu-"]').forEach(m => m.style.display = 'none');
+    _activeWalletId = id;
+    renderWalletEditPanel();
+    document.getElementById('walletEditPanel').style.display = 'block';
   }
 
   /* ── More > Categories panel ── */
   function openMoreCatsPanel() {
+    _catListType = 'expense';
     document.getElementById('moreSubPanelContent').innerHTML = `
+      <div class="cat-type-toggle">
+        <button class="cat-type-btn active" id="catListBtnExpense" onclick="setCatListType('expense')">Expenses</button>
+        <button class="cat-type-btn" id="catListBtnIncome" onclick="setCatListType('income')">Income</button>
+      </div>
       <div id="customCatList"></div>
-      <div class="add-wallet-card" style="margin-top:4px">
-        <div class="add-wallet-title">Add Custom Category</div>
-        <div class="type-toggle" style="margin-bottom:14px">
+      <div class="add-wallet-card" style="margin-top:16px">
+        <div class="add-wallet-title">Add Category</div>
+        <div class="type-toggle" style="margin-bottom:14px;display:none">
           <button class="type-toggle-btn active-expense" id="catFormBtnExpense" onclick="setCatFormType('expense')">&#8595; Expense</button>
           <button class="type-toggle-btn" id="catFormBtnIncome" onclick="setCatFormType('income')">&#8593; Income</button>
         </div>
@@ -1063,11 +1377,11 @@
         </div>
         <div class="field">
           <label>Color</label>
-          <div class="color-row" id="catColorPicker"></div>
+          <div class="color-row" id="catColorPicker" ontouchstart="document.activeElement.blur()"></div>
         </div>
         <div class="field">
           <label>Icon</label>
-          <div class="icon-grid" id="catIconPicker"></div>
+          <div class="icon-grid" id="catIconPicker" ontouchstart="document.activeElement.blur()"></div>
         </div>
         <button class="btn-primary" id="addCatBtn" onclick="addCustomCat()">+ Add Category</button>
       </div>`;
@@ -1147,10 +1461,16 @@
   document.getElementById('monthLabel').textContent = fmtMonthYear(_viewYear, _viewMonth);
   renderMoreMenu();
 
-  /* Close ⋮ menu when clicking outside */
+  /* Close ⋮ menus when clicking outside */
   document.addEventListener('click', function(e) {
+    if (!e.target.closest('[id^="moreWalletMenu-"]') && !e.target.closest('button[onclick*="toggleMoreWalletMenu"]')) {
+      document.querySelectorAll('[id^="moreWalletMenu-"]').forEach(m => m.style.display = 'none');
+    }
     if (!e.target.closest('#walletPanelMenuBtn') && !e.target.closest('#walletPanelMenu')) {
       closeWalletPanelMenu();
+    }
+    if (!e.target.closest('#catPanelMenuBtn') && !e.target.closest('#catPanelMenu')) {
+      closeCatPanelMenu();
     }
   });
 
