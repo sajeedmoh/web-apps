@@ -215,9 +215,46 @@
 
     /* Type toggle */
     .type-toggle { display: flex; background: rgba(0,0,0,0.05); border-radius: 10px; padding: 4px; gap: 4px; margin-bottom: 14px; }
-    .type-toggle-btn { flex: 1; padding: 10px; border: none; border-radius: 7px; font-size: 0.88rem; font-weight: 600; font-family: inherit; cursor: pointer; background: none; color: var(--muted); transition: all 0.15s; }
-    .type-toggle-btn.active-income  { background: rgba(34,197,94,0.15);  color: var(--green); }
-    .type-toggle-btn.active-expense { background: rgba(239,68,68,0.12);  color: var(--red); }
+    .type-toggle-btn { flex: 1; padding: 9px 4px; border: none; border-radius: 7px; font-size: 0.8rem; font-weight: 600; font-family: inherit; cursor: pointer; background: none; color: var(--muted); transition: all 0.15s; white-space: nowrap; }
+    .type-toggle-btn.active-income   { background: rgba(34,197,94,0.15);  color: var(--green); }
+    .type-toggle-btn.active-expense  { background: rgba(239,68,68,0.12);  color: var(--red); }
+    .type-toggle-btn.active-transfer { background: rgba(34,197,94,0.15);  color: var(--green); }
+
+    /* Transfer wallet selectors inside modal */
+    .transfer-wallets {
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .transfer-wallets.visible { display: flex; }
+    .transfer-wallet-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(34,197,94,0.07);
+      border: 1px solid rgba(34,197,94,0.2);
+      border-radius: 10px;
+      padding: 10px 14px;
+    }
+    .transfer-wallet-row label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #22c55e;
+      min-width: 36px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .transfer-wallet-row select {
+      flex: 1;
+      border: none;
+      background: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text);
+      font-family: inherit;
+      outline: none;
+    }
 
     /* Amount input */
     .amount-input-wrap {
@@ -314,10 +351,35 @@
 
   <!-- Overview tab -->
   <div id="tab-overview" class="tab-panel">
-    <div class="empty-state" style="margin-top:40px">
-      <div class="icon">🏠</div>
-      Coming soon — overview &amp; analytics
+    <!-- Filters row -->
+    <div style="display:flex;gap:8px;padding:12px 0 8px;align-items:center">
+      <select id="ovWalletFilter" onchange="renderOverview()" style="flex:1;padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:0.82rem;font-family:inherit;outline:none">
+        <option value="all">All Wallets</option>
+      </select>
+      <select id="ovPeriodFilter" onchange="renderOverview()" style="flex:1;padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:0.82rem;font-family:inherit;outline:none">
+        <option value="month">By Month</option>
+        <option value="year">By Year</option>
+        <option value="all">All Time</option>
+      </select>
     </div>
+    <!-- Month nav (hidden when period=all) -->
+    <div id="ovMonthNav" style="display:flex;align-items:center;justify-content:center;gap:12px;padding:4px 0 10px">
+      <button onclick="ovShiftMonth(-1)" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;padding:4px 10px;border-radius:6px;line-height:1">&#8249;</button>
+      <span id="ovMonthLabel" style="font-size:0.9rem;font-weight:600;min-width:130px;text-align:center"></span>
+      <button onclick="ovShiftMonth(1)" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;padding:4px 10px;border-radius:6px;line-height:1">&#8250;</button>
+    </div>
+    <!-- Summary cards -->
+    <div id="ovSummary"></div>
+    <!-- Type toggle (expense / income) -->
+    <div class="type-toggle" style="margin-bottom:14px">
+      <button class="type-toggle-btn active-expense" id="ovBtnExpense" onclick="setOvType('expense')">&#8595; Expenses</button>
+      <button class="type-toggle-btn" id="ovBtnIncome" onclick="setOvType('income')">&#8593; Income</button>
+    </div>
+    <!-- Donut chart -->
+    <div id="ovChart" style="position:relative;display:flex;justify-content:center;margin-bottom:16px"></div>
+    <!-- Category list -->
+    <div style="font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;padding-left:2px">Categories</div>
+    <div id="ovCatList"></div>
   </div>
 
   <!-- Wallets tab -->
@@ -433,11 +495,12 @@
 <div class="modal-backdrop" id="txnModal" onclick="handleModalBackdropClick(event)">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title">Add Transaction</div>
+    <div class="modal-title" id="modal-title-text">Add Transaction</div>
 
     <div class="type-toggle">
       <button class="type-toggle-btn active-expense" id="btnExpense" onclick="setTxnType('expense')">&#8595; Expense</button>
       <button class="type-toggle-btn" id="btnIncome" onclick="setTxnType('income')">&#8593; Income</button>
+      <button class="type-toggle-btn" id="btnTransfer" onclick="setTxnType('transfer')">&#8644; Transfer</button>
     </div>
 
     <div class="amount-input-wrap">
@@ -445,13 +508,25 @@
       <input type="number" inputmode="decimal" class="amount-input" id="txnAmount" placeholder="0.00" min="0" step="0.01" />
     </div>
 
-    <div class="field">
+    <div class="field" id="catGridField">
       <label>Category</label>
       <div class="cat-grid" id="catGrid"></div>
     </div>
 
+    <!-- Transfer wallet selectors (shown only for Transfer type) -->
+    <div class="transfer-wallets" id="transferWallets">
+      <div class="transfer-wallet-row">
+        <label>From</label>
+        <select id="transferFrom" onchange="updateModalCurrencySymbol()"></select>
+      </div>
+      <div class="transfer-wallet-row">
+        <label>To</label>
+        <select id="transferTo"></select>
+      </div>
+    </div>
+
     <div class="form-row">
-      <div class="field">
+      <div class="field" id="txnWalletField">
         <label>Wallet</label>
         <select id="txnWallet" onchange="updateModalCurrencySymbol()"></select>
       </div>
@@ -476,8 +551,9 @@
   <div class="modal-sheet">
     <div class="modal-handle"></div>
     <div id="txnDetailContent"></div>
-    <button class="btn-danger" id="txnDetailDelBtn">&#128465; Delete Transaction</button>
-    <button class="btn-cancel-link" onclick="closeTxnDetail()">Close</button>
+    <button class="btn-primary" id="saveEditTxnBtn" onclick="saveTxnEdit()" style="margin-bottom:8px">Save Changes</button>
+    <button class="btn-danger" id="txnDetailDelBtn">&#128465; Delete</button>
+    <button class="btn-cancel-link" onclick="closeTxnDetail()">Cancel</button>
   </div>
 </div>
 
@@ -563,9 +639,11 @@
   let _selectedCatColor = WALLET_COLORS[0];
   let _catFormType      = 'expense';
   let _activeWalletId   = null;
+  let _fxRates          = {}; // e.g. { AED: 22.5, USD: 84.2 } — rate to INR
 
   /* ── Utilities ── */
   function getCategory(id) {
+    if (id === '__transfer__') return { id, name: 'Transfer', icon: '⇄', color: '#22c55e' };
     return [...CATEGORIES.expense, ...CATEGORIES.income, ..._customCategories].find(c => c.id === id) || { id, name: 'Category', icon: '📦', color: '#6b7280' };
   }
   function getWallet(id) { return _wallets.find(w => w.id === id); }
@@ -587,6 +665,30 @@
     return _transactions.filter(t => { const d = new Date(t.date + 'T00:00:00'); return d.getFullYear() === y && d.getMonth() === m; });
   }
 
+  /* ── FX rates (non-INR → INR) ── */
+  async function fetchFxRates() {
+    const foreign = [...new Set(_wallets.map(w => w.currency).filter(c => c && c !== 'INR'))];
+    if (!foreign.length) return;
+    try {
+      // open.er-api.com supports AED/USD and needs no API key
+      const res  = await fetch('https://open.er-api.com/v6/latest/INR');
+      const data = await res.json();
+      // rates are INR→X; invert each to get X→INR
+      (foreign).forEach(cur => {
+        const rate = (data.rates || {})[cur];
+        if (rate) _fxRates[cur] = 1 / rate;
+      });
+    } catch (e) { console.warn('FX fetch failed', e); }
+  }
+  function toINR(amount, currency) {
+    if (!currency || currency === 'INR') return amount;
+    const rate = _fxRates[currency];
+    return rate ? amount * rate : null; // null = rate not available yet
+  }
+  function fmtINR(amount) {
+    return '₹' + Math.abs(amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
   /* ── Month nav ── */
   function shiftMonth(delta) {
     _viewMonth += delta;
@@ -596,11 +698,37 @@
   }
 
   /* ── Tab switching ── */
-  function switchTab(name, btn) {
+  function switchTab(name, btn, skipHash) {
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('tab-' + name).classList.add('active');
-    btn.classList.add('active');
+    if (btn) btn.classList.add('active');
+    else {
+      const idx = { overview: 0, wallets: 1, transactions: 2, more: 3 };
+      const btns = document.querySelectorAll('.tab-btn');
+      if (btns[idx[name]]) btns[idx[name]].classList.add('active');
+    }
+    if (name === 'overview') renderOverview();
+    if (!skipHash) location.hash = name;
+  }
+
+  /* ── Restore view from URL hash on load/refresh ── */
+  function initFromHash() {
+    const hash = location.hash.replace('#', '');
+    if (!hash) return;
+    if (hash.startsWith('wallet-')) {
+      const id = parseInt(hash.replace('wallet-', ''));
+      if (getWallet(id)) {
+        switchTab('wallets', null, true);
+        openWalletPanel(id, true);
+      }
+    } else if (hash.startsWith('more-')) {
+      switchTab('more', null, true);
+      const section = hash.replace('more-', '');
+      openMorePanel(section, true);
+    } else if (['overview','wallets','transactions','more'].includes(hash)) {
+      switchTab(hash, null, true);
+    }
   }
 
 
@@ -644,6 +772,11 @@
     if (!res.ok) throw new Error(data.error);
     return data.transaction;
   }
+  async function apiUpdateTxn(id, updates) {
+    const res = await fetch(API_BASE + '/api/funds/transactions/' + id, { method: 'PATCH', headers: authHeaders(), body: JSON.stringify(updates) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+  }
   async function apiDeleteTxn(id) {
     const res = await fetch(API_BASE + '/api/funds/transactions/' + id, { method: 'DELETE', headers: authHeaders() });
     const data = await res.json();
@@ -686,12 +819,20 @@
       return;
     }
     el.innerHTML = '<div class="wallet-list">' + _wallets.map(w => {
-      const bal = getWalletBalance(w);
+      const bal      = getWalletBalance(w);
+      const isForex  = w.currency && w.currency !== 'INR';
+      const inrAmt   = isForex ? toINR(bal, w.currency) : null;
+      const balLine  = isForex && inrAmt !== null
+        ? `<div class="wallet-list-balance" style="color:${balColor(bal, w.color)};display:flex;align-items:baseline;gap:8px">
+             <span>${(bal < 0 ? '-' : '') + fmtINR(inrAmt)}</span>
+             <span style="font-size:0.72rem;color:var(--muted);font-variant-numeric:tabular-nums">${fmtBalance(bal, w.currency)}</span>
+           </div>`
+        : `<div class="wallet-list-balance" style="color:${balColor(bal, w.color)}">${fmtBalance(bal, w.currency)}</div>`;
       return `<div class="wallet-list-item" onclick="openWalletPanel(${w.id})">
         <div class="wallet-list-icon" style="background:${w.color}22">${WALLET_ICONS[w.type] || '📦'}</div>
         <div class="wallet-list-info">
           <div class="wallet-list-name">${escapeHtml(w.name)}</div>
-          <div class="wallet-list-balance" style="color:${balColor(bal, w.color)}">${fmtBalance(bal, w.currency)}</div>
+          ${balLine}
         </div>
         <span style="color:rgba(0,0,0,0.2);font-size:0.9rem">&#8250;</span>
       </div>`;
@@ -743,10 +884,20 @@
     document.getElementById('txnNote').value   = '';
     document.getElementById('txnDate').value   = new Date().toISOString().slice(0, 10);
     _selectedCat = null; _txnType = 'expense';
-    updateTxnTypeUI(); renderCatGrid();
-    document.getElementById('txnWallet').innerHTML = _wallets.map(w =>
+    const walletOptions = _wallets.map(w =>
       `<option value="${w.id}" ${w.id === preSelectedWalletId ? 'selected' : ''}>${WALLET_ICONS[w.type] || '📦'} ${escapeHtml(w.name)} (${w.currency})</option>`
     ).join('');
+    document.getElementById('txnWallet').innerHTML   = walletOptions;
+    document.getElementById('transferFrom').innerHTML = walletOptions;
+    document.getElementById('transferTo').innerHTML   = walletOptions;
+    if (_wallets.length > 1) document.getElementById('transferTo').selectedIndex = 1;
+    // Reset to expense view
+    document.getElementById('catGridField').style.display   = '';
+    document.getElementById('txnWalletField').style.display = '';
+    document.getElementById('transferWallets').classList.remove('visible');
+    document.getElementById('saveTxnBtn').textContent = 'Save Transaction';
+    document.getElementById('modal-title-text').textContent = 'Add Transaction';
+    updateTxnTypeUI(); renderCatGrid();
     updateModalCurrencySymbol();
     document.getElementById('txnModal').classList.add('open');
   }
@@ -754,10 +905,20 @@
   function closeTxnModal() { document.getElementById('txnModal').classList.remove('open'); }
   function handleModalBackdropClick(e) { if (e.target === e.currentTarget) closeTxnModal(); }
 
-  function setTxnType(type) { _txnType = type; _selectedCat = null; updateTxnTypeUI(); renderCatGrid(); }
+  function setTxnType(type) {
+    _txnType = type; _selectedCat = null;
+    updateTxnTypeUI(); renderCatGrid();
+    const isTransfer = type === 'transfer';
+    document.getElementById('catGridField').style.display    = isTransfer ? 'none' : '';
+    document.getElementById('txnWalletField').style.display  = isTransfer ? 'none' : '';
+    document.getElementById('transferWallets').classList.toggle('visible', isTransfer);
+    document.getElementById('saveTxnBtn').textContent = isTransfer ? 'Save Transfer' : 'Save Transaction';
+    document.getElementById('modal-title-text').textContent  = isTransfer ? 'Add Transfer' : 'Add Transaction';
+  }
   function updateTxnTypeUI() {
-    document.getElementById('btnExpense').className = 'type-toggle-btn' + (_txnType === 'expense' ? ' active-expense' : '');
-    document.getElementById('btnIncome').className  = 'type-toggle-btn' + (_txnType === 'income'  ? ' active-income'  : '');
+    document.getElementById('btnExpense').className  = 'type-toggle-btn' + (_txnType === 'expense'  ? ' active-expense'  : '');
+    document.getElementById('btnIncome').className   = 'type-toggle-btn' + (_txnType === 'income'   ? ' active-income'   : '');
+    document.getElementById('btnTransfer').className = 'type-toggle-btn' + (_txnType === 'transfer' ? ' active-transfer' : '');
   }
   function renderCatGrid() {
     const typedCustom = _customCategories.filter(c => c.type === _txnType);
@@ -778,52 +939,146 @@
   }
   function selectCat(id) { _selectedCat = id; renderCatGrid(); }
   function updateModalCurrencySymbol() {
-    const w = getWallet(parseInt(document.getElementById('txnWallet').value));
+    const srcId = _txnType === 'transfer'
+      ? parseInt(document.getElementById('transferFrom').value)
+      : parseInt(document.getElementById('txnWallet').value);
+    const w = getWallet(srcId);
     document.getElementById('modalCurrencySymbol').textContent = sym(w?.currency || 'INR');
   }
 
   /* ── Save transaction ── */
   async function saveTxn() {
-    const amount   = parseFloat(document.getElementById('txnAmount').value);
-    const walletId = parseInt(document.getElementById('txnWallet').value);
-    const date     = document.getElementById('txnDate').value;
-    const note     = document.getElementById('txnNote').value.trim();
+    const amount = parseFloat(document.getElementById('txnAmount').value);
+    const date   = document.getElementById('txnDate').value;
+    const note   = document.getElementById('txnNote').value.trim();
     if (!amount || amount <= 0) { alert('Please enter a valid amount.'); return; }
-    if (!_selectedCat) { alert('Please select a category.'); return; }
     if (!date) { alert('Please select a date.'); return; }
     const btn = document.getElementById('saveTxnBtn');
     btn.disabled = true; btn.textContent = 'Saving…';
     try {
-      await apiAddTxn({ date, amount, type: _txnType, categoryId: _selectedCat, walletId, note });
+      if (_txnType === 'transfer') {
+        const fromId = parseInt(document.getElementById('transferFrom').value);
+        const toId   = parseInt(document.getElementById('transferTo').value);
+        if (fromId === toId) { alert('From and To wallets must be different.'); btn.disabled = false; btn.textContent = 'Save Transfer'; return; }
+        const toW   = getWallet(toId);
+        const fromW = getWallet(fromId);
+        await apiAddTxn({ date, amount, type: 'expense', categoryId: '__transfer__', walletId: fromId, note: note || 'Transfer to ' + (toW?.name || '') });
+        await apiAddTxn({ date, amount, type: 'income',  categoryId: '__transfer__', walletId: toId,   note: note || 'Transfer from ' + (fromW?.name || '') });
+      } else {
+        const walletId = parseInt(document.getElementById('txnWallet').value);
+        if (!_selectedCat) { alert('Please select a category.'); btn.disabled = false; btn.textContent = 'Save Transaction'; return; }
+        await apiAddTxn({ date, amount, type: _txnType, categoryId: _selectedCat, walletId, note });
+      }
       await fetchData(); closeTxnModal();
       if (_activeWalletId) renderWalletPanel(); else renderAll();
     } catch (err) { alert('Error: ' + err.message); }
-    finally { btn.disabled = false; btn.textContent = 'Save Transaction'; }
+    finally { btn.disabled = false; btn.textContent = _txnType === 'transfer' ? 'Save Transfer' : 'Save Transaction'; }
   }
 
   /* ── Transaction detail ── */
+  let _editingTxnId = null;
+  let _editTxnType  = 'expense';
+  let _editCat      = null;
+
   function openTxnDetail(id) {
-    const t      = _transactions.find(x => x.id === id);
+    const t = _transactions.find(x => x.id === id);
     if (!t) return;
-    const cat    = getCategory(t.categoryId);
-    const wallet = getWallet(t.walletId);
-    const sign   = t.type === 'income' ? '+' : '-';
-    const color  = t.type === 'income' ? 'var(--green)' : 'var(--red)';
+    _editingTxnId = id;
+    _editTxnType  = t.type === 'income' ? 'income' : 'expense';
+    _editCat      = t.categoryId;
+
+    const walletOptions = _wallets.map(w =>
+      `<option value="${w.id}" ${w.id === t.walletId ? 'selected' : ''}>${WALLET_ICONS[w.type] || '📦'} ${escapeHtml(w.name)} (${w.currency})</option>`
+    ).join('');
+
     document.getElementById('txnDetailContent').innerHTML = `
-      <div class="detail-icon-wrap" style="background:${cat.color}22">${cat.icon}</div>
-      <div class="detail-amount" style="color:${color}">${sign}${fmt(t.amount, wallet?.currency)}</div>
-      <div class="detail-meta">${escapeHtml(t.note || cat.name)}</div>
-      <div class="detail-rows">
-        <div class="detail-row"><span class="detail-row-label">Category</span><span class="detail-row-value">${cat.icon} ${escapeHtml(cat.name)}</span></div>
-        <div class="detail-row"><span class="detail-row-label">Wallet</span><span class="detail-row-value">${wallet ? escapeHtml(wallet.name) : '—'}</span></div>
-        <div class="detail-row"><span class="detail-row-label">Date</span><span class="detail-row-value">${fmtDate(t.date)}</span></div>
-        <div class="detail-row"><span class="detail-row-label">Type</span><span class="detail-row-value" style="text-transform:capitalize">${t.type}</span></div>
-        ${t.note ? `<div class="detail-row"><span class="detail-row-label">Note</span><span class="detail-row-value">${escapeHtml(t.note)}</span></div>` : ''}
+      <div class="modal-title" style="margin-bottom:14px">Transaction</div>
+      <div class="type-toggle" style="margin-bottom:14px">
+        <button class="type-toggle-btn ${_editTxnType==='expense'?'active-expense':''}" id="editBtnExpense" onclick="setEditTxnType('expense')">&#8595; Expense</button>
+        <button class="type-toggle-btn ${_editTxnType==='income'?'active-income':''}"  id="editBtnIncome"  onclick="setEditTxnType('income')">&#8593; Income</button>
+      </div>
+      <div class="amount-input-wrap" style="margin-bottom:14px">
+        <span class="amount-currency" id="editCurrencySymbol">${sym(getWallet(t.walletId)?.currency||'INR')}</span>
+        <input type="number" inputmode="decimal" class="amount-input" id="editTxnAmount" placeholder="0.00" min="0" step="0.01" value="${t.amount}" />
+      </div>
+      <div class="form-row" style="margin-bottom:14px">
+        <div class="field">
+          <label>Category</label>
+          <select id="editCatGrid" style="width:100%"></select>
+        </div>
+        <div class="field">
+          <label>Wallet</label>
+          <select id="editTxnWallet" onchange="updateEditCurrencySymbol()" style="width:100%">${walletOptions}</select>
+        </div>
+      </div>
+      <div class="form-row" style="margin-bottom:14px">
+        <div class="field">
+          <label>Date</label>
+          <input type="date" id="editTxnDate" value="${t.date}" />
+        </div>
+        <div class="field"></div>
+      </div>
+      <div class="field" style="margin-bottom:8px">
+        <label>Note (optional)</label>
+        <input type="text" id="editTxnNote" placeholder="What was this for?" maxlength="80" value="${escapeHtml(t.note||'')}" />
       </div>`;
+
     document.getElementById('txnDetailDelBtn').onclick = () => deleteTxnFromDetail(id);
+    renderEditCatGrid();
     document.getElementById('txnDetailModal').classList.add('open');
   }
+
+  function setEditTxnType(type) {
+    _editTxnType = type;
+    _editCat = null;
+    document.getElementById('editBtnExpense').className = 'type-toggle-btn' + (type==='expense' ? ' active-expense' : '');
+    document.getElementById('editBtnIncome').className  = 'type-toggle-btn' + (type==='income'  ? ' active-income'  : '');
+    renderEditCatGrid();
+  }
+
+  function renderEditCatGrid() {
+    const el = document.getElementById('editCatGrid');
+    if (!el) return;
+    const list = _customCategories.filter(c => c.type === _editTxnType);
+    el.innerHTML = list.map(c =>
+      `<option value="${c.id}" ${c.id === _editCat ? 'selected' : ''}>${c.icon} ${escapeHtml(c.name)}</option>`
+    ).join('');
+    // sync _editCat to whatever is now selected
+    if (el.value) _editCat = el.value;
+  }
+
+  function selectEditCat(id) { _editCat = id; }
+
+  function updateEditCurrencySymbol() {
+    const w = getWallet(parseInt(document.getElementById('editTxnWallet').value));
+    const el = document.getElementById('editCurrencySymbol');
+    if (el) el.textContent = sym(w?.currency || 'INR');
+  }
+
+  async function saveTxnEdit() {
+    const amount     = parseFloat(document.getElementById('editTxnAmount').value);
+    const walletId   = parseInt(document.getElementById('editTxnWallet').value);
+    const date       = document.getElementById('editTxnDate').value;
+    const note       = document.getElementById('editTxnNote').value.trim();
+    const categoryId = document.getElementById('editCatGrid').value;
+    if (!amount || amount <= 0) { alert('Enter a valid amount.'); return; }
+    if (!categoryId) { alert('Please select a category.'); return; }
+    if (!date) { alert('Please select a date.'); return; }
+    const btn = document.getElementById('saveEditTxnBtn');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      await apiUpdateTxn(_editingTxnId, { date, amount, type: _editTxnType, categoryId, walletId, note });
+      await fetchData(); closeTxnDetail();
+      if (_activeWalletId) renderWalletPanel(); else renderAll();
+    } catch (err) {
+      alert('Error: ' + err.message);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Save Changes';
+    }
+  }
+
   function closeTxnDetail() { document.getElementById('txnDetailModal').classList.remove('open'); }
+
   async function deleteTxnFromDetail(id) {
     if (!confirm('Delete this transaction?')) return;
     try {
@@ -833,16 +1088,18 @@
   }
 
   /* ── Wallet panel ── */
-  function openWalletPanel(id) {
+  function openWalletPanel(id, skipHash) {
     _activeWalletId = id;
     renderWalletPanel();
     document.getElementById('walletPanel').style.display = 'block';
     document.body.style.overflow = 'hidden';
+    if (!skipHash) location.hash = 'wallet-' + id;
   }
   function closeWalletPanel() {
     document.getElementById('walletPanel').style.display = 'none';
     document.body.style.overflow = '';
     _activeWalletId = null;
+    location.hash = 'wallets';
   }
   function toggleWalletPanelMenu(e) {
     e.stopPropagation();
@@ -868,7 +1125,17 @@
     document.getElementById('walletPanelSummary').innerHTML = `
       <div style="display:flex;align-items:stretch;background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:4px;overflow:hidden">
         <div style="flex:1;padding:16px;text-align:center;border-right:1px solid var(--border)">
-          <div style="font-size:1.45rem;font-weight:800;color:${balColor(bal,w.color)};font-variant-numeric:tabular-nums;letter-spacing:-0.02em">${fmtBalance(bal,w.currency)}</div>
+          ${(()=>{
+            const isForex = w.currency && w.currency !== 'INR';
+            const inrAmt  = isForex ? toINR(bal, w.currency) : null;
+            if (isForex && inrAmt !== null) {
+              return `<div style="display:flex;align-items:baseline;justify-content:center;gap:8px;flex-wrap:wrap">
+                        <span style="font-size:1.45rem;font-weight:800;color:${balColor(bal,w.color)};font-variant-numeric:tabular-nums;letter-spacing:-0.02em">${(bal<0?'-':'') + fmtINR(inrAmt)}</span>
+                        <span style="font-size:0.82rem;color:var(--muted);font-variant-numeric:tabular-nums">${fmtBalance(bal,w.currency)}</span>
+                      </div>`;
+            }
+            return `<div style="font-size:1.45rem;font-weight:800;color:${balColor(bal,w.color)};font-variant-numeric:tabular-nums;letter-spacing:-0.02em">${fmtBalance(bal,w.currency)}</div>`;
+          })()}
           <div style="font-size:0.68rem;color:var(--muted);margin-top:4px">Wallet Balance</div>
         </div>
         <div style="flex:1;padding:16px;text-align:center">
@@ -1231,9 +1498,183 @@
     if (!res.ok) throw new Error(data.error || 'Failed to update');
   }
 
+  /* ── Overview ── */
+  let _ovYear  = new Date().getFullYear();
+  let _ovMonth = new Date().getMonth();
+  let _ovType  = 'expense';
+
+  function ovShiftMonth(delta) {
+    const period = document.getElementById('ovPeriodFilter')?.value || 'month';
+    if (period === 'year') {
+      _ovYear += delta;
+    } else {
+      _ovMonth += delta;
+      if (_ovMonth > 11) { _ovMonth = 0; _ovYear++; }
+      if (_ovMonth < 0)  { _ovMonth = 11; _ovYear--; }
+    }
+    renderOverview();
+  }
+
+  function setOvType(type) {
+    _ovType = type;
+    document.getElementById('ovBtnExpense').className = 'type-toggle-btn' + (type === 'expense' ? ' active-expense' : '');
+    document.getElementById('ovBtnIncome').className  = 'type-toggle-btn' + (type === 'income'  ? ' active-income'  : '');
+    renderOverviewChart();
+  }
+
+  function renderOverview() {
+    // Populate wallet filter
+    const wSel = document.getElementById('ovWalletFilter');
+    const selWallet = wSel?.value || 'all';
+    if (wSel) {
+      wSel.innerHTML = '<option value="all">All Wallets</option>' +
+        _wallets.map(w => `<option value="${w.id}" ${String(w.id) === selWallet ? 'selected' : ''}>${escapeHtml(w.name)}</option>`).join('');
+    }
+
+    const period = document.getElementById('ovPeriodFilter')?.value || 'month';
+    const navEl  = document.getElementById('ovMonthNav');
+    const lblEl  = document.getElementById('ovMonthLabel');
+
+    if (period === 'all') {
+      if (navEl) navEl.style.display = 'none';
+    } else {
+      if (navEl) navEl.style.display = '';
+      if (lblEl) {
+        lblEl.textContent = period === 'year'
+          ? String(_ovYear)
+          : new Date(_ovYear, _ovMonth, 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+      }
+    }
+
+    // Filter transactions
+    let txns = _transactions;
+    if (selWallet !== 'all') txns = txns.filter(t => t.walletId === parseInt(selWallet));
+    if (period === 'month') {
+      txns = txns.filter(t => { const d = new Date(t.date + 'T00:00:00'); return d.getFullYear() === _ovYear && d.getMonth() === _ovMonth; });
+    } else if (period === 'year') {
+      txns = txns.filter(t => new Date(t.date + 'T00:00:00').getFullYear() === _ovYear);
+    }
+
+    const totalExp = txns.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+    const totalInc = txns.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+
+    // Summary cards
+    const sumEl = document.getElementById('ovSummary');
+    if (sumEl) sumEl.innerHTML = `
+      <div style="display:flex;gap:10px;margin-bottom:14px">
+        <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center">
+          <div style="font-size:1.1rem;font-weight:800;color:var(--red);font-variant-numeric:tabular-nums">-${fmtINR(totalExp)}</div>
+          <div style="font-size:0.7rem;color:var(--muted);margin-top:3px">Expenses</div>
+        </div>
+        <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center">
+          <div style="font-size:1.1rem;font-weight:800;color:var(--green);font-variant-numeric:tabular-nums">+${fmtINR(totalInc)}</div>
+          <div style="font-size:0.7rem;color:var(--muted);margin-top:3px">Income</div>
+        </div>
+      </div>`;
+
+    // Store filtered txns for chart
+    window._ovTxns = txns;
+    renderOverviewChart();
+  }
+
+  function renderOverviewChart() {
+    const txns   = window._ovTxns || [];
+    const typed  = txns.filter(t => t.type === _ovType && t.categoryId !== '__transfer__');
+    const total  = typed.reduce((s, t) => s + t.amount, 0);
+
+    // Group by category
+    const groups = {};
+    typed.forEach(t => {
+      if (!groups[t.categoryId]) groups[t.categoryId] = { amount: 0, count: 0 };
+      groups[t.categoryId].amount += t.amount;
+      groups[t.categoryId].count  += 1;
+    });
+
+    const sorted = Object.entries(groups)
+      .map(([id, g]) => ({ cat: getCategory(id), amount: g.amount, count: g.count }))
+      .sort((a, b) => b.amount - a.amount);
+
+    const chartEl = document.getElementById('ovChart');
+    const listEl  = document.getElementById('ovCatList');
+
+    if (!sorted.length) {
+      if (chartEl) chartEl.innerHTML = `<div style="text-align:center;padding:32px 0;color:var(--muted);font-size:0.88rem">No ${_ovType} transactions</div>`;
+      if (listEl)  listEl.innerHTML  = '';
+      return;
+    }
+
+    // Build SVG donut
+    const size   = 220;
+    const cx     = size / 2, cy = size / 2;
+    const R      = 88, r = 52; // outer and inner radius
+    let angle    = -Math.PI / 2; // start from top
+    let slices   = '';
+    let labels   = '';
+
+    sorted.forEach((item, i) => {
+      const pct    = item.amount / total;
+      const sweep  = pct * 2 * Math.PI;
+      const midA   = angle + sweep / 2;
+      const x1     = cx + R * Math.cos(angle),         y1 = cy + R * Math.sin(angle);
+      const x2     = cx + R * Math.cos(angle + sweep), y2 = cy + R * Math.sin(angle + sweep);
+      const xi1    = cx + r * Math.cos(angle),         yi1 = cy + r * Math.sin(angle);
+      const xi2    = cx + r * Math.cos(angle + sweep), yi2 = cy + r * Math.sin(angle + sweep);
+      const large  = sweep > Math.PI ? 1 : 0;
+      const color  = item.cat.color;
+
+      slices += `<path d="M${xi1},${yi1} L${x1},${y1} A${R},${R} 0 ${large},1 ${x2},${y2} L${xi2},${yi2} A${r},${r} 0 ${large},0 ${xi1},${yi1} Z"
+        fill="${color}" stroke="#fff" stroke-width="2" />`;
+
+      // Percentage label — only if segment is big enough
+      if (pct >= 0.04) {
+        const lR  = R + 14;
+        const lx  = cx + lR * Math.cos(midA);
+        const ly  = cy + lR * Math.sin(midA);
+        labels += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle"
+          font-size="9" font-weight="700" fill="${color}" font-family="-apple-system,sans-serif">${Math.round(pct * 100)}%</text>`;
+      }
+
+      // Icon on slice — only for larger segments
+      if (pct >= 0.08) {
+        const iR  = (R + r) / 2;
+        const ix  = cx + iR * Math.cos(midA);
+        const iy  = cy + iR * Math.sin(midA);
+        labels += `<text x="${ix}" y="${iy}" text-anchor="middle" dominant-baseline="middle" font-size="14">${item.cat.icon}</text>`;
+      }
+
+      angle += sweep;
+    });
+
+    if (chartEl) chartEl.innerHTML = `
+      <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+        ${slices}${labels}
+        <circle cx="${cx}" cy="${cy}" r="${r - 2}" fill="var(--bg)" />
+      </svg>`;
+
+    // Category list
+    if (listEl) listEl.innerHTML = `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:16px">
+        ${sorted.map((item, i) => {
+          const pct = ((item.amount / total) * 100).toFixed(1);
+          return `<div style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:${i < sorted.length-1 ? '1px solid var(--border)' : 'none'}">
+            <div style="width:40px;height:40px;border-radius:12px;background:${item.cat.color}22;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0">${item.cat.icon}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:0.88rem;font-weight:600">${escapeHtml(item.cat.name)}</div>
+              <div style="font-size:0.72rem;color:var(--muted);margin-top:2px">${item.count} transaction${item.count !== 1 ? 's' : ''}</div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div style="font-size:0.9rem;font-weight:700;color:${_ovType === 'expense' ? 'var(--red)' : 'var(--green)'};font-variant-numeric:tabular-nums">${_ovType === 'expense' ? '-' : '+'}${fmtINR(item.amount)}</div>
+              <div style="font-size:0.7rem;color:var(--muted);margin-top:1px">${pct}%</div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`;
+  }
+
   /* ── Render all ── */
   function renderAll() {
     renderWalletList();
+    renderOverview();
     renderMoreMenu();
   }
 
@@ -1249,21 +1690,23 @@
 
   /* ── More sub-panel ── */
   let _moreSection = null;
-  function openMorePanel(section) {
+  function openMorePanel(section, skipHash) {
     _moreSection = section;
     const titles = { wallets: 'Wallets', categories: 'Categories', labels: 'Labels' };
     document.getElementById('moreSubPanelTitle').textContent = titles[section] || section;
-    if (section === 'wallets')    openMoreWalletsPanel();
+    if (section === 'wallets')         openMoreWalletsPanel();
     else if (section === 'categories') openMoreCatsPanel();
     else if (section === 'labels')     openMoreLabelsPanel();
     document.getElementById('moreSubPanel').style.display = 'block';
     document.body.style.overflow = 'hidden';
+    if (!skipHash) location.hash = 'more-' + section;
   }
   function closeMorePanel() {
     document.getElementById('moreSubPanel').style.display = 'none';
     document.getElementById('moreSubPanelContent').innerHTML = '';
     document.body.style.overflow = '';
     _moreSection = null;
+    location.hash = 'more';
     renderMoreMenu();
   }
 
@@ -1330,7 +1773,7 @@
         <button class="wallet-eye-btn" style="background:${w.color};flex-shrink:0" onclick="event.stopPropagation();openWalletPanel(${w.id})">👁</button>
         <div style="position:relative;flex-shrink:0">
           <button onclick="event.stopPropagation();toggleMoreWalletMenu(event,${w.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.3rem;padding:4px 8px;border-radius:6px;line-height:1;font-family:inherit">&#8942;</button>
-          <div id="moreWalletMenu-${w.id}" style="display:none;position:absolute;right:0;bottom:calc(100% + 4px);background:var(--surface);border:1px solid var(--border);border-radius:10px;min-width:150px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.12);z-index:200">
+          <div id="moreWalletMenu-${w.id}" style="display:none;position:absolute;right:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;min-width:150px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.12);z-index:200">
             <button onclick="event.stopPropagation();openWalletEditPanelFor(${w.id})" style="width:100%;padding:12px 16px;background:none;border:none;color:var(--text);font-size:0.88rem;cursor:pointer;text-align:left;font-family:inherit;display:flex;align-items:center;gap:8px">&#9998; Edit</button>
             <div style="height:1px;background:var(--border);margin:0 12px"></div>
             <button onclick="event.stopPropagation();deleteWalletFromMore(${w.id})" style="width:100%;padding:12px 16px;background:none;border:none;color:var(--red);font-size:0.88rem;cursor:pointer;text-align:left;font-family:inherit;display:flex;align-items:center;gap:8px">&#128465; Delete</button>
@@ -1346,7 +1789,24 @@
       if (m.id !== 'moreWalletMenu-' + id) m.style.display = 'none';
     });
     const menu = document.getElementById('moreWalletMenu-' + id);
-    if (menu) menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    if (!menu) return;
+    if (menu.style.display === 'block') { menu.style.display = 'none'; return; }
+    // Use fixed positioning so the menu is never clipped by a scrollable parent
+    const btnRect    = e.currentTarget.getBoundingClientRect();
+    const menuWidth  = 160;
+    const menuHeight = 110;
+    const spaceBelow = window.innerHeight - btnRect.bottom;
+    menu.style.position = 'fixed';
+    menu.style.right    = 'auto';
+    menu.style.left     = Math.max(4, btnRect.right - menuWidth) + 'px';
+    if (spaceBelow >= menuHeight) {
+      menu.style.top    = (btnRect.bottom + 4) + 'px';
+      menu.style.bottom = 'auto';
+    } else {
+      menu.style.bottom = (window.innerHeight - btnRect.top + 4) + 'px';
+      menu.style.top    = 'auto';
+    }
+    menu.style.display = 'block';
   }
 
   function openWalletEditPanelFor(id) {
@@ -1484,7 +1944,10 @@
       localStorage.removeItem('funds_custom_cats');
       await fetchData();
     }
+    // Fetch live FX rates then re-render with INR conversions
+    await fetchFxRates();
     renderAll();
+    initFromHash();
   }).catch(err => {
     console.error('Failed to load:', err.message);
   });
