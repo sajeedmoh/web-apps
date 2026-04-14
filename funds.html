@@ -134,8 +134,6 @@
     .wallet-list-info { flex: 1; min-width: 0; }
     .wallet-list-name { font-size: 0.92rem; font-weight: 600; color: var(--text); }
     .wallet-list-balance { font-size: 0.78rem; font-weight: 600; font-variant-numeric: tabular-nums; margin-top: 2px; }
-    .wallet-eye-btn { width: 34px; height: 34px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; transition: transform 0.15s; background: var(--accent); color: #fff; }
-    .wallet-eye-btn:active { transform: scale(0.92); }
 
     /* ── Detail sheet ── */
     .detail-icon-wrap { width: 64px; height: 64px; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin: 0 auto 12px; }
@@ -387,11 +385,11 @@
     <div id="walletList"></div>
   </div>
 
-  <!-- Timeline tab -->
-  <div id="tab-transactions" class="tab-panel">
-    <div class="empty-state" style="margin-top:40px">
-      <div class="icon">💳</div>
-      Coming soon — timeline view
+  <!-- Budget tab -->
+  <div id="tab-transactions" class="tab-panel" style="padding-top:4px">
+    <div id="budgetList"></div>
+    <div style="display:flex;justify-content:center;margin-top:16px">
+      <button onclick="openAddBudgetModal()" style="background:rgba(34,197,94,0.13);border:none;color:#22c55e;font-size:1rem;font-weight:700;padding:16px 40px;border-radius:99px;cursor:pointer;font-family:inherit;letter-spacing:0.01em">Create a New Budget</button>
     </div>
   </div>
 
@@ -435,7 +433,7 @@
     <span class="tab-icon">👛</span><span>Wallets</span>
   </button>
   <button class="tab-btn" onclick="switchTab('transactions',this)">
-    <span class="tab-icon">💳</span><span>Timeline</span>
+    <span class="tab-icon">💳</span><span>Budget</span>
   </button>
   <button class="tab-btn" onclick="switchTab('more',this)">
     <span class="tab-icon">&#8943;</span><span>More</span>
@@ -557,6 +555,74 @@
   </div>
 </div>
 
+<!-- Add Budget Modal -->
+<div class="modal-backdrop" id="addBudgetModal" onclick="if(event.target===this)closeAddBudgetModal()">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="budgetModalTitle">Add New Budget</div>
+    <div class="field">
+      <label>Budget Name</label>
+      <input type="text" id="budgetName" placeholder="e.g. Monthly Groceries" maxlength="40" />
+    </div>
+    <div class="form-row">
+      <div class="field">
+        <label>Amount</label>
+        <input type="number" inputmode="decimal" id="budgetAmount" placeholder="0.00" min="0" step="0.01" />
+      </div>
+      <div class="field">
+        <label>Currency</label>
+        <select id="budgetCurrency">
+          <option value="INR">INR</option>
+          <option value="AED">AED</option>
+          <option value="USD">USD</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Wallets dropdown -->
+    <div class="field">
+      <label>Wallets</label>
+      <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;background:rgba(0,0,0,0.03)">
+        <div onclick="toggleBudgetDropdown('wallet')" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer">
+          <span id="budgetWalletSummary" style="font-size:0.9rem;color:var(--text)">All Wallets</span>
+          <span id="budgetWalletChevron" style="color:var(--muted);font-size:0.85rem;transition:transform 0.2s">&#8250;</span>
+        </div>
+        <div id="budgetWalletList" style="display:none;border-top:1px solid var(--border)"></div>
+      </div>
+    </div>
+
+    <!-- Categories dropdown -->
+    <div class="field">
+      <label>Budget For</label>
+      <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;background:rgba(0,0,0,0.03)">
+        <div onclick="toggleBudgetDropdown('cat')" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer">
+          <span id="budgetCatSummary" style="font-size:0.9rem;color:var(--text)">All Expenses</span>
+          <span id="budgetCatChevron" style="color:var(--muted);font-size:0.85rem;transition:transform 0.2s">&#8250;</span>
+        </div>
+        <div id="budgetCatList" style="display:none;border-top:1px solid var(--border)"></div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="field">
+        <label>Recurrence</label>
+        <select id="budgetRecurrence">
+          <option value="monthly">Monthly</option>
+          <option value="weekly">Weekly</option>
+          <option value="yearly">Yearly</option>
+          <option value="one-time">One-time</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Start Date</label>
+        <input type="date" id="budgetStartDate" />
+      </div>
+    </div>
+    <button class="btn-primary" id="saveBudgetBtn" onclick="saveBudget()" style="margin-bottom:8px">Save Budget</button>
+    <button class="btn-cancel-link" onclick="closeAddBudgetModal()">Cancel</button>
+  </div>
+</div>
+
 <!-- More Sub-Panel (full-screen, opens from More tab) -->
 <div id="moreSubPanel" style="display:none;position:fixed;inset:0;z-index:150;background:var(--bg);overflow-y:auto;padding-bottom:88px">
   <nav class="back-bar">
@@ -649,7 +715,7 @@
   function getWallet(id) { return _wallets.find(w => w.id === id); }
   function sym(currency) { return CURRENCY_SYMBOL[currency] || currency + ' '; }
   function fmt(amount, currency) { return sym(currency || 'INR') + Math.abs(amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
-  function fmtShort(amount, currency) { return sym(currency || 'INR') + Math.abs(amount).toLocaleString('en-IN', { maximumFractionDigits: 0 }); }
+
   function fmtBalance(amount, currency) { return (amount < 0 ? '-' : '') + sym(currency || 'INR') + Math.abs(amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
   function balColor(amount, walletColor) { return amount < 0 ? 'var(--red)' : walletColor; }
   function fmtDate(iso) { return new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }); }
@@ -694,6 +760,7 @@
     _viewMonth += delta;
     if (_viewMonth > 11) { _viewMonth = 0; _viewYear++; }
     if (_viewMonth < 0)  { _viewMonth = 11; _viewYear--; }
+    document.getElementById('monthLabel').textContent = fmtMonthYear(_viewYear, _viewMonth);
     renderAll();
   }
 
@@ -709,6 +776,7 @@
       if (btns[idx[name]]) btns[idx[name]].classList.add('active');
     }
     if (name === 'overview') renderOverview();
+    if (name === 'transactions') renderBudgetList();
     if (!skipHash) location.hash = name;
   }
 
@@ -784,33 +852,6 @@
   }
 
   /* ── Shared transaction list renderer ── */
-  function renderTxnList(txns) {
-    if (!txns.length) return '<div class="empty-state"><div class="icon">💸</div>No transactions found.<br>Tap + to add one.</div>';
-    const grouped = {};
-    txns.forEach(t => { (grouped[t.date] = grouped[t.date] || []).push(t); });
-    const dates = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
-    let html = '';
-    dates.forEach(date => {
-      html += `<div class="txn-group"><div class="txn-date-label">${fmtDate(date)}</div>`;
-      grouped[date].forEach(t => {
-        const cat    = getCategory(t.categoryId);
-        const wallet = getWallet(t.walletId);
-        const sign   = t.type === 'income' ? '+' : '-';
-        html += `<div class="txn-row" onclick="openTxnDetail(${t.id})">
-          <div class="txn-cat-icon" style="background:${cat.color}22">${cat.icon}</div>
-          <div class="txn-info">
-            <div class="txn-title">${escapeHtml(t.note || cat.name)}</div>
-            <div class="txn-sub">${escapeHtml(cat.name)}${wallet ? ' · ' + escapeHtml(wallet.name) : ''}</div>
-          </div>
-          <span class="txn-amount ${t.type}">${sign}${fmt(t.amount, wallet?.currency)}</span>
-          <span class="txn-chevron">&#8250;</span>
-        </div>`;
-      });
-      html += '</div>';
-    });
-    return html;
-  }
-
   /* ── Render wallet list ── */
   function renderWalletList() {
     const el = document.getElementById('walletList');
@@ -1047,7 +1088,6 @@
     if (el.value) _editCat = el.value;
   }
 
-  function selectEditCat(id) { _editCat = id; }
 
   function updateEditCurrencySymbol() {
     const w = getWallet(parseInt(document.getElementById('editTxnWallet').value));
@@ -1345,7 +1385,7 @@
       const meta = txnCount === 0
         ? 'No transactions yet'
         : `${txnCount} transaction${txnCount !== 1 ? 's' : ''} in ${walletCount} wallet${walletCount !== 1 ? 's' : ''}`;
-      return `<div class="cat-list-item" onclick="openCategoryPanel('${c.id}')">
+      return `<div class="cat-list-item" onclick="openCategoryPanel('${escapeHtml(c.id)}')">
         <div class="cat-circle" style="background:${c.color}">${c.icon}</div>
         <div class="cat-info">
           <div class="cat-name">${escapeHtml(c.name)}</div>
@@ -1496,6 +1536,315 @@
     const res = await fetch(API_BASE + '/api/funds/categories/' + id, { method: 'PATCH', headers: authHeaders(), body: JSON.stringify(updates) });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to update');
+  }
+
+  /* ── Budget ── */
+  let _budgets = JSON.parse(localStorage.getItem('funds_budgets') || '[]');
+  let _editingBudgetId = null;
+
+  function saveBudgetsLocal() {
+    localStorage.setItem('funds_budgets', JSON.stringify(_budgets));
+  }
+
+  function getBudgetPeriod(b) {
+    // Uses global _viewYear / _viewMonth so the top month nav controls budget view
+    const start      = new Date(b.startDate + 'T00:00:00');
+    const startYear  = start.getFullYear();
+    const startMonth = start.getMonth();
+    // If viewing a month before the budget started, return null (hide it)
+    if (_viewYear < startYear || (_viewYear === startYear && _viewMonth < startMonth)) return null;
+    let pStart, pEnd;
+    if (b.recurrence === 'monthly') {
+      // Start month → use actual start date; later months → use 1st of month
+      pStart = (_viewYear === startYear && _viewMonth === startMonth)
+        ? new Date(start) : new Date(_viewYear, _viewMonth, 1);
+      pEnd = new Date(_viewYear, _viewMonth + 1, 0); // last day of viewed month
+    } else if (b.recurrence === 'weekly') {
+      pStart = (_viewYear === startYear && _viewMonth === startMonth)
+        ? new Date(start) : new Date(_viewYear, _viewMonth, 1);
+      pEnd = new Date(_viewYear, _viewMonth, pStart.getDate() + 6);
+    } else if (b.recurrence === 'yearly') {
+      pStart = (_viewYear === startYear && _viewMonth === startMonth)
+        ? new Date(start) : new Date(_viewYear, 0, 1);
+      pEnd = new Date(_viewYear, 11, 31);
+    } else {
+      pStart = start;
+      pEnd   = new Date(9999, 11, 31);
+    }
+    return { pStart, pEnd };
+  }
+
+  function getBudgetSpent(b) {
+    const period = getBudgetPeriod(b);
+    if (!period) return 0;
+    const { pStart, pEnd } = period;
+    const wallets    = b.wallets    || b.walletId    || 'all';
+    const categories = b.categories || b.categoryId  || 'all';
+    return _transactions.filter(t => {
+      if (t.type !== 'expense' || t.categoryId === '__transfer__') return false;
+      const d = new Date(t.date + 'T00:00:00');
+      if (d < pStart || d > pEnd) return false;
+      if (wallets    !== 'all' && !wallets.includes(String(t.walletId))) return false;
+      if (categories !== 'all' && !categories.includes(t.categoryId))   return false;
+      return true;
+    }).reduce((s, t) => s + t.amount, 0);
+  }
+
+  function fmtBudgetDate(d) {
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+
+  function renderBudgetList() {
+    const el = document.getElementById('budgetList');
+    if (!el) return;
+    if (!_budgets.length) {
+      el.innerHTML = `<div class="empty-state" style="margin-top:40px"><div class="icon">📊</div>No budgets yet.<br>Create one below.</div>`;
+      return;
+    }
+    // Only show budgets active in the viewed month (getBudgetPeriod returns null if before start)
+    const activeBudgets = _budgets.filter(b => getBudgetPeriod(b) !== null);
+    if (!activeBudgets.length) {
+      el.innerHTML = `<div class="empty-state" style="margin-top:40px"><div class="icon">📊</div>No budgets for this period.</div>`;
+      return;
+    }
+    el.innerHTML = activeBudgets.map(b => {
+      const spent    = getBudgetSpent(b);
+      const left     = b.amount - spent;
+      const pct      = Math.min(100, (spent / b.amount) * 100);
+      const overBudget = spent > b.amount;
+      // Hue goes from 120 (green) → 60 (yellow) → 0 (red) as pct goes 0→100
+      const hue      = Math.round(120 - (pct / 100) * 120);
+      const barColor = overBudget ? 'var(--red)' : `hsl(${hue},72%,42%)`;
+      const leftColor = barColor;
+      const { pStart, pEnd } = getBudgetPeriod(b) || {};
+      const cur = b.currency || 'INR';
+      const s = sym(cur);
+      return `<div style="background:var(--surface);border-bottom:1px solid var(--border);padding:18px 16px;position:relative">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <div style="font-size:1rem;font-weight:700">${escapeHtml(b.name)}</div>
+          <div style="position:relative">
+            <button onclick="toggleBudgetMenu(event,${b.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.2rem;padding:2px 8px;border-radius:6px;line-height:1">&#8942;</button>
+            <div id="budgetMenu-${b.id}" style="display:none;position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:10px;min-width:140px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.12);z-index:300">
+              <button onclick="openEditBudgetModal(${b.id})" style="width:100%;padding:12px 16px;background:none;border:none;color:var(--text);font-size:0.88rem;cursor:pointer;text-align:left;font-family:inherit;display:flex;align-items:center;gap:8px">&#9998; Edit</button>
+              <div style="height:1px;background:var(--border);margin:0 12px"></div>
+              <button onclick="deleteBudget(${b.id})" style="width:100%;padding:12px 16px;background:none;border:none;color:var(--red);font-size:0.88rem;cursor:pointer;text-align:left;font-family:inherit;display:flex;align-items:center;gap:8px">&#128465; Delete</button>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:0.88rem;margin-bottom:10px">
+          <span style="font-size:1.1rem;font-weight:800;color:${leftColor}">${s}${Math.abs(left).toLocaleString('en-IN',{minimumFractionDigits:0,maximumFractionDigits:0})}</span>
+          <span style="color:var(--muted);font-size:0.82rem"> ${overBudget ? 'over' : 'left'} out of ${s}${b.amount.toLocaleString('en-IN',{minimumFractionDigits:0,maximumFractionDigits:0})}</span>
+        </div>
+        <div style="background:rgba(0,0,0,0.07);border-radius:8px;height:34px;overflow:hidden;margin-bottom:8px">
+          <div style="width:${pct.toFixed(1)}%;height:100%;background:${barColor};border-radius:8px;display:flex;align-items:center;padding-left:10px;min-width:${pct>5?'auto':'0'}">
+            ${pct >= 8 ? `<span style="color:#fff;font-size:0.78rem;font-weight:700">${pct.toFixed(1)}%</span>` : ''}
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--muted)">
+          <span>${fmtBudgetDate(pStart)}</span>
+          <span>${fmtBudgetDate(pEnd)}</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  let _budgetSelWallets  = ['all'];
+  let _budgetSelCats     = ['all'];
+  let _budgetWalletOpen  = false;
+  let _budgetCatOpen     = false;
+
+  function toggleBudgetDropdown(type) {
+    if (type === 'wallet') {
+      _budgetWalletOpen = !_budgetWalletOpen;
+      document.getElementById('budgetWalletList').style.display = _budgetWalletOpen ? 'block' : 'none';
+      document.getElementById('budgetWalletChevron').style.transform = _budgetWalletOpen ? 'rotate(90deg)' : '';
+    } else {
+      _budgetCatOpen = !_budgetCatOpen;
+      document.getElementById('budgetCatList').style.display = _budgetCatOpen ? 'block' : 'none';
+      document.getElementById('budgetCatChevron').style.transform = _budgetCatOpen ? 'rotate(90deg)' : '';
+    }
+  }
+
+  function updateBudgetWalletSummary() {
+    const el = document.getElementById('budgetWalletSummary');
+    if (!el) return;
+    if (_budgetSelWallets.includes('all')) { el.textContent = 'All Wallets'; return; }
+    const names = _budgetSelWallets.map(id => _wallets.find(w => String(w.id) === id)?.name || id);
+    el.textContent = names.join(', ');
+  }
+
+  function updateBudgetCatSummary() {
+    const el = document.getElementById('budgetCatSummary');
+    if (!el) return;
+    if (_budgetSelCats.includes('all')) { el.textContent = 'All Expenses'; return; }
+    const names = _budgetSelCats.map(id => _customCategories.find(c => c.id === id)?.name || id);
+    el.textContent = names.join(', ');
+  }
+
+  function renderBudgetWalletList() {
+    const el = document.getElementById('budgetWalletList');
+    if (!el) return;
+    const allSelected = _budgetSelWallets.includes('all');
+    const rows = [{ id: 'all', label: 'All Wallets', icon: '👛' }, ..._wallets.map(w => ({ id: String(w.id), label: w.name, icon: WALLET_ICONS[w.type] || '📦' }))];
+    el.innerHTML = rows.map((r, i) => {
+      const checked = allSelected ? r.id === 'all' : _budgetSelWallets.includes(r.id);
+      return `<div onclick="toggleBudgetWallet('${escapeHtml(r.id)}')" style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:${i < rows.length-1 ? '1px solid var(--border)' : 'none'};cursor:pointer;background:${checked ? 'rgba(34,197,94,0.07)' : 'transparent'}">
+        <span style="font-size:1.1rem">${r.icon}</span>
+        <span style="flex:1;font-size:0.88rem;font-weight:${r.id==='all'?'600':'400'}">${escapeHtml(r.label)}</span>
+        ${checked ? '<span style="color:#22c55e;font-size:1.1rem;font-weight:700">✓</span>' : '<span style="width:16px"></span>'}
+      </div>`;
+    }).join('');
+    updateBudgetWalletSummary();
+  }
+
+  function toggleBudgetWallet(id) {
+    if (id === 'all') {
+      _budgetSelWallets = ['all'];
+    } else {
+      _budgetSelWallets = _budgetSelWallets.filter(x => x !== 'all');
+      if (_budgetSelWallets.includes(id)) {
+        _budgetSelWallets = _budgetSelWallets.filter(x => x !== id);
+        if (!_budgetSelWallets.length) _budgetSelWallets = ['all'];
+      } else {
+        _budgetSelWallets.push(id);
+      }
+    }
+    renderBudgetWalletList();
+  }
+
+  function renderBudgetCatList() {
+    const el = document.getElementById('budgetCatList');
+    if (!el) return;
+    const allSelected = _budgetSelCats.includes('all');
+    const expCats = _customCategories.filter(c => c.type === 'expense');
+    const rows = [{ id: 'all', label: 'All Expenses', icon: '📊' }, ...expCats.map(c => ({ id: c.id, label: c.name, icon: c.icon }))];
+    el.innerHTML = rows.map((r, i) => {
+      const checked = allSelected ? r.id === 'all' : _budgetSelCats.includes(r.id);
+      return `<div onclick="toggleBudgetCat('${escapeHtml(r.id)}')" style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:${i < rows.length-1 ? '1px solid var(--border)' : 'none'};cursor:pointer;background:${checked ? 'rgba(34,197,94,0.07)' : 'transparent'}">
+        <span style="font-size:1.1rem">${r.icon}</span>
+        <span style="flex:1;font-size:0.88rem;font-weight:${r.id==='all'?'600':'400'}">${escapeHtml(r.label)}</span>
+        ${checked ? '<span style="color:#22c55e;font-size:1.1rem;font-weight:700">✓</span>' : '<span style="width:16px"></span>'}
+      </div>`;
+    }).join('');
+    updateBudgetCatSummary();
+  }
+
+  function toggleBudgetCat(id) {
+    if (id === 'all') {
+      _budgetSelCats = ['all'];
+    } else {
+      _budgetSelCats = _budgetSelCats.filter(x => x !== 'all');
+      if (_budgetSelCats.includes(id)) {
+        _budgetSelCats = _budgetSelCats.filter(x => x !== id);
+        if (!_budgetSelCats.length) _budgetSelCats = ['all'];
+      } else {
+        _budgetSelCats.push(id);
+      }
+    }
+    renderBudgetCatList();
+  }
+
+  function openAddBudgetModal() {
+    _editingBudgetId  = null;
+    _budgetSelWallets = ['all'];
+    _budgetSelCats    = ['all'];
+    _budgetWalletOpen = false;
+    _budgetCatOpen    = false;
+    document.getElementById('budgetWalletList').style.display = 'none';
+    document.getElementById('budgetCatList').style.display    = 'none';
+    document.getElementById('budgetWalletChevron').style.transform = '';
+    document.getElementById('budgetCatChevron').style.transform    = '';
+    document.getElementById('budgetModalTitle').textContent = 'Add New Budget';
+    document.getElementById('budgetName').value       = '';
+    document.getElementById('budgetAmount').value     = '';
+    document.getElementById('budgetCurrency').value   = 'INR';
+    document.getElementById('budgetStartDate').value  = new Date().toISOString().slice(0,10);
+    document.getElementById('budgetRecurrence').value = 'monthly';
+    renderBudgetWalletList();
+    renderBudgetCatList();
+    document.getElementById('saveBudgetBtn').textContent = 'Save Budget';
+    document.getElementById('addBudgetModal').classList.add('open');
+  }
+
+  function closeAddBudgetModal() {
+    document.getElementById('addBudgetModal').classList.remove('open');
+  }
+
+  function saveBudget() {
+    const name       = document.getElementById('budgetName').value.trim();
+    const amount     = parseFloat(document.getElementById('budgetAmount').value);
+    const currency   = document.getElementById('budgetCurrency').value;
+    const recurrence = document.getElementById('budgetRecurrence').value;
+    const startDate  = document.getElementById('budgetStartDate').value;
+    if (!name)                 { alert('Please enter a budget name.'); return; }
+    if (!amount || amount <= 0){ alert('Please enter a valid amount.'); return; }
+    if (!startDate)            { alert('Please select a start date.'); return; }
+    const wallets    = _budgetSelWallets.includes('all') ? 'all' : _budgetSelWallets;
+    const categories = _budgetSelCats.includes('all')    ? 'all' : _budgetSelCats;
+    if (_editingBudgetId) {
+      _budgets = _budgets.map(b => b.id === _editingBudgetId
+        ? { ...b, name, amount, currency, wallets, categories, recurrence, startDate } : b);
+    } else {
+      _budgets.push({ id: Date.now(), name, amount, currency, wallets, categories, recurrence, startDate });
+    }
+    saveBudgetsLocal();
+    closeAddBudgetModal();
+    renderBudgetList();
+  }
+
+  function toggleBudgetMenu(e, id) {
+    e.stopPropagation();
+    document.querySelectorAll('[id^="budgetMenu-"]').forEach(m => {
+      if (m.id !== 'budgetMenu-' + id) m.style.display = 'none';
+    });
+    const menu = document.getElementById('budgetMenu-' + id);
+    if (!menu) return;
+    if (menu.style.display === 'block') { menu.style.display = 'none'; return; }
+    const btnRect   = e.currentTarget.getBoundingClientRect();
+    const menuWidth = 140, menuHeight = 90;
+    const spaceBelow = window.innerHeight - btnRect.bottom;
+    menu.style.left = Math.max(4, btnRect.right - menuWidth) + 'px';
+    if (spaceBelow >= menuHeight) {
+      menu.style.top    = (btnRect.bottom + 4) + 'px';
+      menu.style.bottom = 'auto';
+    } else {
+      menu.style.bottom = (window.innerHeight - btnRect.top + 4) + 'px';
+      menu.style.top    = 'auto';
+    }
+    menu.style.display = 'block';
+  }
+
+  function openEditBudgetModal(id) {
+    document.querySelectorAll('[id^="budgetMenu-"]').forEach(m => m.style.display = 'none');
+    const b = _budgets.find(x => x.id === id);
+    if (!b) return;
+    _editingBudgetId  = id;
+    _budgetSelWallets = b.wallets    === 'all' ? ['all'] : (b.wallets    || ['all']);
+    _budgetSelCats    = b.categories === 'all' ? ['all'] : (b.categories || ['all']);
+    _budgetWalletOpen = false;
+    _budgetCatOpen    = false;
+    document.getElementById('budgetWalletList').style.display = 'none';
+    document.getElementById('budgetCatList').style.display    = 'none';
+    document.getElementById('budgetWalletChevron').style.transform = '';
+    document.getElementById('budgetCatChevron').style.transform    = '';
+    document.getElementById('budgetModalTitle').textContent   = 'Edit Budget';
+    document.getElementById('budgetName').value               = b.name;
+    document.getElementById('budgetAmount').value             = b.amount;
+    document.getElementById('budgetCurrency').value           = b.currency || 'INR';
+    document.getElementById('budgetStartDate').value          = b.startDate;
+    document.getElementById('budgetRecurrence').value         = b.recurrence || 'monthly';
+    document.getElementById('saveBudgetBtn').textContent      = 'Update Budget';
+    renderBudgetWalletList();
+    renderBudgetCatList();
+    document.getElementById('addBudgetModal').classList.add('open');
+  }
+
+  function deleteBudget(id) {
+    document.querySelectorAll('[id^="budgetMenu-"]').forEach(m => m.style.display = 'none');
+    if (!confirm('Delete this budget?')) return;
+    _budgets = _budgets.filter(b => b.id !== id);
+    saveBudgetsLocal();
+    renderBudgetList();
   }
 
   /* ── Overview ── */
@@ -1674,6 +2023,7 @@
   /* ── Render all ── */
   function renderAll() {
     renderWalletList();
+    renderBudgetList();
     renderOverview();
     renderMoreMenu();
   }
@@ -1770,7 +2120,6 @@
           <div class="wallet-list-name">${escapeHtml(w.name)}</div>
           <div class="wallet-list-balance" style="color:${balColor(bal, w.color)}">${fmtBalance(bal, w.currency)}</div>
         </div>
-        <button class="wallet-eye-btn" style="background:${w.color};flex-shrink:0" onclick="event.stopPropagation();openWalletPanel(${w.id})">👁</button>
         <div style="position:relative;flex-shrink:0">
           <button onclick="event.stopPropagation();toggleMoreWalletMenu(event,${w.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.3rem;padding:4px 8px;border-radius:6px;line-height:1;font-family:inherit">&#8942;</button>
           <div id="moreWalletMenu-${w.id}" style="display:none;position:absolute;right:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;min-width:150px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.12);z-index:200">
@@ -1925,6 +2274,9 @@
   document.addEventListener('click', function(e) {
     if (!e.target.closest('[id^="moreWalletMenu-"]') && !e.target.closest('button[onclick*="toggleMoreWalletMenu"]')) {
       document.querySelectorAll('[id^="moreWalletMenu-"]').forEach(m => m.style.display = 'none');
+    }
+    if (!e.target.closest('[id^="budgetMenu-"]') && !e.target.closest('button[onclick*="toggleBudgetMenu"]')) {
+      document.querySelectorAll('[id^="budgetMenu-"]').forEach(m => m.style.display = 'none');
     }
     if (!e.target.closest('#walletPanelMenuBtn') && !e.target.closest('#walletPanelMenu')) {
       closeWalletPanelMenu();
