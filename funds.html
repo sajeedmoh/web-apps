@@ -216,7 +216,7 @@
     .type-toggle-btn { flex: 1; padding: 9px 4px; border: none; border-radius: 7px; font-size: 0.8rem; font-weight: 600; font-family: inherit; cursor: pointer; background: none; color: var(--muted); transition: all 0.15s; white-space: nowrap; }
     .type-toggle-btn.active-income   { background: rgba(34,197,94,0.15);  color: var(--green); }
     .type-toggle-btn.active-expense  { background: rgba(239,68,68,0.12);  color: var(--red); }
-    .type-toggle-btn.active-transfer { background: rgba(34,197,94,0.15);  color: var(--green); }
+    .type-toggle-btn.active-transfer { background: rgba(139,92,246,0.15); color: var(--accent); }
 
     /* Transfer wallet selectors inside modal */
     .transfer-wallets {
@@ -372,11 +372,12 @@
     <div class="type-toggle" style="margin-bottom:14px">
       <button class="type-toggle-btn active-expense" id="ovBtnExpense" onclick="setOvType('expense')">&#8595; Expenses</button>
       <button class="type-toggle-btn" id="ovBtnIncome" onclick="setOvType('income')">&#8593; Income</button>
+      <button class="type-toggle-btn" id="ovBtnTransfer" onclick="setOvType('transfer')">&#8644; Transfers</button>
     </div>
     <!-- Donut chart -->
     <div id="ovChart" style="position:relative;display:flex;justify-content:center;margin-bottom:16px"></div>
     <!-- Category list -->
-    <div style="font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;padding-left:2px">Categories</div>
+    <div class="ov-breakdown-label" style="font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;padding-left:2px">Categories</div>
     <div id="ovCatList"></div>
   </div>
 
@@ -807,6 +808,7 @@
     if (!res.ok) throw new Error(data.error || 'Failed to load');
     _wallets      = data.wallets      || [];
     _transactions = data.transactions || [];
+    _budgets      = data.budgets      || [];
     const serverCats = data.categories || [];
     const localCats  = JSON.parse(localStorage.getItem('funds_custom_cats') || '[]');
     const serverIds  = new Set(serverCats.map(c => c.id));
@@ -1539,11 +1541,22 @@
   }
 
   /* ── Budget ── */
-  let _budgets = JSON.parse(localStorage.getItem('funds_budgets') || '[]');
+  let _budgets = [];
   let _editingBudgetId = null;
 
-  function saveBudgetsLocal() {
-    localStorage.setItem('funds_budgets', JSON.stringify(_budgets));
+  async function apiAddBudget(b) {
+    const res = await fetch(API_BASE + '/api/funds/budgets', { method: 'POST', headers: authHeaders(), body: JSON.stringify(b) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to save budget');
+    return data.budget;
+  }
+  async function apiPatchBudget(id, updates) {
+    const res = await fetch(API_BASE + '/api/funds/budgets/' + id, { method: 'PATCH', headers: authHeaders(), body: JSON.stringify(updates) });
+    if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Failed to update budget'); }
+  }
+  async function apiDeleteBudget(id) {
+    const res = await fetch(API_BASE + '/api/funds/budgets/' + id, { method: 'DELETE', headers: authHeaders() });
+    if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Failed to delete budget'); }
   }
 
   function getBudgetPeriod(b) {
@@ -1770,7 +1783,7 @@
     document.getElementById('addBudgetModal').classList.remove('open');
   }
 
-  function saveBudget() {
+  async function saveBudget() {
     const name       = document.getElementById('budgetName').value.trim();
     const amount     = parseFloat(document.getElementById('budgetAmount').value);
     const currency   = document.getElementById('budgetCurrency').value;
@@ -1781,15 +1794,29 @@
     if (!startDate)            { alert('Please select a start date.'); return; }
     const wallets    = _budgetSelWallets.includes('all') ? 'all' : _budgetSelWallets;
     const categories = _budgetSelCats.includes('all')    ? 'all' : _budgetSelCats;
-    if (_editingBudgetId) {
-      _budgets = _budgets.map(b => b.id === _editingBudgetId
-        ? { ...b, name, amount, currency, wallets, categories, recurrence, startDate } : b);
-    } else {
-      _budgets.push({ id: Date.now(), name, amount, currency, wallets, categories, recurrence, startDate });
+    const btn = document.getElementById('saveBudgetBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+    try {
+      if (_editingBudgetId) {
+        await apiPatchBudget(_editingBudgetId, { name, amount, currency, wallets, categories, recurrence, startDate });
+        _budgets = _budgets.map(b => b.id === _editingBudgetId
+          ? { ...b, name, amount, currency, wallets, categories, recurrence, startDate } : b);
+      } else {
+        const saved = await apiAddBudget({ name, amount, currency, wallets, categories, recurrence, startDate });
+        _budgets.push(saved);
+      }
+      // Snap view to budget's start month so it's immediately visible
+      const budgetStart = new Date(startDate + 'T00:00:00');
+      _viewYear  = budgetStart.getFullYear();
+      _viewMonth = budgetStart.getMonth();
+      document.getElementById('monthLabel').textContent = fmtMonthYear(_viewYear, _viewMonth);
+      closeAddBudgetModal();
+      renderBudgetList();
+    } catch (err) {
+      alert('Failed to save budget: ' + err.message);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Save Budget'; }
     }
-    saveBudgetsLocal();
-    closeAddBudgetModal();
-    renderBudgetList();
   }
 
   function toggleBudgetMenu(e, id) {
@@ -1839,12 +1866,16 @@
     document.getElementById('addBudgetModal').classList.add('open');
   }
 
-  function deleteBudget(id) {
+  async function deleteBudget(id) {
     document.querySelectorAll('[id^="budgetMenu-"]').forEach(m => m.style.display = 'none');
     if (!confirm('Delete this budget?')) return;
-    _budgets = _budgets.filter(b => b.id !== id);
-    saveBudgetsLocal();
-    renderBudgetList();
+    try {
+      await apiDeleteBudget(id);
+      _budgets = _budgets.filter(b => b.id !== id);
+      renderBudgetList();
+    } catch (err) {
+      alert('Failed to delete budget: ' + err.message);
+    }
   }
 
   /* ── Overview ── */
@@ -1866,8 +1897,9 @@
 
   function setOvType(type) {
     _ovType = type;
-    document.getElementById('ovBtnExpense').className = 'type-toggle-btn' + (type === 'expense' ? ' active-expense' : '');
-    document.getElementById('ovBtnIncome').className  = 'type-toggle-btn' + (type === 'income'  ? ' active-income'  : '');
+    document.getElementById('ovBtnExpense').className  = 'type-toggle-btn' + (type === 'expense'  ? ' active-expense'  : '');
+    document.getElementById('ovBtnIncome').className   = 'type-toggle-btn' + (type === 'income'   ? ' active-income'   : '');
+    document.getElementById('ovBtnTransfer').className = 'type-toggle-btn' + (type === 'transfer' ? ' active-transfer' : '');
     renderOverviewChart();
   }
 
@@ -1904,20 +1936,25 @@
       txns = txns.filter(t => new Date(t.date + 'T00:00:00').getFullYear() === _ovYear);
     }
 
-    const totalExp = txns.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-    const totalInc = txns.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+    const totalExp      = txns.filter(t => t.type === 'expense' && t.categoryId !== '__transfer__').reduce((s, t) => s + t.amount, 0);
+    const totalInc      = txns.filter(t => t.type === 'income'  && t.categoryId !== '__transfer__').reduce((s, t) => s + t.amount, 0);
+    const totalTransfer = txns.filter(t => t.type === 'expense' && t.categoryId === '__transfer__').reduce((s, t) => s + t.amount, 0);
 
     // Summary cards
     const sumEl = document.getElementById('ovSummary');
     if (sumEl) sumEl.innerHTML = `
-      <div style="display:flex;gap:10px;margin-bottom:14px">
-        <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center">
-          <div style="font-size:1.1rem;font-weight:800;color:var(--red);font-variant-numeric:tabular-nums">-${fmtINR(totalExp)}</div>
-          <div style="font-size:0.7rem;color:var(--muted);margin-top:3px">Expenses</div>
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:11px 6px;text-align:center">
+          <div style="font-size:0.98rem;font-weight:800;color:var(--red);font-variant-numeric:tabular-nums">-${fmtINR(totalExp)}</div>
+          <div style="font-size:0.68rem;color:var(--muted);margin-top:3px">Expenses</div>
         </div>
-        <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center">
-          <div style="font-size:1.1rem;font-weight:800;color:var(--green);font-variant-numeric:tabular-nums">+${fmtINR(totalInc)}</div>
-          <div style="font-size:0.7rem;color:var(--muted);margin-top:3px">Income</div>
+        <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:11px 6px;text-align:center">
+          <div style="font-size:0.98rem;font-weight:800;color:var(--green);font-variant-numeric:tabular-nums">+${fmtINR(totalInc)}</div>
+          <div style="font-size:0.68rem;color:var(--muted);margin-top:3px">Income</div>
+        </div>
+        <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:11px 6px;text-align:center">
+          <div style="font-size:0.98rem;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums">&#8644; ${fmtINR(totalTransfer)}</div>
+          <div style="font-size:0.68rem;color:var(--muted);margin-top:3px">Transfers</div>
         </div>
       </div>`;
 
@@ -1927,24 +1964,46 @@
   }
 
   function renderOverviewChart() {
-    const txns   = window._ovTxns || [];
-    const typed  = txns.filter(t => t.type === _ovType && t.categoryId !== '__transfer__');
-    const total  = typed.reduce((s, t) => s + t.amount, 0);
-
-    // Group by category
-    const groups = {};
-    typed.forEach(t => {
-      if (!groups[t.categoryId]) groups[t.categoryId] = { amount: 0, count: 0 };
-      groups[t.categoryId].amount += t.amount;
-      groups[t.categoryId].count  += 1;
-    });
-
-    const sorted = Object.entries(groups)
-      .map(([id, g]) => ({ cat: getCategory(id), amount: g.amount, count: g.count }))
-      .sort((a, b) => b.amount - a.amount);
-
+    const txns = window._ovTxns || [];
     const chartEl = document.getElementById('ovChart');
     const listEl  = document.getElementById('ovCatList');
+    const lblEl   = document.querySelector('#tab-overview .ov-breakdown-label');
+
+    let sorted, total;
+
+    if (_ovType === 'transfer') {
+      const transfers = txns.filter(t => t.type === 'expense' && t.categoryId === '__transfer__');
+      total = transfers.reduce((s, t) => s + t.amount, 0);
+      const groups = {};
+      transfers.forEach(t => {
+        const key = String(t.walletId);
+        if (!groups[key]) groups[key] = { amount: 0, count: 0, txns: [] };
+        groups[key].amount += t.amount;
+        groups[key].count  += 1;
+        groups[key].txns.push(t);
+      });
+      sorted = Object.entries(groups)
+        .map(([wid, g]) => {
+          const w = getWallet(parseInt(wid)) || { name: 'Unknown', color: '#8b5cf6' };
+          return { label: w.name, icon: '💳', color: w.color || '#8b5cf6', amount: g.amount, count: g.count, txns: g.txns };
+        })
+        .sort((a, b) => b.amount - a.amount);
+      if (lblEl) lblEl.textContent = 'Wallets';
+    } else {
+      const typed = txns.filter(t => t.type === _ovType && t.categoryId !== '__transfer__');
+      total = typed.reduce((s, t) => s + t.amount, 0);
+      const groups = {};
+      typed.forEach(t => {
+        if (!groups[t.categoryId]) groups[t.categoryId] = { amount: 0, count: 0, txns: [] };
+        groups[t.categoryId].amount += t.amount;
+        groups[t.categoryId].count  += 1;
+        groups[t.categoryId].txns.push(t);
+      });
+      sorted = Object.entries(groups)
+        .map(([id, g]) => { const cat = getCategory(id); return { label: cat.name, icon: cat.icon, color: cat.color, amount: g.amount, count: g.count, txns: g.txns }; })
+        .sort((a, b) => b.amount - a.amount);
+      if (lblEl) lblEl.textContent = 'Categories';
+    }
 
     if (!sorted.length) {
       if (chartEl) chartEl.innerHTML = `<div style="text-align:center;padding:32px 0;color:var(--muted);font-size:0.88rem">No ${_ovType} transactions</div>`;
@@ -1953,44 +2012,34 @@
     }
 
     // Build SVG donut
-    const size   = 220;
-    const cx     = size / 2, cy = size / 2;
-    const R      = 88, r = 52; // outer and inner radius
-    let angle    = -Math.PI / 2; // start from top
-    let slices   = '';
-    let labels   = '';
+    const size  = 220;
+    const cx    = size / 2, cy = size / 2;
+    const R     = 88, r = 52;
+    let angle   = -Math.PI / 2;
+    let slices  = '', labels = '';
 
-    sorted.forEach((item, i) => {
-      const pct    = item.amount / total;
-      const sweep  = pct * 2 * Math.PI;
-      const midA   = angle + sweep / 2;
-      const x1     = cx + R * Math.cos(angle),         y1 = cy + R * Math.sin(angle);
-      const x2     = cx + R * Math.cos(angle + sweep), y2 = cy + R * Math.sin(angle + sweep);
-      const xi1    = cx + r * Math.cos(angle),         yi1 = cy + r * Math.sin(angle);
-      const xi2    = cx + r * Math.cos(angle + sweep), yi2 = cy + r * Math.sin(angle + sweep);
-      const large  = sweep > Math.PI ? 1 : 0;
-      const color  = item.cat.color;
+    sorted.forEach(item => {
+      const pct   = item.amount / total;
+      const sweep = pct * 2 * Math.PI;
+      const midA  = angle + sweep / 2;
+      const x1    = cx + R * Math.cos(angle),         y1  = cy + R * Math.sin(angle);
+      const x2    = cx + R * Math.cos(angle + sweep), y2  = cy + R * Math.sin(angle + sweep);
+      const xi1   = cx + r * Math.cos(angle),         yi1 = cy + r * Math.sin(angle);
+      const xi2   = cx + r * Math.cos(angle + sweep), yi2 = cy + r * Math.sin(angle + sweep);
+      const large = sweep > Math.PI ? 1 : 0;
 
       slices += `<path d="M${xi1},${yi1} L${x1},${y1} A${R},${R} 0 ${large},1 ${x2},${y2} L${xi2},${yi2} A${r},${r} 0 ${large},0 ${xi1},${yi1} Z"
-        fill="${color}" stroke="#fff" stroke-width="2" />`;
+        fill="${item.color}" stroke="#fff" stroke-width="2" />`;
 
-      // Percentage label — only if segment is big enough
       if (pct >= 0.04) {
-        const lR  = R + 14;
-        const lx  = cx + lR * Math.cos(midA);
-        const ly  = cy + lR * Math.sin(midA);
+        const lx = cx + (R + 14) * Math.cos(midA), ly = cy + (R + 14) * Math.sin(midA);
         labels += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle"
-          font-size="9" font-weight="700" fill="${color}" font-family="-apple-system,sans-serif">${Math.round(pct * 100)}%</text>`;
+          font-size="9" font-weight="700" fill="${item.color}" font-family="-apple-system,sans-serif">${Math.round(pct * 100)}%</text>`;
       }
-
-      // Icon on slice — only for larger segments
       if (pct >= 0.08) {
-        const iR  = (R + r) / 2;
-        const ix  = cx + iR * Math.cos(midA);
-        const iy  = cy + iR * Math.sin(midA);
-        labels += `<text x="${ix}" y="${iy}" text-anchor="middle" dominant-baseline="middle" font-size="14">${item.cat.icon}</text>`;
+        const iR = (R + r) / 2;
+        labels += `<text x="${cx + iR * Math.cos(midA)}" y="${cy + iR * Math.sin(midA)}" text-anchor="middle" dominant-baseline="middle" font-size="14">${item.icon}</text>`;
       }
-
       angle += sweep;
     });
 
@@ -2000,24 +2049,60 @@
         <circle cx="${cx}" cy="${cy}" r="${r - 2}" fill="var(--bg)" />
       </svg>`;
 
-    // Category list
+    const amtColor = _ovType === 'expense' ? 'var(--red)' : _ovType === 'income' ? 'var(--green)' : 'var(--accent)';
+    const amtPrefix = _ovType === 'expense' ? '-' : _ovType === 'income' ? '+' : '⇄ ';
+
     if (listEl) listEl.innerHTML = `
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:16px">
         ${sorted.map((item, i) => {
           const pct = ((item.amount / total) * 100).toFixed(1);
-          return `<div style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:${i < sorted.length-1 ? '1px solid var(--border)' : 'none'}">
-            <div style="width:40px;height:40px;border-radius:12px;background:${item.cat.color}22;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0">${item.cat.icon}</div>
-            <div style="flex:1;min-width:0">
-              <div style="font-size:0.88rem;font-weight:600">${escapeHtml(item.cat.name)}</div>
-              <div style="font-size:0.72rem;color:var(--muted);margin-top:2px">${item.count} transaction${item.count !== 1 ? 's' : ''}</div>
+          const txnRows = item.txns
+            .slice().sort((a, b) => new Date(b.date) - new Date(a.date))
+            .map(t => {
+              const w = getWallet(t.walletId);
+              const d = new Date(t.date + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+              return `<div style="display:flex;align-items:center;gap:10px;padding:9px 16px 9px 68px;background:var(--bg);border-top:1px solid var(--border)">
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:0.82rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(t.note || '—')}</div>
+                  <div style="font-size:0.7rem;color:var(--muted);margin-top:1px">${escapeHtml(w?.name || '')} · ${d}</div>
+                </div>
+                <div style="font-size:0.85rem;font-weight:700;color:${amtColor};font-variant-numeric:tabular-nums;flex-shrink:0">${amtPrefix}${fmtINR(t.amount)}</div>
+              </div>`;
+            }).join('');
+          return `<div>
+            <div onclick="toggleOvDetail(${i})" style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:${i < sorted.length-1 ? '1px solid var(--border)' : 'none'};cursor:pointer;user-select:none">
+              <div style="width:40px;height:40px;border-radius:12px;background:${item.color}22;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0">${item.icon}</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:0.88rem;font-weight:600">${escapeHtml(item.label)}</div>
+                <div style="font-size:0.72rem;color:var(--muted);margin-top:2px">${item.count} transaction${item.count !== 1 ? 's' : ''}</div>
+              </div>
+              <div style="text-align:right;flex-shrink:0;display:flex;align-items:center;gap:10px">
+                <div>
+                  <div style="font-size:0.9rem;font-weight:700;color:${amtColor};font-variant-numeric:tabular-nums">${amtPrefix}${fmtINR(item.amount)}</div>
+                  <div style="font-size:0.7rem;color:var(--muted);margin-top:1px">${pct}%</div>
+                </div>
+                <div id="ovArrow-${i}" style="color:var(--muted);font-size:0.8rem;transition:transform 0.2s;line-height:1">›</div>
+              </div>
             </div>
-            <div style="text-align:right;flex-shrink:0">
-              <div style="font-size:0.9rem;font-weight:700;color:${_ovType === 'expense' ? 'var(--red)' : 'var(--green)'};font-variant-numeric:tabular-nums">${_ovType === 'expense' ? '-' : '+'}${fmtINR(item.amount)}</div>
-              <div style="font-size:0.7rem;color:var(--muted);margin-top:1px">${pct}%</div>
-            </div>
+            <div id="ovDetail-${i}" style="display:none">${txnRows}</div>
           </div>`;
         }).join('')}
       </div>`;
+  }
+
+  function toggleOvDetail(i) {
+    const detail = document.getElementById('ovDetail-' + i);
+    const arrow  = document.getElementById('ovArrow-' + i);
+    if (!detail) return;
+    const isOpen = detail.style.display !== 'none';
+    // Close all
+    document.querySelectorAll('[id^="ovDetail-"]').forEach(d => d.style.display = 'none');
+    document.querySelectorAll('[id^="ovArrow-"]').forEach(a => { a.style.transform = ''; a.textContent = '›'; });
+    // Open this one if it was closed
+    if (!isOpen) {
+      detail.style.display = 'block';
+      if (arrow) { arrow.style.transform = 'rotate(90deg)'; arrow.textContent = '›'; }
+    }
   }
 
   /* ── Render all ── */
@@ -2294,6 +2379,15 @@
         try { await apiAddCategory(cat); } catch (e) { /* skip duplicates/errors */ }
       }
       localStorage.removeItem('funds_custom_cats');
+      await fetchData();
+    }
+    // One-time migration: push any localStorage budgets to the server
+    const localBudgets = JSON.parse(localStorage.getItem('funds_budgets') || '[]');
+    if (localBudgets.length > 0) {
+      for (const b of localBudgets) {
+        try { await apiAddBudget(b); } catch (e) { /* skip errors */ }
+      }
+      localStorage.removeItem('funds_budgets');
       await fetchData();
     }
     // Fetch live FX rates then re-render with INR conversions
