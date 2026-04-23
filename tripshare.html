@@ -1,0 +1,3326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TripShare</title>
+  <script>if (!localStorage.getItem('auth_session')) window.location.replace('login.html');</script>
+  <script src="config.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:            #f0f4f8;
+      --surface:       #ffffff;
+      --surface2:      #eef2f6;
+      --border:        rgba(0,0,0,0.09);
+      --text:          #1a1a2e;
+      --muted:         rgba(0,0,0,0.42);
+      --accent:        #1aa672;
+      --accent-bg:     rgba(26,166,114,0.10);
+      --accent-border: rgba(26,166,114,0.30);
+      --green:         #16a34a;
+      --green-bg:      rgba(22,163,74,0.10);
+      --red:           #dc2626;
+      --red-bg:        rgba(220,38,38,0.08);
+      --bottom-nav-h:  64px;
+      --top-bar-h:     52px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-top: var(--top-bar-h);
+      padding-bottom: calc(var(--bottom-nav-h) + 8px);
+    }
+
+    /* ── Top bar ── */
+    .top-bar {
+      position: fixed; top: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 480px; z-index: 100;
+      background: rgba(240,244,248,0.96); backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 16px; height: var(--top-bar-h);
+    }
+    .top-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: 0.88rem; color: var(--accent); font-weight: 600;
+      padding: 8px 4px; display: flex; align-items: center; gap: 4px;
+      min-width: 56px;
+    }
+    .top-btn.invisible { visibility: hidden; }
+    .top-title { font-size: 1rem; font-weight: 700; color: var(--text); }
+    .top-action-btn {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--accent); color: #fff; border: none;
+      cursor: pointer; font-size: 1.4rem; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      min-width: 32px;
+    }
+
+    /* ── Bottom nav ── */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 480px; height: var(--bottom-nav-h);
+      background: rgba(255,255,255,0.96); backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-top: 1px solid var(--border);
+      display: flex; z-index: 100;
+      padding-bottom: env(safe-area-inset-bottom, 0);
+    }
+    .nav-item {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 4px;
+      background: none; border: none; cursor: pointer;
+      color: var(--muted); transition: color 0.15s; padding: 8px 4px;
+    }
+    .nav-item.active { color: var(--accent); }
+    .nav-item .nav-icon { font-size: 1.3rem; line-height: 1; }
+    .nav-item .nav-label { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.02em; }
+
+    /* ── Page layout ── */
+    .page { max-width: 480px; margin: 0 auto; padding: 12px 16px; }
+    .section-label {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--muted); margin: 16px 0 8px;
+    }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+    .empty-state { text-align: center; padding: 48px 24px; color: var(--muted); }
+    .empty-state .empty-icon { font-size: 2.4rem; margin-bottom: 12px; }
+    .empty-state p { font-size: 0.9rem; line-height: 1.6; }
+
+    /* ── Summary banner ── */
+    .summary-banner {
+      border-radius: 14px; padding: 18px 20px; color: #fff; margin-bottom: 4px;
+      background: linear-gradient(135deg, #1aa672, #158a5e);
+    }
+    .summary-banner.green  { background: linear-gradient(135deg, #16a34a, #15803d); }
+    .summary-banner.neutral { background: linear-gradient(135deg, #475569, #334155); }
+    .summary-banner .label   { font-size: 0.78rem; opacity: 0.8; margin-bottom: 4px; }
+    .summary-banner .amount  { font-size: 1.7rem; font-weight: 700; letter-spacing: -0.02em; }
+    .summary-banner .sub     { font-size: 0.78rem; opacity: 0.7; margin-top: 4px; }
+
+    /* ── Group detail redesign ── */
+    .gd-header {
+      margin: 0 -16px; padding: 22px 16px 24px;
+      background: linear-gradient(145deg, #0a2d4d 0%, #0d4a6e 55%, #1a5c8a 100%);
+      color: #fff;
+    }
+    .gd-title { font-size: 1.85rem; font-weight: 800; line-height: 1.15; margin-bottom: 16px; }
+    .gd-header-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+    .gd-pill { padding: 7px 14px; border-radius: 20px; font-size: 0.82rem; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .gd-pill-dark { background: rgba(0,0,0,0.28); border: 1.5px solid transparent; color: #fff; }
+    .gd-pill-outline { background: transparent; border: 1.5px solid rgba(255,255,255,0.4); color: #fff; }
+    .gd-bal-row { padding: 11px 0 12px; font-size: 0.92rem; color: var(--text); border-bottom: 1px solid var(--border); margin-bottom: 0; }
+    .gd-tabs { display: flex; overflow-x: auto; margin: 0 -16px; padding: 0 16px; border-bottom: 1px solid var(--border); scrollbar-width: none; margin-bottom: 0; }
+    .gd-tabs::-webkit-scrollbar { display: none; }
+    .gd-tab { flex-shrink: 0; padding: 10px 14px; border: none; border-bottom: 2.5px solid transparent; background: none; font-size: 0.85rem; font-weight: 600; color: var(--muted); cursor: pointer; font-family: inherit; white-space: nowrap; }
+    .gd-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .gd-tab-settle { flex-shrink: 0; align-self: center; margin-right: 8px; padding: 6px 16px; border-radius: 20px; border: none; background: #e67e22; color: #fff; font-size: 0.84rem; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; }
+    .exp-month-hdr { padding: 14px 0 6px; font-size: 0.85rem; font-weight: 700; color: var(--text); }
+    .exp-row-v2 { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.12s; }
+    .exp-row-v2:last-child { border-bottom: none; }
+    .exp-date-col { width: 30px; flex-shrink: 0; text-align: center; line-height: 1; }
+    .exp-date-mon { font-size: 0.6rem; text-transform: uppercase; color: var(--muted); letter-spacing: 0.5px; }
+    .exp-date-day { font-size: 1rem; font-weight: 700; color: var(--text); }
+    .exp-icon-sq { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; background: rgba(26,166,114,0.12); }
+    .exp-icon-sq.settle { background: rgba(22,163,74,0.15); }
+    .exp-body-v2 { flex: 1; min-width: 0; }
+    .exp-desc-v2 { font-size: 0.88rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .exp-sub-v2 { font-size: 0.74rem; color: var(--muted); margin-top: 2px; }
+    .exp-right-v2 { text-align: right; flex-shrink: 0; min-width: 72px; }
+    .exp-tag-v2 { font-size: 0.7rem; }
+    .exp-tag-borrowed { color: var(--red); }
+    .exp-tag-lent { color: var(--green); }
+    .exp-tag-none { color: var(--muted); font-style: italic; }
+    .exp-amt-v2 { font-size: 0.9rem; font-weight: 700; }
+    .exp-amt-borrowed { color: var(--red); }
+    .exp-amt-lent { color: var(--green); }
+
+    /* ── Group cards ── */
+    .group-card {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 16px; cursor: pointer; transition: background 0.15s;
+      border-bottom: 1px solid var(--border);
+    }
+    .group-card:last-child { border-bottom: none; }
+    .group-card:hover { background: var(--surface2); }
+    .group-avatar {
+      width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+      background: var(--accent-bg); border: 1px solid var(--accent-border);
+      display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
+    }
+    .group-info { flex: 1; min-width: 0; }
+    .group-name { font-size: 0.95rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .group-meta { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+    .group-balance { text-align: right; flex-shrink: 0; }
+    .group-balance .bal-amount { font-size: 0.9rem; font-weight: 700; }
+    .group-balance .bal-label  { font-size: 0.7rem; color: var(--muted); }
+    .bal-owed    { color: var(--green); }
+    .bal-owes    { color: var(--red); }
+    .bal-settled { color: var(--muted); }
+
+    /* ── Group detail header ── */
+    .group-detail-header {
+      background: linear-gradient(135deg, #1aa672, #158a5e);
+      border-radius: 14px; padding: 18px 20px; color: #fff; margin-bottom: 4px;
+    }
+    .group-detail-header h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 4px; }
+    .group-detail-header .meta { font-size: 0.78rem; opacity: 0.8; }
+    .group-detail-header .balance-line {
+      margin-top: 12px; padding-top: 12px;
+      border-top: 1px solid rgba(255,255,255,0.2);
+      font-size: 0.88rem; opacity: 0.9;
+    }
+    .group-detail-header .balance-line strong { font-size: 1.05rem; }
+
+    /* ── Sub tabs ── */
+    .tab-nav { display: flex; gap: 2px; margin-bottom: 4px; }
+    .tab-btn {
+      flex: 1; padding: 9px 4px; border: none; background: none; cursor: pointer;
+      font-size: 0.82rem; font-weight: 600; color: var(--muted);
+      border-bottom: 2px solid transparent; transition: all 0.15s;
+    }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* ── Expense rows ── */
+    .expense-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 13px 16px; border-bottom: 1px solid var(--border);
+      cursor: pointer; transition: background 0.15s;
+    }
+    .expense-row:last-child { border-bottom: none; }
+    .expense-row:hover { background: var(--surface2); }
+    .expense-icon {
+      width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+      background: var(--accent-bg); display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
+    }
+    .expense-info { flex: 1; min-width: 0; }
+    .expense-desc { font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .expense-sub  { font-size: 0.74rem; color: var(--muted); margin-top: 2px; }
+    .expense-right { text-align: right; flex-shrink: 0; }
+    .expense-amount { font-size: 0.92rem; font-weight: 700; }
+    .expense-share  { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+    .you-paid { color: var(--green); }
+    .you-owe  { color: var(--red); }
+
+    /* ── Balance rows ── */
+    .balance-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 13px 16px; border-bottom: 1px solid var(--border);
+    }
+    .balance-row:last-child { border-bottom: none; }
+    .member-avatar {
+      width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+      background: var(--accent-bg); border: 1px solid var(--accent-border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 700; color: var(--accent);
+    }
+    .balance-info { flex: 1; min-width: 0; }
+    .balance-text { font-size: 0.86rem; line-height: 1.5; }
+    .settle-btn {
+      padding: 6px 12px; border-radius: 8px; border: 1px solid var(--accent-border);
+      background: var(--accent-bg); color: var(--accent);
+      font-size: 0.76rem; font-weight: 600; cursor: pointer; white-space: nowrap;
+      transition: background 0.15s;
+    }
+    .settle-btn:hover { background: var(--accent); color: #fff; }
+
+    /* ── Settlement history rows ── */
+    .settlement-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 16px; border-bottom: 1px solid var(--border);
+      background: var(--green-bg);
+    }
+    .settlement-row:last-child { border-bottom: none; }
+    .settlement-info { flex: 1; min-width: 0; }
+    .settlement-text { font-size: 0.82rem; }
+    .settlement-date { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+    .settlement-amount { font-size: 0.88rem; font-weight: 700; color: var(--green); }
+    .icon-btn {
+      background: none; border: none; cursor: pointer;
+      color: var(--muted); font-size: 0.9rem; padding: 4px;
+    }
+
+    /* ── Member rows ── */
+    .member-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 16px; border-bottom: 1px solid var(--border);
+    }
+    .member-row:last-child { border-bottom: none; }
+    .member-info { flex: 1; }
+    .member-name  { font-size: 0.9rem; font-weight: 600; }
+    .member-email { font-size: 0.74rem; color: var(--muted); margin-top: 2px; }
+    .remove-btn {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--red-bg); color: var(--red);
+      border: none; cursor: pointer; font-size: 0.9rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ── Friend rows (Splitwise style) ── */
+    .friend-row-sw {
+      display: flex; align-items: flex-start; gap: 14px;
+      padding: 14px 16px; border-bottom: 1px solid var(--border); cursor: pointer;
+      transition: background 0.12s;
+    }
+    .friend-row-sw:last-child { border-bottom: none; }
+    .friend-row-sw:active { background: var(--surface2); }
+    .friend-avatar-lg {
+      width: 48px; height: 48px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem; font-weight: 700; color: #fff; letter-spacing: 0.02em;
+    }
+
+    /* ── Activity rows ── */
+    .activity-row {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 13px 16px; border-bottom: 1px solid var(--border);
+    }
+    .activity-row:last-child { border-bottom: none; }
+    .activity-icon {
+      width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+      background: var(--accent-bg); display: flex; align-items: center; justify-content: center; font-size: 1rem;
+    }
+    .activity-icon.settle { background: var(--green-bg); }
+    .activity-info { flex: 1; min-width: 0; }
+    .activity-text { font-size: 0.84rem; line-height: 1.5; color: var(--text); }
+    .activity-text .bold { font-weight: 600; }
+    .activity-meta { font-size: 0.72rem; color: var(--muted); margin-top: 3px; }
+    .activity-amount { font-size: 0.9rem; font-weight: 700; flex-shrink: 0; }
+
+    /* ── Modals ── */
+    .modal-backdrop {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5); z-index: 200;
+      align-items: flex-end; justify-content: center;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--surface); border-radius: 20px 20px 0 0;
+      width: 100%; max-width: 480px;
+      max-height: 92vh; display: flex; flex-direction: column;
+      padding-bottom: env(safe-area-inset-bottom, 0);
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 20px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .modal-title { font-size: 1rem; font-weight: 700; }
+    .modal-close {
+      width: 28px; height: 28px; border-radius: 50%; border: none;
+      background: var(--surface2); cursor: pointer; font-size: 0.9rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .modal-body { padding: 16px 20px; overflow-y: auto; flex: 1; }
+    .modal-footer { padding: 12px 20px 16px; border-top: 1px solid var(--border); flex-shrink: 0; }
+
+    /* ── Form elements ── */
+    .form-group { margin-bottom: 14px; }
+    .form-label { display: block; font-size: 0.82rem; font-weight: 600; color: #444; margin-bottom: 5px; }
+    .form-input, .form-select {
+      width: 100%; padding: 10px 12px;
+      border: 1.5px solid var(--border); border-radius: 10px;
+      font-size: 0.93rem; background: #fafafa; color: var(--text);
+      outline: none; transition: border-color 0.18s; font-family: inherit;
+      -webkit-appearance: none; appearance: none;
+    }
+    .form-input:focus, .form-select:focus { border-color: var(--accent); background: #fff; }
+    .form-error { font-size: 0.76rem; color: var(--red); margin-top: 4px; }
+    .btn-primary {
+      width: 100%; padding: 12px; border-radius: 10px; border: none;
+      background: var(--accent); color: #fff;
+      font-size: 0.95rem; font-weight: 600; cursor: pointer;
+      transition: background 0.18s, transform 0.1s; font-family: inherit;
+    }
+    .btn-primary:hover:not(:disabled) { background: #158a5e; }
+    .btn-primary:active { transform: scale(0.98); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-outline {
+      width: 100%; padding: 10px; border-radius: 10px;
+      border: 1.5px solid var(--accent); background: none; color: var(--accent);
+      font-size: 0.88rem; font-weight: 600; cursor: pointer; font-family: inherit;
+      margin-top: 8px; transition: background 0.15s;
+    }
+    .btn-outline:hover { background: var(--accent-bg); }
+    .btn-danger {
+      width: 100%; padding: 10px; border-radius: 10px;
+      border: 1px solid var(--red); background: var(--red-bg); color: var(--red);
+      font-size: 0.88rem; font-weight: 600; cursor: pointer; font-family: inherit;
+      margin-top: 8px; transition: background 0.15s;
+    }
+    .btn-danger:hover { background: var(--red); color: #fff; }
+
+    /* ── Split UI ── */
+    .split-type-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .split-member-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 0; border-bottom: 1px solid var(--border);
+    }
+    .split-member-row:last-child { border-bottom: none; }
+    .split-member-row label { flex: 1; font-size: 0.86rem; cursor: pointer; }
+    .split-share  { font-size: 0.8rem; color: var(--muted); min-width: 76px; text-align: right; }
+    .split-input  {
+      width: 84px; padding: 5px 8px; border-radius: 8px;
+      border: 1.5px solid var(--border); font-size: 0.82rem;
+      text-align: right; outline: none; font-family: inherit;
+    }
+    .split-input:focus { border-color: var(--accent); }
+    .split-total-row { display: flex; justify-content: space-between; padding: 6px 0 0; font-size: 0.8rem; color: var(--muted); }
+    .split-ok  { color: var(--green); font-weight: 600; }
+    .split-err { color: var(--red);   font-weight: 600; }
+
+    /* ── Friend picker (in add-members modal) ── */
+    .friend-pick-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+    }
+    .friend-pick-row:last-child { border-bottom: none; }
+    .friend-pick-row label { flex: 1; cursor: pointer; }
+    .friend-pick-name  { font-size: 0.88rem; font-weight: 600; }
+    .friend-pick-email { font-size: 0.72rem; color: var(--muted); }
+
+    /* ── Friend detail ── */
+    .fd-header {
+      background: linear-gradient(145deg, #0d7a57 0%, #1aa672 60%, #20b97e 100%);
+      padding: 24px 16px 28px; position: relative;
+    }
+    .fd-avatar-xl {
+      width: 72px; height: 72px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; font-weight: 700; color: #fff;
+      border: 3px solid rgba(255,255,255,0.35); margin-bottom: 12px;
+    }
+    .fd-hname  { font-size: 1.5rem; font-weight: 700; color: #fff; }
+    .fd-hbal   { font-size: 0.9rem; color: rgba(255,255,255,0.85); margin-top: 5px; }
+    .fd-hbal strong { font-weight: 700; }
+    .fd-actions {
+      display: flex; gap: 8px; padding: 12px 16px;
+      border-bottom: 1px solid var(--border); overflow-x: auto;
+    }
+    .fd-act-btn {
+      flex-shrink: 0; padding: 9px 20px; border-radius: 20px;
+      font-size: 0.84rem; font-weight: 600; cursor: pointer;
+      border: 1.5px solid var(--border); background: var(--surface);
+      font-family: inherit; white-space: nowrap; color: var(--text);
+      transition: background 0.15s;
+    }
+    .fd-act-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .fd-month-label {
+      font-size: 0.78rem; font-weight: 700; color: var(--text);
+      padding: 14px 16px 6px; letter-spacing: 0.01em;
+    }
+    .fd-exp-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 16px; border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .fd-exp-row:last-child { border-bottom: none; }
+    .fd-exp-date { flex-shrink:0; width:34px; text-align:center; }
+    .fd-exp-date .day  { font-size:0.72rem; color:var(--muted); text-transform:uppercase; }
+    .fd-exp-date .num  { font-size:1rem; font-weight:700; color:var(--text); line-height:1; }
+    .fd-exp-icon {
+      flex-shrink:0; width:40px; height:40px; border-radius:10px;
+      background:var(--bg); display:flex; align-items:center;
+      justify-content:center; font-size:1.1rem;
+    }
+    .fd-exp-info { flex:1; min-width:0; }
+    .fd-exp-desc { font-size:0.9rem; font-weight:600; }
+    .fd-exp-sub  { font-size:0.74rem; color:var(--muted); margin-top:2px; }
+    .fd-exp-amt  { flex-shrink:0; text-align:right; }
+    .fd-exp-tag  { font-size:0.7rem; color:var(--muted); }
+    .fd-exp-val  { font-size:0.88rem; font-weight:700; margin-top:1px; }
+    .fd-exp-val.lent   { color: var(--green); }
+    .fd-exp-val.borrow { color: var(--red); }
+
+    /* ── Friend settings modal ── */
+    .fs-friend-row {
+      display: flex; align-items: center; gap: 14px; padding: 4px 0 20px;
+    }
+    .fs-section-label {
+      font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.07em; color: var(--muted); padding: 16px 0 8px;
+    }
+    .fs-action-row {
+      display: block; width: 100%; padding: 14px 0; text-align: left;
+      background: none; border: none; border-top: 1px solid var(--border);
+      cursor: pointer; font-size: 0.95rem; font-family: inherit; color: var(--text);
+    }
+    .fs-action-row.danger { color: var(--red); }
+    .fs-group-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 0; border-top: 1px solid var(--border);
+      cursor: pointer;
+    }
+    .fs-group-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: var(--accent-bg); border: 1px solid var(--accent-border);
+      display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
+    }
+
+    /* ── Context menu ── */
+    .ctx-menu {
+      display: none; position: fixed; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 500;
+      min-width: 164px; overflow: hidden;
+    }
+    .ctx-menu.open { display: block; }
+    .ctx-item {
+      display: block; width: 100%; padding: 12px 16px;
+      background: none; border: none; text-align: left; cursor: pointer;
+      font-size: 0.87rem; color: var(--text); font-family: inherit;
+      transition: background 0.12s;
+    }
+    .ctx-item:hover { background: var(--surface2); }
+    .ctx-item.danger { color: var(--red); }
+
+    /* ── Loading / Toast ── */
+    .loading-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(255,255,255,0.7); z-index: 999;
+      align-items: center; justify-content: center;
+    }
+    .loading-overlay.show { display: flex; }
+    .spinner {
+      width: 36px; height: 36px; border: 3px solid var(--border);
+      border-top-color: var(--accent); border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .toast {
+      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+      background: #1a1a2e; color: #fff; border-radius: 10px;
+      padding: 10px 18px; font-size: 0.84rem; z-index: 9999;
+      opacity: 0; transition: opacity 0.2s; pointer-events: none; white-space: nowrap;
+    }
+    .toast.show { opacity: 1; }
+
+    @media (min-width: 480px) {
+      .modal { border-radius: 20px; margin: auto; }
+      .modal-backdrop { align-items: center; }
+      .bottom-nav { border-radius: 20px 20px 0 0; }
+    }
+
+    /* ── FAB — stays inside the 480px content column on desktop ── */
+    .fab {
+      position: fixed; bottom: calc(var(--bottom-nav-h) + 10px);
+      right: calc(max(0px, (100vw - 480px) / 2) + 10px); z-index: 90;
+      background: var(--accent); color: #fff; border: none; border-radius: 28px;
+      cursor: pointer; padding: 11px 22px; font-size: 0.88rem; font-weight: 700;
+      display: flex; align-items: center; gap: 7px; white-space: nowrap;
+      box-shadow: 0 4px 18px rgba(26,166,114,0.40);
+      transition: transform 0.15s, box-shadow 0.15s; font-family: inherit;
+    }
+    .fab:hover { transform: scale(1.04); box-shadow: 0 6px 22px rgba(26,166,114,0.50); }
+    .fab:active { transform: scale(0.97); }
+
+    /* ── body.ae-open hides chrome so AE screen fills viewport ── */
+    body.ae-open .top-bar,
+    body.ae-open .bottom-nav,
+    body.ae-open .fab { display: none !important; }
+    body.ae-open { padding-top: 0; padding-bottom: 0; }
+
+    /* ── Add Expense screen (in page flow, not fixed) ── */
+    .ae-screen {
+      background: var(--bg); min-height: 100svh;
+    }
+    .ae-screen > * {
+      max-width: 480px; margin-left: auto; margin-right: auto;
+      background: var(--surface);
+    }
+    .ae-top-bar {
+      position: sticky; top: 0; z-index: 50; background: var(--surface);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 16px; border-bottom: 1px solid var(--border);
+    }
+    .ae-top-close {
+      background: none; border: none; cursor: pointer; font-size: 1.15rem;
+      color: var(--text); padding: 4px 6px; line-height: 1; font-family: inherit;
+    }
+    .ae-top-title { font-size: 1rem; font-weight: 600; color: var(--text); }
+    .ae-top-save {
+      background: none; border: none; cursor: pointer; font-size: 0.95rem;
+      font-weight: 700; color: var(--accent); padding: 4px 8px; font-family: inherit;
+    }
+    .ae-top-save:disabled { opacity: 0.5; }
+    .ae-with-row {
+      display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+      padding: 11px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .ae-with-label { font-size: 0.9rem; font-weight: 500; white-space: nowrap; }
+    .ae-search {
+      flex: 1; min-width: 80px; border: none; outline: none;
+      font-size: 0.9rem; color: var(--accent); background: none; font-family: inherit;
+    }
+    .ae-search::placeholder { color: var(--muted); }
+    .ae-chip-wrap { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .ae-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: var(--accent-bg); border: 1px solid var(--accent-border);
+      border-radius: 20px; padding: 4px 10px 4px 8px;
+      font-size: 0.83rem; font-weight: 600; color: #0e8a5a;
+    }
+    .chip-x {
+      background: none; border: none; cursor: pointer; color: #0e8a5a;
+      font-size: 0.8rem; padding: 0; line-height: 1; margin-left: 2px;
+    }
+    .ae-section-label {
+      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.07em;
+      text-transform: uppercase; color: var(--muted); padding: 14px 16px 6px;
+    }
+    .ae-pick-row {
+      display: flex; align-items: center; gap: 14px;
+      padding: 12px 16px; border-bottom: 1px solid var(--border);
+      cursor: pointer; transition: background 0.12s;
+    }
+    .ae-pick-row:active { background: var(--surface2); }
+    .ae-pick-avatar {
+      width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+      background: var(--accent-bg); border: 1px solid var(--accent-border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.78rem; font-weight: 700; color: var(--accent);
+    }
+    .ae-pick-avatar.round { border-radius: 50%; }
+    .ae-pick-info { flex: 1; min-width: 0; }
+    .ae-pick-name { font-size: 0.93rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ae-pick-sub  { font-size: 0.74rem; color: var(--muted); margin-top: 2px; }
+    .ae-radio {
+      width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+      border: 2px solid rgba(0,0,0,0.2);
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .ae-radio.selected { border-color: var(--accent); background: var(--accent); }
+    .ae-radio.selected::after { content:''; width:8px; height:8px; border-radius:50%; background:#fff; }
+
+    /* Step 2 form */
+    .ae-form-row {
+      display: flex; align-items: stretch; border-bottom: 1px solid var(--border);
+    }
+    .ae-form-icon-btn {
+      width: 58px; flex-shrink: 0; background: var(--surface2);
+      border: none; border-right: 1px solid var(--border); cursor: pointer;
+      display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+    }
+    .ae-form-input {
+      flex: 1; padding: 18px 16px; border: none; outline: none;
+      font-size: 1rem; color: var(--text); background: var(--surface); font-family: inherit;
+    }
+    .ae-form-input::placeholder { color: var(--muted); }
+    .ae-amount-input {
+      flex: 1; padding: 18px 16px; border: none; outline: none;
+      font-size: 1.5rem; font-weight: 600; color: var(--text);
+      background: var(--surface); font-family: inherit; letter-spacing: -0.02em;
+    }
+    .ae-amount-input::placeholder { color: rgba(0,0,0,0.18); font-weight: 400; font-size: 1.3rem; }
+    .ae-split-summary {
+      display: flex; align-items: center; padding: 14px 16px; gap: 12px;
+      border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.12s;
+      background: var(--surface);
+    }
+    .ae-split-summary:active { background: var(--surface2); }
+    .ae-split-sum-title { font-size: 0.88rem; font-weight: 600; color: var(--text); }
+    .ae-split-sum-desc  { font-size: 0.74rem; color: var(--muted); margin-top: 2px; }
+
+    /* Split picker modal */
+    .split-opt-row {
+      display: flex; align-items: center; gap: 14px;
+      padding: 15px 16px; border-bottom: 1px solid var(--border);
+      cursor: pointer; transition: background 0.12s;
+    }
+    .split-opt-row:last-child { border-bottom: none; }
+    .split-opt-row:active { background: var(--surface2); }
+    .split-opt-title { font-size: 0.9rem; font-weight: 600; color: var(--text); }
+    .split-opt-sub   { font-size: 0.8rem; margin-top: 3px; font-weight: 500; }
+    .split-opt-sub.green { color: var(--green); }
+    .split-opt-sub.red   { color: var(--red); }
+    .split-avatars { position: relative; width: 52px; height: 38px; flex-shrink: 0; }
+    .split-av {
+      position: absolute; width: 34px; height: 34px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.68rem; font-weight: 700; color: #fff;
+      border: 2.5px solid var(--surface); top: 2px;
+    }
+    .split-av-1 { left: 0; z-index: 2; }
+    .split-av-2 { left: 16px; z-index: 1; }
+
+    /* Split options full-screen */
+    .so-screen {
+      position: fixed; top: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 480px; height: 100%; z-index: 300;
+      background: var(--bg); overflow-y: auto; display: flex; flex-direction: column;
+    }
+    .so-top-bar {
+      position: sticky; top: 0; z-index: 10; background: var(--surface);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .so-top-btn {
+      background: none; border: none; color: var(--accent); font-size: 0.92rem;
+      font-weight: 700; cursor: pointer; font-family: inherit; padding: 4px 0; min-width: 56px;
+    }
+    .so-paid-row {
+      display: flex; align-items: center; gap: 14px; padding: 14px 16px;
+      border-bottom: 1px solid var(--border); background: var(--surface); cursor: pointer;
+    }
+    .so-type-tabs {
+      display: flex; gap: 6px; padding: 12px 16px;
+      border-bottom: 1px solid var(--border); background: var(--surface);
+    }
+    .so-tab {
+      flex: 1; padding: 9px 4px; border-radius: 8px; border: 1.5px solid var(--border);
+      background: var(--surface); font-family: inherit; font-size: 0.85rem;
+      font-weight: 700; cursor: pointer; color: var(--text); transition: all 0.15s;
+    }
+    .so-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .so-type-desc {
+      padding: 12px 16px; background: var(--bg); border-bottom: 1px solid var(--border);
+    }
+    .so-type-desc strong { font-size: 0.9rem; display: block; margin-bottom: 2px; }
+    .so-type-desc span   { font-size: 0.78rem; color: var(--muted); }
+    .so-member-row {
+      display: flex; align-items: center; gap: 14px; padding: 14px 16px;
+      border-bottom: 1px solid var(--border); background: var(--surface);
+    }
+    .so-member-row:last-child { border-bottom: none; }
+    .so-member-input {
+      width: 80px; padding: 7px 10px; border: 1.5px solid var(--border);
+      border-radius: 8px; font-size: 0.9rem; text-align: right;
+      font-family: inherit; background: var(--bg); color: var(--text); outline: none;
+    }
+    .so-member-input:focus { border-color: var(--accent); background: #fff; }
+    .so-check-circle {
+      width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; border: 2px solid var(--border); background: var(--surface);
+      transition: all 0.15s;
+    }
+    .so-check-circle.on { background: var(--accent); border-color: var(--accent); }
+    .so-footer {
+      position: sticky; bottom: 0; background: var(--surface);
+      border-top: 1px solid var(--border); padding: 12px 16px;
+      display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+    }
+    .so-all-btn {
+      display: flex; align-items: center; gap: 6px;
+      background: none; border: none; font-family: inherit;
+      font-size: 0.9rem; font-weight: 600; cursor: pointer; color: var(--text);
+    }
+    .ae-picker-row {
+      display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+      border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.12s;
+    }
+    .ae-picker-row:active { background: var(--surface2); }
+    .ae-picker-name { flex: 1; font-size: 0.9rem; font-weight: 500; }
+    .ae-picker-check { font-size: 1rem; color: var(--accent); }
+    .ae-footer-bar {
+      display: flex; align-items: center; padding: 10px 16px; gap: 4px;
+      border-top: 1px solid var(--border); background: var(--surface); flex-shrink: 0;
+    }
+    .ae-footer-btn {
+      display: flex; align-items: center; gap: 6px; background: none; border: none;
+      cursor: pointer; font-size: 0.82rem; color: var(--muted); font-family: inherit;
+      padding: 5px 8px; border-radius: 6px; transition: background 0.12s;
+    }
+    .ae-footer-btn:hover { background: var(--surface2); color: var(--text); }
+
+  </style>
+</head>
+<body>
+
+<!-- ── Top bar ── -->
+<div class="top-bar">
+  <button class="top-btn invisible" id="topBackBtn" onclick="goBack()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    Back
+  </button>
+  <div class="top-title" id="topTitle">TripShare ✈️</div>
+  <button class="top-action-btn" id="topActionBtn" onclick="handleAction()">+</button>
+</div>
+
+<!-- ══════════════════════ GROUPS TAB ══════════════════════ -->
+<div id="screenGroups" style="display:none">
+  <div class="page">
+    <div id="groupsOverall" style="display:none;padding:4px 0 18px;font-size:0.95rem;line-height:1.6"></div>
+    <div class="section-label">Your Groups</div>
+    <div class="card" id="groupsListCard" style="display:none"></div>
+    <div class="empty-state" id="groupsEmpty">
+      <div class="empty-icon">✈️</div>
+      <p>No groups yet.<br>Tap + to create one and start splitting.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ GROUP DETAIL ══════════════════════ -->
+<div id="screenDetail" style="display:none">
+  <div class="page">
+    <div class="gd-header" id="detailHeader">
+      <h1 class="gd-title" id="detailName">Group</h1>
+      <div class="gd-header-btns">
+        <button class="gd-pill gd-pill-dark" onclick="switchGroupTab('members')">
+          👥 <span id="detailPeopleCount">0</span> people
+        </button>
+        <button class="gd-pill gd-pill-outline" onclick="openGroupMenu(event)">⋯ More</button>
+      </div>
+    </div>
+
+    <div class="gd-bal-row" id="detailBalanceLine"></div>
+
+    <div class="gd-tabs">
+      <button class="gd-tab-settle" onclick="openSettleUpModal()">Settle up</button>
+      <button class="gd-tab active" id="tbExpenses" onclick="switchGroupTab('expenses')">Expenses</button>
+      <button class="gd-tab" id="tbBalances" onclick="switchGroupTab('balances')">Balances</button>
+      <button class="gd-tab" id="tbMembers"  onclick="switchGroupTab('members')">Members</button>
+    </div>
+
+    <div id="paneExpenses">
+      <div id="expensesCard"></div>
+      <div class="empty-state" id="expensesEmpty" style="display:none">
+        <div class="empty-icon">🧾</div>
+        <p>No expenses yet.<br>Tap + to add the first one.</p>
+      </div>
+    </div>
+
+    <div id="paneBalances" style="display:none">
+      <div class="card" id="balancesCard"></div>
+    </div>
+
+    <div id="paneMembers" style="display:none">
+      <div class="card" id="membersCard"></div>
+      <button class="btn-outline" onclick="openModal('modalAddMembers')">+ Add Members</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ FRIENDS TAB ══════════════════════ -->
+<div id="screenFriends">
+  <div class="page" style="padding-top:8px">
+    <div id="friendsOverall" style="display:none;padding:4px 0 18px;font-size:0.95rem;line-height:1.6"></div>
+    <div id="friendsCard" style="display:none"></div>
+    <div class="empty-state" id="friendsEmpty">
+      <div class="empty-icon">👥</div>
+      <p>No friends yet.<br>Tap "Add friends" to get started.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ ACTIVITY TAB ══════════════════════ -->
+<div id="screenActivity" style="display:none">
+  <div class="page">
+    <div class="section-label">Recent Activity</div>
+    <div class="card" id="activityCard" style="display:none"></div>
+    <div class="empty-state" id="activityEmpty">
+      <div class="empty-icon">🕐</div>
+      <p>No activity yet.<br>Activity appears here as you add expenses and settle up.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ ADD EXPENSE SCREEN ══════════════════════ -->
+<div id="screenAddExpense" class="ae-screen" style="display:none">
+
+  <!-- Step 1: pick who to split with -->
+  <div id="aeStep1" style="display:block">
+    <div class="ae-top-bar">
+      <button class="ae-top-close" onclick="closeAddExpense()">✕</button>
+      <span class="ae-top-title">Add an expense</span>
+      <div style="width:56px"></div>
+    </div>
+    <div class="ae-with-row">
+      <span class="ae-with-label">With you and:</span>
+      <input class="ae-search" id="aeSearch" placeholder="Enter names, emails, or phone #s" oninput="filterExpCtx()" />
+    </div>
+    <div id="aeCtxList"></div>
+  </div>
+
+  <!-- Step 2: fill in expense details -->
+  <div id="aeStep2" style="display:none">
+    <div class="ae-top-bar">
+      <button class="ae-top-close" onclick="backToAeStep1()">←</button>
+      <span class="ae-top-title">Add an expense</span>
+      <button class="ae-top-save" id="aeSave" onclick="saveExpenseFromScreen()">Save</button>
+    </div>
+    <div class="ae-with-row">
+      <span class="ae-with-label">With you and:</span>
+      <div class="ae-chip-wrap">
+        <div class="ae-chip" id="aeChip"></div>
+      </div>
+    </div>
+    <div>
+      <!-- Description -->
+      <div class="ae-form-row">
+        <button class="ae-form-icon-btn">📋</button>
+        <input class="ae-form-input" id="aeDesc" placeholder="Enter a description" />
+      </div>
+      <!-- Amount + currency -->
+      <div class="ae-form-row">
+        <button class="ae-form-icon-btn" onclick="toggleAeCurrPicker()">
+          <span id="aeCurrencyIcon">₹</span>
+        </button>
+        <input class="ae-amount-input" id="aeAmount" type="number" placeholder="0.00" min="0" step="0.01" oninput="aeRecalcSplits()" />
+      </div>
+      <!-- Paid by / split — tappable summary row -->
+      <div class="ae-split-summary" onclick="openSplitPicker()">
+        <div style="flex:1">
+          <div class="ae-split-sum-title" id="aeSplitSummaryTitle">Paid by you and split equally</div>
+          <div class="ae-split-sum-desc"  id="aeSplitSummaryDesc"></div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <!-- Paid-by picker (used by More options) -->
+      <div id="aePaidByPicker" style="display:none;border-bottom:1px solid var(--border)"></div>
+      <!-- Currency picker (hidden) -->
+      <div id="aeCurrPicker" style="display:none;padding:8px 16px;border-bottom:1px solid var(--border)">
+        <select class="form-select" id="aeCurrency" onchange="onAeCurrChange()">
+          <option value="INR">₹ INR – Indian Rupee</option>
+          <option value="AED">د.إ AED – UAE Dirham</option>
+          <option value="USD">$ USD – US Dollar</option>
+          <option value="EUR">€ EUR – Euro</option>
+          <option value="GBP">£ GBP – British Pound</option>
+        </select>
+      </div>
+      <!-- Custom split rows (hidden unless split = unequally) -->
+      <div id="aeSplitRows" style="display:none"></div>
+    </div>
+    <!-- Validation errors -->
+    <div id="aeErrors" style="padding:0 16px 4px;min-height:0"></div>
+    <!-- Footer bar: date + group -->
+    <div class="ae-footer-bar">
+      <button class="ae-footer-btn" onclick="toggleAeDatePicker()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span id="aeDateLabel">Today</span>
+      </button>
+      <span style="color:var(--border);margin:0 2px">|</span>
+      <button class="ae-footer-btn">
+        <span>✈️</span>
+        <span id="aeGroupLabel"></span>
+      </button>
+    </div>
+    <!-- Date picker (hidden) -->
+    <div id="aeDatePicker" style="display:none;padding:8px 16px;border-top:1px solid var(--border)">
+      <input class="form-input" id="aeDate" type="date" onchange="onAeDateChange()" />
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ BOTTOM NAV ══════════════════════ -->
+<nav class="bottom-nav">
+  <button class="nav-item active" id="navFriends" onclick="switchMainTab('friends')">
+    <span class="nav-icon">👥</span>
+    <span class="nav-label">Friends</span>
+  </button>
+  <button class="nav-item" id="navGroups" onclick="switchMainTab('groups')">
+    <span class="nav-icon">✈️</span>
+    <span class="nav-label">Groups</span>
+  </button>
+  <button class="nav-item" id="navActivity" onclick="switchMainTab('activity')">
+    <span class="nav-icon">🕐</span>
+    <span class="nav-label">Activity</span>
+  </button>
+</nav>
+
+<!-- ── FAB ── -->
+<button class="fab" id="fabAddExpense" onclick="_currentFriend ? fdAddExpense() : _current ? openAddExpenseScreen(true) : openAddExpenseScreen(false)">
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="flex-shrink:0"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  Add expense
+</button>
+
+<!-- ══════════════════════ MODALS ══════════════════════ -->
+
+<!-- Create Group -->
+<div class="modal-backdrop" id="modalCreateGroup" onclick="closeBdrop(event,'modalCreateGroup')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">New Group</div>
+      <button class="modal-close" onclick="closeModal('modalCreateGroup')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Group name *</label>
+        <input class="form-input" id="cgName" placeholder="e.g. Goa 2026" />
+        <div class="form-error" id="cgNameErr"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <input class="form-input" id="cgDesc" placeholder="Optional" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Currency</label>
+        <select class="form-select" id="cgCurrency">
+          <option value="INR">INR – Indian Rupee</option>
+          <option value="AED">AED – UAE Dirham</option>
+          <option value="USD">USD – US Dollar</option>
+          <option value="EUR">EUR – Euro</option>
+          <option value="GBP">GBP – British Pound</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Add members (optional)</label>
+        <div id="cgFriendList" style="margin-bottom:8px"></div>
+        <div style="display:flex;gap:8px">
+          <input class="form-input" id="cgEmailInput" type="email" placeholder="Add by email" style="flex:1" />
+          <button class="btn-primary" onclick="cgAddByEmail()" style="width:auto;padding:10px 14px">Add</button>
+        </div>
+        <div class="form-error" id="cgEmailErr"></div>
+        <div id="cgAddedList" style="margin-top:8px"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-primary" id="cgSubmit" onclick="createGroup()">Create Group</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Members (to existing group) -->
+<div class="modal-backdrop" id="modalAddMembers" onclick="closeBdrop(event,'modalAddMembers')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Add Members</div>
+      <button class="modal-close" onclick="closeModal('modalAddMembers')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Select from friends</label>
+        <div id="amFriendList" class="card" style="padding:0 12px"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Or add by email</label>
+        <div style="display:flex;gap:8px">
+          <input class="form-input" id="amEmailInput" type="email" placeholder="friend@example.com" style="flex:1" />
+          <button class="btn-primary" onclick="amAddByEmail()" style="width:auto;padding:10px 14px">Add</button>
+        </div>
+        <div class="form-error" id="amEmailErr"></div>
+        <div id="amAddedList" style="margin-top:8px"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-primary" id="amSubmit" onclick="saveAddMembers()">Add to Group</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Friend -->
+<div class="modal-backdrop" id="modalAddFriend" onclick="closeBdrop(event,'modalAddFriend')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Add Friend</div>
+      <button class="modal-close" onclick="closeModal('modalAddFriend')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Email or mobile number *</label>
+        <input class="form-input" id="afEmail" type="text" placeholder="friend@example.com or +971xxxxxxxx" autocomplete="off" />
+        <div class="form-error" id="afEmailErr"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Display name (optional)</label>
+        <input class="form-input" id="afName" placeholder="Auto-detected if registered" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-primary" id="afSubmit" onclick="addFriend()">Add Friend</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add / Edit Expense -->
+<div class="modal-backdrop" id="modalExpense" onclick="closeBdrop(event,'modalExpense')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="expTitle">Add Expense</div>
+      <button class="modal-close" onclick="closeModal('modalExpense')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Description *</label>
+        <input class="form-input" id="expDesc" placeholder="e.g. Hotel dinner" />
+        <div class="form-error" id="expDescErr"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group">
+          <label class="form-label">Amount *</label>
+          <input class="form-input" id="expAmount" type="number" min="0.01" step="0.01" placeholder="0.00" oninput="recalcSplits()" />
+          <div class="form-error" id="expAmtErr"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Currency</label>
+          <select class="form-select" id="expCurrency"></select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group">
+          <label class="form-label">Paid by</label>
+          <select class="form-select" id="expPaidBy"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input class="form-input" id="expDate" type="date" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <select class="form-select" id="expCategory">
+          <option value="Accommodation">🏨 Accommodation</option>
+          <option value="Food">🍽️ Food &amp; Drink</option>
+          <option value="Transport">🚗 Transport</option>
+          <option value="Activities">🎡 Activities</option>
+          <option value="Shopping">🛒 Shopping</option>
+          <option value="Medical">💊 Medical</option>
+          <option value="Utilities">📱 Utilities</option>
+          <option value="Other" selected>📦 Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <div class="split-type-row">
+          <span class="form-label" style="margin:0">Split</span>
+          <select class="form-select" id="splitType" style="width:auto;padding:6px 10px;font-size:0.82rem" onchange="recalcSplits()">
+            <option value="equal">Equal</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        <div class="card" style="padding:0 12px" id="splitRows"></div>
+        <div class="split-total-row">
+          <span>Total split</span>
+          <span id="splitTotalLabel"></span>
+        </div>
+        <div class="form-error" id="expSplitErr"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-primary" id="expSubmit" onclick="saveExpense()">Save Expense</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settle Up -->
+<div class="modal-backdrop" id="modalSettle" onclick="closeBdrop(event,'modalSettle')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Record Settlement</div>
+      <button class="modal-close" onclick="closeModal('modalSettle')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">From (who paid)</label>
+        <select class="form-select" id="stFrom"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">To (who received)</label>
+        <select class="form-select" id="stTo"></select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group">
+          <label class="form-label">Amount *</label>
+          <input class="form-input" id="stAmount" type="number" min="0.01" step="0.01" placeholder="0.00" />
+          <div class="form-error" id="stAmtErr"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input class="form-input" id="stDate" type="date" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Note</label>
+        <input class="form-input" id="stNote" placeholder="Optional" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-primary" id="stSubmit" onclick="saveSettlement()">Record Settlement</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Group -->
+<div class="modal-backdrop" id="modalEditGroup" onclick="closeBdrop(event,'modalEditGroup')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Edit Group</div>
+      <button class="modal-close" onclick="closeModal('modalEditGroup')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Group name</label>
+        <input class="form-input" id="egName" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <input class="form-input" id="egDesc" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-primary" onclick="saveEditGroup()">Save Changes</button>
+      <button class="btn-danger" id="egDelete" onclick="confirmDeleteGroup()">Delete Group</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ FRIEND DETAIL ══════════════════════ -->
+<div id="screenFriendDetail" style="display:none">
+  <div class="page" style="padding:0">
+    <div class="fd-header" id="fdHeader">
+      <div id="fdAvatarEl" class="fd-avatar-xl"></div>
+      <div id="fdNameEl" class="fd-hname"></div>
+      <div id="fdBalEl" class="fd-hbal"></div>
+    </div>
+    <div class="fd-actions">
+      <button class="fd-act-btn primary" onclick="settleUpFriend()">Settle up</button>
+    </div>
+    <div id="fdExpList"></div>
+    <div id="fdEmpty" class="empty-state" style="display:none">
+      <div class="empty-icon">🧾</div>
+      <p>No expenses yet.<br>Tap "Add expense" to get started.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Friend Settings Modal -->
+<div class="modal-backdrop" id="modalFriendSettings" onclick="closeBdrop(event,'modalFriendSettings')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Friend settings</div>
+      <button class="modal-close" onclick="closeModal('modalFriendSettings')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fs-friend-row">
+        <div id="fsAvatar" style="width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700;color:#fff;flex-shrink:0"></div>
+        <div>
+          <div id="fsName" style="font-size:1rem;font-weight:700"></div>
+          <div id="fsEmail" style="font-size:0.8rem;color:var(--muted);margin-top:2px"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Display name</label>
+        <input class="form-input" id="fsNameInput" placeholder="Friend's name" />
+      </div>
+      <div class="fs-section-label">Manage relationship</div>
+      <button class="fs-action-row danger" onclick="removeFriendFromSettings()">Remove from friends list</button>
+      <div id="fsSharedGroupsSection" style="display:none">
+        <div class="fs-section-label">Shared groups</div>
+        <div id="fsSharedGroups"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-primary" onclick="saveFriendSettings()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Split Options Full-Screen -->
+<div id="screenSplitOptions" class="so-screen" style="display:none">
+  <div class="so-top-bar">
+    <button class="so-top-btn" style="text-align:left" onclick="closeSplitOptions()">Cancel</button>
+    <span style="font-size:1rem;font-weight:700">Split options</span>
+    <button class="so-top-btn" style="text-align:right" onclick="saveSplitOptions()">Done</button>
+  </div>
+  <div class="so-paid-row" onclick="toggleSoPaidByPicker()">
+    <div id="soPaidAvatar" style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;color:#fff;flex-shrink:0;background:var(--accent)"></div>
+    <div style="flex:1">
+      <span style="font-size:0.78rem;color:var(--muted)">Paid by </span>
+      <span style="font-weight:700;font-size:0.95rem" id="soPaidName"></span>
+    </div>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+  </div>
+  <div id="soPaidByPickerSo" style="display:none;background:var(--surface);border-bottom:1px solid var(--border)"></div>
+  <div class="so-type-tabs">
+    <button class="so-tab active" id="soTab_equal"   onclick="setSoType('equal')"  >=</button>
+    <button class="so-tab"        id="soTab_amount"  onclick="setSoType('amount')" >1.23</button>
+    <button class="so-tab"        id="soTab_percent" onclick="setSoType('percent')">%</button>
+  </div>
+  <div class="so-type-desc" id="soTypeDesc">
+    <strong>Split equally</strong>
+    <span>Select which people owe an equal share.</span>
+  </div>
+  <div id="soMemberRows" style="flex:1"></div>
+  <div class="so-footer">
+    <div>
+      <div style="font-size:0.95rem;font-weight:700" id="soFooterAmt"></div>
+      <div style="font-size:0.74rem;color:var(--muted)" id="soFooterSub"></div>
+    </div>
+    <button class="so-all-btn" id="soAllBtn" onclick="soToggleAll()">
+      All <div class="so-check-circle on" style="width:24px;height:24px">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+    </button>
+  </div>
+</div>
+
+<!-- Split Picker Modal -->
+<div class="modal-backdrop" id="modalSplitPicker" onclick="closeBdrop(event,'modalSplitPicker')">
+  <div class="modal">
+    <div class="modal-header" style="justify-content:space-between">
+      <button style="background:none;border:none;color:var(--accent);font-size:0.9rem;font-weight:600;cursor:pointer;font-family:inherit;padding:4px 0" onclick="closeModal('modalSplitPicker')">Cancel</button>
+      <div class="modal-title">Expense details</div>
+      <div style="width:60px"></div>
+    </div>
+    <div style="background:var(--bg);padding:12px 16px;text-align:center;font-size:0.88rem;color:var(--muted);border-bottom:1px solid var(--border)">
+      How was this expense split?
+    </div>
+    <div id="splitPickerOpts"></div>
+    <div style="padding:14px 16px;border-top:1px solid var(--border)">
+      <button onclick="openMoreSplitOptions()" style="width:100%;padding:13px;border:1.5px solid var(--border);border-radius:10px;background:var(--surface);font-family:inherit;font-size:0.9rem;font-weight:600;cursor:pointer;color:var(--text)">More options</button>
+    </div>
+  </div>
+</div>
+
+<!-- Context menus -->
+<div class="ctx-menu" id="ctxGroup">
+  <button class="ctx-item" onclick="openEditGroupModal()">Edit group</button>
+</div>
+<div class="ctx-menu" id="ctxExpense">
+  <button class="ctx-item" onclick="openEditExpense()">Edit expense</button>
+  <button class="ctx-item danger" onclick="deleteExpense()">Delete expense</button>
+</div>
+
+<!-- Loading / Toast -->
+<div class="loading-overlay" id="loading"><div class="spinner"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── Constants & State ──────────────────────────────────────────────────────
+  const SESSION = JSON.parse(localStorage.getItem('auth_session') || 'null');
+  const TOKEN   = localStorage.getItem('auth_token') || '';
+  const ME      = SESSION?.email || '';
+
+  let _groups     = [];
+  let _friends    = [];
+  let _current    = null;   // current group
+  let _mainTab    = 'friends';
+  let _groupTab   = 'expenses';
+  let _editingExpId = null;
+
+  // Pending members to add (in create/add-member modals)
+  let _cgPending  = [];  // create group
+  let _amPending  = [];  // add members
+
+  let _showSettled = false;
+
+  // Add-Expense screen state
+  let _expCtx   = null;   // { type:'group'|'friend', trip, email?, name? }
+  let _aeSelId  = null;   // tripId or friend email selected in step 1
+  let _aePaidBy   = null;   // email of who paid
+  let _aeSplit    = 'equal';
+  let _aeSplitOpt = 0;      // 0=you paid equal, 1=you owed full, 2=other paid equal, 3=other owed full, -1=custom
+  let _aeCurrency = 'INR';
+  let _aeDate   = '';
+
+  const ICONS = {
+    Accommodation:'🏨', Food:'🍽️', Transport:'🚗',
+    Activities:'🎡', Shopping:'🛒', Medical:'💊', Utilities:'📱', Other:'📦',
+  };
+  const SYM = { INR:'₹', AED:'د.إ', USD:'$', EUR:'€', GBP:'£' };
+
+  function fmt(n, cur) { return (SYM[cur]||cur+' ') + Math.abs(n).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+  function initials(n) { const p=(n||'').trim().split(/\s+/); return ((p[0]?.[0]||'')+(p[1]?.[0]||p[0]?.[1]||'')).toUpperCase(); }
+  function mname(email, grp) { return (grp||_current)?.members.find(m=>m.email===email)?.name || email; }
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function today() { return new Date().toISOString().split('T')[0]; }
+  function relDate(d) {
+    if (!d) return '';
+    const diff = Math.floor((Date.now() - new Date(d)) / 86400000);
+    if (diff === 0) return 'Today';
+    if (diff === 1) return 'Yesterday';
+    if (diff < 7)  return diff + 'd ago';
+    return new Date(d).toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+  }
+
+  // ── API ────────────────────────────────────────────────────────────────────
+  async function api(method, path, body) {
+    const res = await fetch((window.API_BASE||'') + path, {
+      method,
+      headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+TOKEN },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Request failed');
+    return data;
+  }
+
+  // ── Balance calculation ────────────────────────────────────────────────────
+  function calcNet(grp) {
+    const net = {};
+    grp.members.forEach(m => net[m.email] = 0);
+    grp.expenses.forEach(e => {
+      net[e.paidBy] = (net[e.paidBy]||0) + e.amount;
+      e.splits.forEach(s => { net[s.email] = (net[s.email]||0) - s.amount; });
+    });
+    grp.settlements.forEach(s => {
+      net[s.from] = (net[s.from]||0) + s.amount;
+      net[s.to]   = (net[s.to]||0)   - s.amount;
+    });
+    return net;
+  }
+
+  function simplify(net) {
+    const c=[], d=[];
+    Object.entries(net).forEach(([e,a]) => {
+      if (a > 0.01) c.push({email:e,amount:a});
+      else if (a < -0.01) d.push({email:e,amount:-a});
+    });
+    c.sort((a,b)=>b.amount-a.amount);
+    d.sort((a,b)=>b.amount-a.amount);
+    const t=[]; let i=0,j=0;
+    while (i<c.length && j<d.length) {
+      const s=Math.min(c[i].amount,d[j].amount);
+      t.push({from:d[j].email,to:c[i].email,amount:s});
+      c[i].amount-=s; d[j].amount-=s;
+      if(c[i].amount<0.01)i++; if(d[j].amount<0.01)j++;
+    }
+    return t;
+  }
+
+  // ── UI helpers ─────────────────────────────────────────────────────────────
+  function setLoading(v) { document.getElementById('loading').classList.toggle('show',v); }
+  let _toastT;
+  function toast(msg, err=false) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.style.background = err ? '#dc2626' : '#1a1a2e';
+    el.classList.add('show');
+    clearTimeout(_toastT);
+    _toastT = setTimeout(() => el.classList.remove('show'), 2500);
+  }
+  function openModal(id)  { document.getElementById(id).classList.add('open'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+  function closeBdrop(e,id) { if(e.target===document.getElementById(id)) closeModal(id); }
+  function closeMenus() { document.querySelectorAll('.ctx-menu').forEach(m=>m.classList.remove('open')); }
+  document.addEventListener('click', closeMenus);
+
+  // ── Main tab switching ─────────────────────────────────────────────────────
+  const TAB_TITLES = { friends:'', groups:'Groups ✈️', activity:'Activity' };
+
+  function switchMainTab(tab) {
+    _mainTab = tab;
+    ['groups','friends','activity'].forEach(t => {
+      const s = document.getElementById('screen'+t.charAt(0).toUpperCase()+t.slice(1));
+      const n = document.getElementById('nav'+t.charAt(0).toUpperCase()+t.slice(1));
+      if (s) s.style.display = t===tab?'':'none';
+      if (n) n.classList.toggle('active', t===tab);
+    });
+    document.getElementById('screenDetail').style.display = 'none';
+    document.getElementById('screenFriendDetail').style.display = 'none';
+    document.getElementById('screenAddExpense').style.display = 'none';
+    document.body.classList.remove('ae-open');
+    _currentFriend = null;
+
+    const bb = document.getElementById('topBackBtn');
+    const ab = document.getElementById('topActionBtn');
+
+    if (tab === 'friends') {
+      bb.classList.remove('invisible');
+      bb.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`;
+      bb.onclick = () => {};
+      bb.style.color = 'var(--text)';
+      document.getElementById('topTitle').textContent = '';
+      ab.textContent = 'Add friends';
+      ab.className = 'top-btn';
+      ab.style.cssText = 'color:var(--accent);font-weight:700;font-size:0.88rem;min-width:auto';
+      ab.onclick = openAddFriendModal;
+      renderFriends();
+    } else {
+      bb.classList.add('invisible');
+      bb.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg> Back`;
+      bb.onclick = goBack;
+      bb.style.color = '';
+      if (tab === 'groups') {
+        ab.textContent = 'Add group';
+        ab.className = 'top-btn';
+        ab.style.cssText = 'color:var(--accent);font-weight:700;font-size:0.88rem;min-width:auto';
+        ab.onclick = openCreateGroupModal;
+      } else {
+        ab.textContent = '+';
+        ab.className = 'top-action-btn';
+        ab.style.cssText = '';
+        ab.onclick = handleAction;
+      }
+      document.getElementById('topTitle').textContent = TAB_TITLES[tab]||'TripShare';
+      if (tab === 'activity') renderActivity();
+      if (tab === 'groups') renderGroups();
+    }
+  }
+
+  function setTopBar(showBack, title) {
+    const btn = document.getElementById('topBackBtn');
+    btn.classList.toggle('invisible', !showBack);
+    document.getElementById('topTitle').textContent = title;
+  }
+
+  function handleAction() {
+    if (_current) { openAddExpenseScreen(true); return; }
+    if (_mainTab === 'friends') { openAddFriendModal(); return; }
+    openCreateGroupModal();
+  }
+
+  // ── Init ───────────────────────────────────────────────────────────────────
+  async function init() {
+    setLoading(true);
+    try {
+      const [gData, fData] = await Promise.all([
+        api('GET', '/api/tripshare'),
+        api('GET', '/api/tripshare/friends'),
+      ]);
+      _groups  = gData.trips   || [];
+      _friends = fData.friends || [];
+      switchMainTab('friends');
+    } catch(err) { toast(err.message, true); }
+    finally { setLoading(false); }
+  }
+
+  // ── Groups list ────────────────────────────────────────────────────────────
+  function renderGroups() {
+    const card    = document.getElementById('groupsListCard');
+    const empty   = document.getElementById('groupsEmpty');
+    const ovDiv   = document.getElementById('groupsOverall');
+    const visible = _groups.filter(g => g.description !== '__direct__');
+    if (!visible.length) { card.style.display='none'; empty.style.display=''; ovDiv.style.display='none'; return; }
+    empty.style.display = 'none';
+    card.style.display  = '';
+    const overall = {};
+    card.innerHTML = visible.map(g => {
+      const net   = calcNet(g);
+      const myNet = net[ME]||0;
+      overall[g.currency] = (overall[g.currency]||0) + myNet;
+      const total = g.expenses.reduce((s,e)=>s+e.amount,0);
+      let balHtml;
+      if (Math.abs(myNet)<0.01) {
+        balHtml = `<div class="group-balance"><div class="bal-amount bal-settled">Settled</div></div>`;
+      } else if (myNet>0) {
+        balHtml = `<div class="group-balance"><div class="bal-amount bal-owed">+${fmt(myNet,g.currency)}</div><div class="bal-label">owed to you</div></div>`;
+      } else {
+        balHtml = `<div class="group-balance"><div class="bal-amount bal-owes">${fmt(myNet,g.currency)}</div><div class="bal-label">you owe</div></div>`;
+      }
+      return `<div class="group-card" onclick="openGroup('${g.tripId}')">
+        <div class="group-avatar">✈️</div>
+        <div class="group-info">
+          <div class="group-name">${esc(g.name)}</div>
+          <div class="group-meta">${g.members.length} members · ${g.expenses.length} expenses · ${fmt(total,g.currency)}</div>
+        </div>
+        ${balHtml}
+        <span style="color:var(--muted);font-size:0.9rem;margin-left:4px">›</span>
+      </div>`;
+    }).join('');
+    const nz = Object.entries(overall).filter(([,v]) => Math.abs(v) > 0.01);
+    if (!nz.length) {
+      ovDiv.style.display = 'none';
+    } else {
+      const allPos = nz.every(([,v]) => v > 0);
+      const prefix = allPos ? 'you are owed' : 'you owe';
+      const amtsHtml = nz.map(([c,v]) => `<strong style="color:${v>0?'var(--green)':'var(--red)'}">${fmt(Math.abs(v),c)}</strong>`).join(' + ');
+      ovDiv.innerHTML = `Overall, ${prefix} ${amtsHtml}`;
+      ovDiv.style.display = '';
+    }
+  }
+
+  // ── Open group ─────────────────────────────────────────────────────────────
+  async function openGroup(tripId) {
+    setLoading(true);
+    try {
+      const data = await api('GET', `/api/tripshare/trips/${tripId}`);
+      _current = data.trip;
+      const idx = _groups.findIndex(g=>g.tripId===tripId);
+      if (idx>=0) _groups[idx]=_current; else _groups.unshift(_current);
+      ['groups','friends','activity'].forEach(t =>
+        document.getElementById('screen'+t.charAt(0).toUpperCase()+t.slice(1)).style.display='none');
+      document.getElementById('screenDetail').style.display = '';
+      setTopBar(true, _current.name);
+      renderDetail();
+      switchGroupTab('expenses');
+    } catch(err) { toast(err.message, true); }
+    finally { setLoading(false); }
+  }
+
+  function goBack() {
+    _current = null;
+    document.getElementById('screenDetail').style.display = 'none';
+    document.getElementById('screenGroups').style.display = '';
+    const ab = document.getElementById('topActionBtn');
+    ab.textContent = '+'; ab.className = 'top-action-btn';
+    ab.style.cssText = ''; ab.onclick = handleAction;
+    setTopBar(false, 'Groups ✈️');
+    renderGroups();
+  }
+
+  // ── Group detail ───────────────────────────────────────────────────────────
+  function renderDetail() {
+    const g = _current;
+    document.getElementById('detailName').textContent = g.name;
+    document.getElementById('detailPeopleCount').textContent = g.members.length;
+    setTopBar(true, '');
+    const net = calcNet(g);
+    const my  = net[ME]||0;
+    const sym = SYM[g.currency]||g.currency;
+    const balEl = document.getElementById('detailBalanceLine');
+    if (Math.abs(my) < 0.01) {
+      balEl.innerHTML = '<span style="color:var(--green)">✓ You are all settled up</span>';
+    } else if (my > 0) {
+      balEl.innerHTML = `You are owed <strong style="color:var(--green)">${sym}${my.toFixed(2)}</strong>`;
+    } else {
+      balEl.innerHTML = `You owe <strong style="color:var(--red)">${sym}${Math.abs(my).toFixed(2)}</strong>`;
+    }
+    renderExpensesPane();
+    renderBalancesPane();
+    renderMembersPane();
+  }
+
+  function switchGroupTab(tab) {
+    _groupTab = tab;
+    ['expenses','balances','members'].forEach(t => {
+      document.getElementById('pane'+t.charAt(0).toUpperCase()+t.slice(1)).style.display = t===tab?'':'none';
+      document.getElementById('tb'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active', t===tab);
+    });
+  }
+
+  // ── Expenses pane ──────────────────────────────────────────────────────────
+  const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const MON_ABBR    = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  function renderExpensesPane() {
+    const g     = _current;
+    const card  = document.getElementById('expensesCard');
+    const empty = document.getElementById('expensesEmpty');
+    const sym   = SYM[g.currency]||g.currency;
+
+    // Merge expenses + settlements into one sorted list
+    const items = [
+      ...(g.expenses||[]).map(e => ({ ...e, _type:'expense' })),
+      ...(g.settlements||[]).map(s => ({ ...s, _type:'settlement' })),
+    ].sort((a,b) => b.date.localeCompare(a.date));
+
+    if (!items.length) { card.innerHTML=''; empty.style.display=''; return; }
+    empty.style.display = 'none';
+
+    // Group by YYYY-MM
+    const groups = [];
+    let cur = null;
+    items.forEach(item => {
+      const ym = item.date.slice(0,7);
+      if (!cur || cur.ym !== ym) { cur = { ym, items:[] }; groups.push(cur); }
+      cur.items.push(item);
+    });
+
+    card.innerHTML = groups.map(grp => {
+      const [yr, mo] = grp.ym.split('-');
+      const label = `${MONTH_NAMES[+mo-1]} ${yr}`;
+      const rows = grp.items.map(item => {
+        const d   = item.date.split('-');
+        const mon = MON_ABBR[+d[1]-1];
+        const day = +d[2];
+        const dateCol = `<div class="exp-date-col"><div class="exp-date-mon">${mon}</div><div class="exp-date-day">${day}</div></div>`;
+
+        if (item._type === 'settlement') {
+          const payer = mname(item.from, g);
+          const payee = mname(item.to, g);
+          const desc  = item.from === ME ? `You paid ${payee} ${sym}${item.amount.toFixed(2)}.`
+                      : item.to === ME   ? `${payer} paid you ${sym}${item.amount.toFixed(2)}.`
+                      :                    `${payer} paid ${payee} ${sym}${item.amount.toFixed(2)}.`;
+          return `<div class="exp-row-v2" onclick="deleteSettlement(${item.id})">
+            ${dateCol}
+            <div class="exp-icon-sq settle">💸</div>
+            <div class="exp-body-v2"><div class="exp-desc-v2" style="font-weight:400;color:var(--muted)">${desc}</div></div>
+          </div>`;
+        }
+
+        // Expense
+        const icon  = ICONS[item.category]||'📦';
+        const esSym = SYM[item.currency]||item.currency;
+        const myS   = (item.splits||[]).find(s=>s.email===ME);
+        const paid  = item.paidBy === ME;
+        const pname = mname(item.paidBy, g);
+        let rightHtml = '';
+        if (paid) {
+          const lent = item.amount - (myS?.amount||0);
+          if (lent > 0.01) {
+            rightHtml = `<div class="exp-right-v2"><div class="exp-tag-v2 exp-tag-lent">you lent</div><div class="exp-amt-v2 exp-amt-lent">${esSym}${lent.toFixed(2)}</div></div>`;
+          } else {
+            rightHtml = `<div class="exp-right-v2"><div class="exp-tag-v2 exp-tag-none">paid for self</div></div>`;
+          }
+        } else if (myS) {
+          rightHtml = `<div class="exp-right-v2"><div class="exp-tag-v2 exp-tag-borrowed">you borrowed</div><div class="exp-amt-v2 exp-amt-borrowed">${esSym}${myS.amount.toFixed(2)}</div></div>`;
+        } else {
+          rightHtml = `<div class="exp-right-v2"><div class="exp-tag-v2 exp-tag-none">not involved</div></div>`;
+        }
+        const subText = paid ? `You paid ${esSym}${item.amount.toFixed(2)}` : `${esc(pname)} paid ${esSym}${item.amount.toFixed(2)}`;
+        return `<div class="exp-row-v2" onclick="openExpMenu(event,${item.id})">
+          ${dateCol}
+          <div class="exp-icon-sq">${icon}</div>
+          <div class="exp-body-v2">
+            <div class="exp-desc-v2">${esc(item.description)}</div>
+            <div class="exp-sub-v2">${subText}</div>
+          </div>
+          ${rightHtml}
+        </div>`;
+      }).join('');
+      return `<div class="exp-month-hdr">${label}</div>${rows}`;
+    }).join('');
+  }
+
+  // ── Balances pane ──────────────────────────────────────────────────────────
+  function renderBalancesPane() {
+    const g    = _current;
+    const net  = calcNet(g);
+    const debts= simplify(net);
+    const card = document.getElementById('balancesCard');
+    if (!debts.length) {
+      card.innerHTML = `<div style="padding:28px 16px;text-align:center;color:var(--muted)">
+        <div style="font-size:1.8rem;margin-bottom:8px">🎉</div>
+        <div style="font-weight:600">All settled up!</div></div>`;
+    } else {
+      const sym = SYM[g.currency]||g.currency;
+      card.innerHTML = debts.map(d => {
+        const fn = mname(d.from,g), tn = mname(d.to,g);
+        return `<div class="balance-row">
+          <div class="member-avatar">${initials(fn)}</div>
+          <div class="balance-info">
+            <div class="balance-text">
+              <span class="bold">${esc(fn)}</span> owes
+              <span class="bold">${esc(tn)}</span>
+              <span style="font-weight:700">${sym}${d.amount.toFixed(2)}</span>
+            </div>
+          </div>
+          <button class="settle-btn" onclick="openSettleModal('${d.from}','${d.to}',${d.amount.toFixed(2)})">Settle</button>
+        </div>`;
+      }).join('');
+    }
+    if (g.settlements.length) {
+      card.innerHTML += `<div style="padding:10px 16px 4px;font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted)">Settlements</div>`;
+      card.innerHTML += [...g.settlements].reverse().map(s =>
+        `<div class="settlement-row">
+          <div style="font-size:1.1rem">💸</div>
+          <div class="settlement-info">
+            <div class="settlement-text">${esc(mname(s.from,g))} paid ${esc(mname(s.to,g))}</div>
+            <div class="settlement-date">${s.date}${s.note?' · '+esc(s.note):''}</div>
+          </div>
+          <div class="settlement-amount">${SYM[s.currency]||s.currency}${s.amount.toFixed(2)}</div>
+          <button class="icon-btn" onclick="deleteSettlement(${s.id})">✕</button>
+        </div>`
+      ).join('');
+    }
+  }
+
+  // ── Members pane ───────────────────────────────────────────────────────────
+  function renderMembersPane() {
+    const g   = _current;
+    const net = calcNet(g);
+    const sym = SYM[g.currency]||g.currency;
+    document.getElementById('membersCard').innerHTML = g.members.map(m => {
+      const n = net[m.email]||0;
+      const netHtml = Math.abs(n)<0.01
+        ? `<span style="color:var(--muted);font-size:0.8rem">Settled</span>`
+        : n>0
+          ? `<span class="bal-owed" style="font-size:0.82rem;font-weight:600">+${sym}${n.toFixed(2)}</span>`
+          : `<span class="bal-owes" style="font-size:0.82rem;font-weight:600">-${sym}${Math.abs(n).toFixed(2)}</span>`;
+      const canRemove = (g.createdBy===ME||m.email===ME) && m.email!==g.createdBy;
+      return `<div class="member-row">
+        <div class="member-avatar">${initials(m.name)}</div>
+        <div class="member-info">
+          <div class="member-name">${esc(m.name)}${m.email===ME?' (you)':''}${m.email===g.createdBy?' 👑':''}</div>
+          <div class="member-email">${esc(m.email)}</div>
+        </div>
+        ${netHtml}
+        ${canRemove?`<button class="remove-btn" onclick="removeMember('${m.email}')">✕</button>`:''}
+      </div>`;
+    }).join('');
+  }
+
+  // ── Friends tab ────────────────────────────────────────────────────────────
+  function avatarColor(name) {
+    const palette = ['#e17055','#6c5ce7','#00b894','#0984e3','#fd79a8','#00cec9','#e67e22','#a29bfe','#d63031','#2ecc71'];
+    let h = 0;
+    for (const c of (name||'')) h = (h * 31 + c.charCodeAt(0)) & 0xffffffff;
+    return palette[Math.abs(h) % palette.length];
+  }
+
+  function friendBalances(friendEmail) {
+    const totals = {};
+    _groups
+      .filter(g => g.memberEmails.includes(friendEmail) && g.memberEmails.includes(ME))
+      .forEach(g => {
+        simplify(calcNet(g)).forEach(d => {
+          if (d.from === friendEmail && d.to === ME)
+            totals[g.currency] = (totals[g.currency]||0) + d.amount;
+          else if (d.from === ME && d.to === friendEmail)
+            totals[g.currency] = (totals[g.currency]||0) - d.amount;
+        });
+      });
+    return totals;
+  }
+
+  function renderFriends() {
+    const card  = document.getElementById('friendsCard');
+    const empty = document.getElementById('friendsEmpty');
+    const ovDiv = document.getElementById('friendsOverall');
+
+    if (!_friends.length) {
+      card.style.display='none'; empty.style.display='';
+      if (ovDiv) ovDiv.style.display='none';
+      return;
+    }
+
+    const withBal = _friends.map(f => ({ ...f, bals: friendBalances(f.email) }));
+
+    // Overall balance — inline text like Splitwise
+    if (ovDiv) {
+      const overall = {};
+      withBal.forEach(f => Object.entries(f.bals).forEach(([c,v]) => { overall[c]=(overall[c]||0)+v; }));
+      const nz = Object.entries(overall).filter(([,v])=>Math.abs(v)>0.01);
+      if (!nz.length) {
+        ovDiv.style.display='none';
+      } else {
+        const allPos = nz.every(([,v])=>v>0);
+        const prefix = allPos ? 'you are owed' : 'you owe';
+        const amtsHtml = nz.map(([c,v])=>`<strong style="color:var(--accent)">${fmt(Math.abs(v),c)}</strong>`).join(' + ');
+        ovDiv.innerHTML = `Overall, ${prefix} ${amtsHtml}`;
+        ovDiv.style.display='';
+      }
+    }
+
+    const makeRow = f => {
+      const nz = Object.entries(f.bals).filter(([,v])=>Math.abs(v)>0.01);
+
+      // Right-side balance column
+      const balColHtml = nz.length ? nz.map(([c,v]) => `
+        <div style="text-align:right">
+          <div style="font-size:0.7rem;color:${v>0?'var(--green)':'var(--red)'}">${v>0?'owes you':'you owe'}</div>
+          <div style="font-size:1rem;font-weight:700;color:${v>0?'var(--green)':'var(--red)'}">${fmt(Math.abs(v),c)}</div>
+        </div>`).join('') : '';
+
+      // Per-group breakdown lines
+      const sharedGrps = _groups.filter(g=>g.memberEmails.includes(f.email)&&g.memberEmails.includes(ME));
+      const lines = [];
+      sharedGrps.forEach(g => {
+        simplify(calcNet(g)).forEach(d => {
+          const parts = f.name.trim().split(/\s+/);
+          const sname = parts.length>1 ? parts[0]+' '+parts[1][0]+'.' : parts[0];
+          if (d.from===f.email&&d.to===ME)
+            lines.push(`${esc(sname)} owes you ${fmt(d.amount,g.currency)} in "${esc(g.name)}"`);
+          else if (d.from===ME&&d.to===f.email)
+            lines.push(`You owe ${esc(sname)} ${fmt(d.amount,g.currency)} in "${esc(g.name)}"`);
+        });
+      });
+      const shown = lines.slice(0,2);
+      const extra = lines.length - shown.length;
+      const breakHtml = shown.map(l=>`<div style="font-size:0.74rem;color:var(--muted);margin-top:2px">${l}</div>`).join('')
+        + (extra>0?`<div style="font-size:0.74rem;color:var(--muted);margin-top:2px">Plus ${extra} more balance${extra>1?'s':''}</div>`:'');
+
+      return `<div class="friend-row-sw" onclick="openFriend('${esc(f.email)}')">
+        <div class="friend-avatar-lg" style="background:${avatarColor(f.name)}">${initials(f.name)}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:0.97rem;font-weight:600">${esc(f.name)}</div>
+          ${breakHtml}
+        </div>
+        ${balColHtml?`<div style="flex-shrink:0;margin-left:8px">${balColHtml}</div>`:''}
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;margin-left:6px;color:var(--muted)" opacity="0.5"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>`;
+    };
+
+    const unsettled = withBal.filter(f=>Object.values(f.bals).some(v=>Math.abs(v)>0.01));
+    const settled   = withBal.filter(f=>!Object.values(f.bals).some(v=>Math.abs(v)>0.01));
+
+    // Strip card styling — plain rows
+    card.style.cssText = 'display:block;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden';
+    empty.style.display = 'none';
+
+    let html = unsettled.map(makeRow).join('');
+
+    if (settled.length) {
+      if (_showSettled) {
+        html += `<div style="padding:12px 16px;text-align:center;border-top:1px solid var(--border)">
+          <button onclick="_showSettled=false;renderFriends()"
+            style="background:none;border:none;cursor:pointer;font-family:inherit;font-size:0.8rem;font-weight:600;color:var(--muted)">
+            Hide settled friends ▲
+          </button>
+        </div>`;
+        html += settled.map(makeRow).join('');
+      } else {
+        html += `<div style="padding:16px;border-top:1px solid var(--border)">
+          <div style="font-size:0.78rem;color:var(--muted);text-align:center;margin-bottom:10px">
+            Hiding friends you settled up with recently
+          </div>
+          <button onclick="_showSettled=true;renderFriends()"
+            style="width:100%;padding:11px;border:2px solid var(--accent);border-radius:8px;
+            background:none;color:var(--accent);font-size:0.88rem;font-weight:700;
+            cursor:pointer;font-family:inherit">
+            Show ${settled.length} settled-up friend${settled.length!==1?'s':''}
+          </button>
+        </div>`;
+      }
+    }
+
+    card.innerHTML = html;
+  }
+
+  function openAddFriendModal() {
+    document.getElementById('afEmail').value = '';
+    document.getElementById('afName').value  = '';
+    document.getElementById('afEmailErr').textContent = '';
+    openModal('modalAddFriend');
+    setTimeout(()=>document.getElementById('afEmail').focus(),100);
+  }
+
+  async function addFriend() {
+    const raw   = document.getElementById('afEmail').value.trim();
+    const identifier = raw.toLowerCase();
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
+    const isPhone = /^\+?[\d\s\-()]{7,15}$/.test(raw);
+    if (!identifier || (!isEmail && !isPhone)) {
+      document.getElementById('afEmailErr').textContent = 'Enter a valid email or mobile number.'; return;
+    }
+    document.getElementById('afEmailErr').textContent = '';
+    const btn = document.getElementById('afSubmit');
+    btn.disabled=true; btn.textContent='Adding…';
+    try {
+      const data = await api('POST','/api/tripshare/friends',{
+        email: identifier, name: document.getElementById('afName').value.trim()||undefined,
+      });
+      _friends.push(data.friend);
+      closeModal('modalAddFriend');
+      renderFriends();
+      toast('Friend added!');
+    } catch(err) { toast(err.message,true); }
+    finally { btn.disabled=false; btn.textContent='Add Friend'; }
+  }
+
+  // ── Friend detail ─────────────────────────────────────────────────────────
+  let _currentFriend = null;
+
+  function openFriend(email) {
+    const f = _friends.find(x => x.email === email);
+    if (!f) return;
+    _currentFriend = f;
+    ['groups','friends','activity'].forEach(t =>
+      document.getElementById('screen'+t[0].toUpperCase()+t.slice(1)).style.display='none');
+    document.getElementById('screenFriendDetail').style.display = '';
+    const bb = document.getElementById('topBackBtn');
+    bb.classList.remove('invisible');
+    bb.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg> Back`;
+    bb.onclick = closeFriendDetail;
+    bb.style.color = '';
+    document.getElementById('topTitle').textContent = f.name;
+    const ab = document.getElementById('topActionBtn');
+    ab.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`;
+    ab.className = 'top-action-btn';
+    ab.style.cssText = 'background:var(--surface);color:var(--text);border:1px solid var(--border)';
+    ab.onclick = openFriendSettings;
+    renderFriendDetail();
+    ensureDirectGroup(f);
+  }
+
+  async function ensureDirectGroup(f) {
+    const exists = _groups.find(g =>
+      g.description === '__direct__' &&
+      g.memberEmails.includes(f.email) && g.memberEmails.includes(ME) &&
+      g.members.length === 2
+    );
+    if (exists) return;
+    try {
+      const data = await api('POST', '/api/tripshare/trips', { name: f.name, description: '__direct__', currency: 'INR' });
+      const grp  = data.trip;
+      await api('POST', `/api/tripshare/trips/${grp.tripId}/members`, { email: f.email, name: f.name });
+      const full = await api('GET', `/api/tripshare/trips/${grp.tripId}`);
+      _groups.unshift(full.trip);
+    } catch { /* silent — fdAddExpense will retry if needed */ }
+  }
+
+  function closeFriendDetail() {
+    _currentFriend = null;
+    document.getElementById('screenFriendDetail').style.display = 'none';
+    switchMainTab('friends');
+  }
+
+  function renderFriendDetail() {
+    const f = _currentFriend;
+    const color = avatarColor(f.name);
+    document.getElementById('fdAvatarEl').textContent = initials(f.name);
+    document.getElementById('fdAvatarEl').style.background = color;
+    document.getElementById('fdNameEl').textContent = f.name;
+
+    // Balance
+    const bals = friendBalances(f.email);
+    const balParts = Object.entries(bals).filter(([,v]) => Math.abs(v) > 0.01);
+    if (!balParts.length) {
+      document.getElementById('fdBalEl').innerHTML = 'All settled up 🎉';
+    } else {
+      const parts = balParts.map(([cur, val]) => {
+        const s = SYM[cur] || cur;
+        return val > 0
+          ? `<strong>${f.name} owes you ${s}${Math.abs(val).toFixed(2)}</strong>`
+          : `<strong>You owe ${f.name} ${s}${Math.abs(val).toFixed(2)}</strong>`;
+      });
+      document.getElementById('fdBalEl').innerHTML = parts.join(' · ');
+    }
+
+    // Collect all expenses across shared groups
+    const rows = [];
+    _groups
+      .filter(g => g.memberEmails.includes(f.email) && g.memberEmails.includes(ME))
+      .forEach(g => {
+        (g.expenses || []).forEach(e => {
+          const myShare = (e.splits||[]).find(s=>s.email===ME)?.amount || 0;
+          const frShare = (e.splits||[]).find(s=>s.email===f.email)?.amount || 0;
+          let tag='', val=0, cls='';
+          if (e.paidBy === ME && frShare > 0) {
+            tag = `${f.name} borrowed`; val = frShare; cls = 'lent';
+          } else if (e.paidBy === f.email && myShare > 0) {
+            tag = 'you borrowed'; val = myShare; cls = 'borrow';
+          } else { return; }
+          rows.push({ ...e, currency: g.currency, tripId: g.tripId, groupName: g.description==='__direct__'?'':g.name, tag, val, cls });
+        });
+      });
+
+    rows.sort((a,b) => b.date.localeCompare(a.date));
+
+    const empty = document.getElementById('fdEmpty');
+    const list  = document.getElementById('fdExpList');
+    if (!rows.length) { empty.style.display=''; list.innerHTML=''; return; }
+    empty.style.display = 'none';
+
+    // Group by month
+    const months = {};
+    rows.forEach(r => {
+      const [y,m] = r.date.split('-');
+      const key = `${y}-${m}`;
+      if (!months[key]) months[key] = [];
+      months[key].push(r);
+    });
+
+    const MONTHS = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
+    list.innerHTML = Object.entries(months).map(([key, exps]) => {
+      const [y,m] = key.split('-');
+      const label = `${MONTHS[+m]} ${y}`;
+      const expHtml = exps.map(e => {
+        const d = new Date(e.date+'T00:00:00');
+        const dayName = d.toLocaleDateString('en',{weekday:'short'});
+        const dayNum  = d.getDate();
+        const sym = SYM[e.currency]||e.currency;
+        const sub = e.groupName ? `${e.groupName} · ${sym}${e.amount.toFixed(2)}` : `${sym}${e.amount.toFixed(2)}`;
+        return `<div class="fd-exp-row" style="cursor:pointer" onclick="openFdExpMenu(event,'${e.tripId}',${e.id})">
+          <div class="fd-exp-date"><div class="day">${dayName}</div><div class="num">${dayNum}</div></div>
+          <div class="fd-exp-icon">🧾</div>
+          <div class="fd-exp-info">
+            <div class="fd-exp-desc">${esc(e.description)}</div>
+            <div class="fd-exp-sub">${sub}</div>
+          </div>
+          <div class="fd-exp-amt">
+            <div class="fd-exp-tag">${e.tag}</div>
+            <div class="fd-exp-val ${e.cls}">${sym}${e.val.toFixed(2)}</div>
+          </div>
+        </div>`;
+      }).join('');
+      return `<div class="fd-month-label">${label}</div><div class="card" style="margin:0 16px 8px">${expHtml}</div>`;
+    }).join('');
+  }
+
+  function openFriendSettings() {
+    const f = _currentFriend;
+    document.getElementById('fsAvatar').textContent = initials(f.name);
+    document.getElementById('fsAvatar').style.background = avatarColor(f.name);
+    document.getElementById('fsName').textContent = f.name;
+    document.getElementById('fsEmail').textContent = f.email;
+    document.getElementById('fsNameInput').value = f.name;
+    // Shared groups (real groups only, no direct)
+    const shared = _groups.filter(g => g.description !== '__direct__' && g.memberEmails.includes(f.email) && g.memberEmails.includes(ME));
+    const sec = document.getElementById('fsSharedGroupsSection');
+    const grpEl = document.getElementById('fsSharedGroups');
+    if (shared.length) {
+      sec.style.display = '';
+      grpEl.innerHTML = shared.map(g => `
+        <div class="fs-group-row" onclick="closeModal('modalFriendSettings');openGroup('${g.tripId}')">
+          <div class="fs-group-icon">✈️</div>
+          <div style="flex:1;font-size:0.9rem;font-weight:600">${esc(g.name)}</div>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>`).join('');
+    } else {
+      sec.style.display = 'none';
+    }
+    openModal('modalFriendSettings');
+  }
+
+  async function saveFriendSettings() {
+    const name = document.getElementById('fsNameInput').value.trim();
+    if (!name) return;
+    const f = _currentFriend;
+    setLoading(true);
+    try {
+      await api('PATCH', `/api/tripshare/friends/${encodeURIComponent(f.email)}`, { name });
+      f.name = name;
+      const fi = _friends.findIndex(x => x.email === f.email);
+      if (fi >= 0) _friends[fi].name = name;
+      closeModal('modalFriendSettings');
+      document.getElementById('topTitle').textContent = name;
+      document.getElementById('fdNameEl').textContent = name;
+      document.getElementById('fdAvatarEl').textContent = initials(name);
+      document.getElementById('fdAvatarEl').style.background = avatarColor(name);
+      toast('Name updated!');
+    } catch(err) { toast(err.message, true); }
+    finally { setLoading(false); }
+  }
+
+  function removeFriendFromSettings() {
+    closeModal('modalFriendSettings');
+    removeFriend(_currentFriend.email);
+  }
+
+  async function fdAddExpense() {
+    const f = _currentFriend;
+    // Find or create the direct 1:1 group
+    let trip = _groups.find(g =>
+      g.description === '__direct__' &&
+      g.memberEmails.includes(f.email) && g.memberEmails.includes(ME) &&
+      g.members.length === 2
+    );
+    if (!trip) {
+      setLoading(true);
+      try {
+        const data = await api('POST', '/api/tripshare/trips', { name: f.name, description: '__direct__', currency: 'INR' });
+        const grp  = data.trip;
+        await api('POST', `/api/tripshare/trips/${grp.tripId}/members`, { email: f.email, name: f.name });
+        const full = await api('GET', `/api/tripshare/trips/${grp.tripId}`);
+        _groups.unshift(full.trip);
+        trip = full.trip;
+      } catch(err) { toast(err.message, true); return; }
+      finally { setLoading(false); }
+    }
+    // Reset AE state and go straight to Step 2
+    document.getElementById('aeDesc').value   = '';
+    document.getElementById('aeAmount').value = '';
+    document.getElementById('aeErrors').innerHTML = '';
+    _aePaidBy = ME; _aeSplitOpt = 0; _aeSplit = 'equal'; _soCustomSplits = null;
+    _aeDate = today();
+    document.getElementById('aeDateLabel').textContent = 'Today';
+    document.getElementById('aeStep1').style.display = 'none';
+    document.getElementById('aeStep2').style.display = 'block';
+    document.body.classList.add('ae-open');
+    document.getElementById('screenFriendDetail').style.display = 'none';
+    document.getElementById('screenAddExpense').style.display = 'block';
+    window.scrollTo(0, 0);
+    goToAeStep2AsFriend(f.email, f.name, trip);
+  }
+
+  async function settleUpFriend() {
+    const f = _currentFriend;
+    const bals = friendBalances(f.email);
+    const nonZero = Object.entries(bals).filter(([,v]) => Math.abs(v) > 0.01);
+    if (!nonZero.length) { toast('Already settled up!'); return; }
+    const [cur, val] = nonZero[0];
+    const sym = SYM[cur] || cur;
+    const absVal = Math.abs(val).toFixed(2);
+    const payer  = val > 0 ? ME : f.email;       // who pays whom
+    const payee  = val > 0 ? f.email : ME;
+    const payerName = val > 0 ? 'You' : f.name;
+    if (!confirm(`Record ${payerName} paying ${sym}${absVal} to settle up?`)) return;
+    // Find/create direct group
+    const direct = _groups.find(g => g.description === '__direct__' && g.memberEmails.includes(f.email) && g.memberEmails.includes(ME));
+    if (!direct) { toast('No shared expenses to settle', true); return; }
+    setLoading(true);
+    try {
+      const splits = [
+        { email: payer, amount: 0 },
+        { email: payee, amount: parseFloat(absVal) },
+      ];
+      const data = await api('POST', `/api/tripshare/trips/${direct.tripId}/expenses`, {
+        description: 'Settlement', amount: parseFloat(absVal),
+        splits, currency: cur, paidBy: payer, date: today(), category: 'Settlement',
+      });
+      const gi = _groups.findIndex(g => g.tripId === direct.tripId);
+      if (gi >= 0) _groups[gi].expenses.push(data.expense);
+      renderFriendDetail();
+      toast('Settlement recorded!');
+    } catch(err) { toast(err.message, true); }
+    finally { setLoading(false); }
+  }
+
+  async function removeFriend(email) {
+    const f = _friends.find(x=>x.email===email);
+    if (!confirm(`Remove ${f?.name||email} from friends?`)) return;
+    setLoading(true);
+    try {
+      await api('DELETE',`/api/tripshare/friends/${encodeURIComponent(email)}`);
+      _friends = _friends.filter(x=>x.email!==email);
+      closeFriendDetail();
+      toast('Friend removed.');
+    } catch(err) { toast(err.message,true); }
+    finally { setLoading(false); }
+  }
+
+  // ── Activity tab ───────────────────────────────────────────────────────────
+  function renderActivity() {
+    const card  = document.getElementById('activityCard');
+    const empty = document.getElementById('activityEmpty');
+    const events = [];
+    _groups.forEach(g => {
+      g.expenses.forEach(e => events.push({
+        type:'expense', grpName:g.name, grpId:g.tripId, currency:e.currency,
+        desc:e.description, amount:e.amount, paidBy:mname(e.paidBy,g),
+        date: e.createdAt||e.date,
+      }));
+      g.settlements.forEach(s => events.push({
+        type:'settlement', grpName:g.name, grpId:g.tripId, currency:s.currency,
+        from:mname(s.from,g), to:mname(s.to,g), amount:s.amount,
+        date: s.createdAt||s.date,
+      }));
+    });
+    events.sort((a,b)=>b.date.localeCompare(a.date));
+    if (!events.length) { card.style.display='none'; empty.style.display=''; return; }
+    card.style.display=''; empty.style.display='none';
+    card.innerHTML = events.slice(0,60).map(ev => {
+      if (ev.type==='expense') {
+        return `<div class="activity-row">
+          <div class="activity-icon">💳</div>
+          <div class="activity-info">
+            <div class="activity-text"><span class="bold">${esc(ev.paidBy)}</span> added <span class="bold">${esc(ev.desc)}</span></div>
+            <div class="activity-meta">${esc(ev.grpName)} · ${relDate(ev.date)}</div>
+          </div>
+          <div class="activity-amount">${fmt(ev.amount,ev.currency)}</div>
+        </div>`;
+      } else {
+        return `<div class="activity-row">
+          <div class="activity-icon settle">💸</div>
+          <div class="activity-info">
+            <div class="activity-text"><span class="bold">${esc(ev.from)}</span> paid <span class="bold">${esc(ev.to)}</span></div>
+            <div class="activity-meta">${esc(ev.grpName)} · ${relDate(ev.date)}</div>
+          </div>
+          <div class="activity-amount" style="color:var(--green)">${fmt(ev.amount,ev.currency)}</div>
+        </div>`;
+      }
+    }).join('');
+  }
+
+  // ── Create Group ───────────────────────────────────────────────────────────
+  function openCreateGroupModal() {
+    _cgPending = [];
+    document.getElementById('cgName').value = '';
+    document.getElementById('cgDesc').value = '';
+    document.getElementById('cgCurrency').value = 'INR';
+    document.getElementById('cgNameErr').textContent = '';
+    document.getElementById('cgEmailErr').textContent = '';
+    document.getElementById('cgEmailInput').value = '';
+    renderCgFriendList();
+    renderCgAddedList();
+    openModal('modalCreateGroup');
+    setTimeout(()=>document.getElementById('cgName').focus(),100);
+  }
+
+  function renderCgFriendList() {
+    const el = document.getElementById('cgFriendList');
+    const available = _friends.filter(f=>!_cgPending.find(p=>p.email===f.email));
+    if (!available.length) { el.innerHTML=''; return; }
+    el.innerHTML = `<div class="card" style="padding:0 12px;margin-bottom:4px">`+
+      available.map((f,i)=>`<div class="friend-pick-row">
+        <input type="checkbox" id="cgfc_${i}" value="${esc(f.email)}" onchange="cgToggleFriend('${f.email}','${esc(f.name)}')" />
+        <label for="cgfc_${i}"><div class="friend-pick-name">${esc(f.name)}</div><div class="friend-pick-email">${esc(f.email)}</div></label>
+      </div>`).join('')+`</div>`;
+  }
+
+  function cgToggleFriend(email, name) {
+    const idx = _cgPending.findIndex(p=>p.email===email);
+    if (idx>=0) _cgPending.splice(idx,1); else _cgPending.push({email,name});
+    renderCgAddedList();
+  }
+
+  function cgAddByEmail() {
+    const email = document.getElementById('cgEmailInput').value.trim().toLowerCase();
+    if (!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      document.getElementById('cgEmailErr').textContent='Enter a valid email.'; return;
+    }
+    if (email===ME) { document.getElementById('cgEmailErr').textContent="That's you — you're already in."; return; }
+    if (_cgPending.find(p=>p.email===email)) { document.getElementById('cgEmailErr').textContent='Already added.'; return; }
+    document.getElementById('cgEmailErr').textContent = '';
+    _cgPending.push({email, name:email});
+    document.getElementById('cgEmailInput').value = '';
+    renderCgAddedList();
+    renderCgFriendList();
+  }
+
+  function renderCgAddedList() {
+    document.getElementById('cgAddedList').innerHTML = _cgPending.map(p=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:4px 0">
+        <div class="member-avatar" style="width:28px;height:28px;font-size:0.65rem">${initials(p.name)}</div>
+        <span style="flex:1;font-size:0.84rem">${esc(p.name===p.email?p.email:p.name+' · '+p.email)}</span>
+        <button class="icon-btn" onclick="cgRemovePending('${p.email}')">✕</button>
+      </div>`).join('');
+  }
+
+  function cgRemovePending(email) {
+    _cgPending = _cgPending.filter(p=>p.email!==email);
+    renderCgAddedList();
+    renderCgFriendList();
+  }
+
+  async function createGroup() {
+    const name = document.getElementById('cgName').value.trim();
+    if (!name) { document.getElementById('cgNameErr').textContent='Group name is required.'; return; }
+    document.getElementById('cgNameErr').textContent = '';
+    const btn = document.getElementById('cgSubmit');
+    btn.disabled=true; btn.textContent='Creating…';
+    try {
+      const data = await api('POST','/api/tripshare/trips',{
+        name, description:document.getElementById('cgDesc').value.trim(),
+        currency:document.getElementById('cgCurrency').value,
+      });
+      const grp = data.trip;
+      // Add pending members one by one
+      for (const p of _cgPending) {
+        try {
+          await api('POST',`/api/tripshare/trips/${grp.tripId}/members`,{email:p.email,name:p.name!==p.email?p.name:undefined});
+        } catch {}
+      }
+      // Reload full trip
+      const full = await api('GET',`/api/tripshare/trips/${grp.tripId}`);
+      _groups.unshift(full.trip);
+      closeModal('modalCreateGroup');
+      toast('Group created!');
+      await openGroup(grp.tripId);
+    } catch(err) { toast(err.message,true); }
+    finally { btn.disabled=false; btn.textContent='Create Group'; }
+  }
+
+  // ── Add Members (to existing group) ───────────────────────────────────────
+  function openAddMembersModal() {
+    _amPending = [];
+    const existing = _current.memberEmails;
+    const available = _friends.filter(f=>!existing.includes(f.email));
+    document.getElementById('amFriendList').innerHTML = available.length
+      ? available.map((f,i)=>`<div class="friend-pick-row">
+          <input type="checkbox" id="amfc_${i}" value="${esc(f.email)}" onchange="amToggleFriend('${f.email}','${esc(f.name)}')" />
+          <label for="amfc_${i}"><div class="friend-pick-name">${esc(f.name)}</div><div class="friend-pick-email">${esc(f.email)}</div></label>
+        </div>`).join('')
+      : `<div style="padding:12px 0;font-size:0.84rem;color:var(--muted)">No friends to add (all already in group or no friends saved)</div>`;
+    document.getElementById('amEmailInput').value = '';
+    document.getElementById('amEmailErr').textContent = '';
+    renderAmAddedList();
+    openModal('modalAddMembers');
+  }
+
+  function amToggleFriend(email, name) {
+    const idx = _amPending.findIndex(p=>p.email===email);
+    if (idx>=0) _amPending.splice(idx,1); else _amPending.push({email,name});
+    renderAmAddedList();
+  }
+
+  function amAddByEmail() {
+    const email = document.getElementById('amEmailInput').value.trim().toLowerCase();
+    if (!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      document.getElementById('amEmailErr').textContent='Enter a valid email.'; return;
+    }
+    if (_current.memberEmails.includes(email)) { document.getElementById('amEmailErr').textContent='Already a member.'; return; }
+    if (_amPending.find(p=>p.email===email)) { document.getElementById('amEmailErr').textContent='Already added.'; return; }
+    document.getElementById('amEmailErr').textContent = '';
+    _amPending.push({email, name:email});
+    document.getElementById('amEmailInput').value = '';
+    renderAmAddedList();
+  }
+
+  function renderAmAddedList() {
+    document.getElementById('amAddedList').innerHTML = _amPending.map(p=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:4px 0">
+        <div class="member-avatar" style="width:28px;height:28px;font-size:0.65rem">${initials(p.name)}</div>
+        <span style="flex:1;font-size:0.84rem">${esc(p.email)}</span>
+        <button class="icon-btn" onclick="amRemovePending('${p.email}')">✕</button>
+      </div>`).join('');
+  }
+
+  function amRemovePending(email) { _amPending=_amPending.filter(p=>p.email!==email); renderAmAddedList(); }
+
+  async function saveAddMembers() {
+    if (!_amPending.length) { toast('Select or enter at least one member.', true); return; }
+    const btn = document.getElementById('amSubmit');
+    btn.disabled=true; btn.textContent='Adding…';
+    let added=0;
+    try {
+      for (const p of _amPending) {
+        try {
+          await api('POST',`/api/tripshare/trips/${_current.tripId}/members`,{email:p.email,name:p.name!==p.email?p.name:undefined});
+          added++;
+        } catch {}
+      }
+      const data = await api('GET',`/api/tripshare/trips/${_current.tripId}`);
+      _current = data.trip;
+      closeModal('modalAddMembers');
+      renderDetail();
+      toast(`${added} member${added!==1?'s':''} added!`);
+    } catch(err) { toast(err.message,true); }
+    finally { btn.disabled=false; btn.textContent='Add to Group'; }
+  }
+
+  async function removeMember(email) {
+    if (!confirm(`Remove ${mname(email,_current)} from this group?`)) return;
+    setLoading(true);
+    try {
+      await api('DELETE',`/api/tripshare/trips/${_current.tripId}/members/${encodeURIComponent(email)}`);
+      _current.members      = _current.members.filter(m=>m.email!==email);
+      _current.memberEmails = _current.memberEmails.filter(e=>e!==email);
+      renderDetail();
+      toast('Member removed.');
+    } catch(err) { toast(err.message,true); }
+    finally { setLoading(false); }
+  }
+
+  // ── Add / Edit Expense ─────────────────────────────────────────────────────
+  function openAddExpense() {
+    _editingExpId = null;
+    document.getElementById('expTitle').textContent = 'Add Expense';
+    document.getElementById('expDesc').value   = '';
+    document.getElementById('expAmount').value = '';
+    document.getElementById('expDate').value   = today();
+    document.getElementById('expCategory').value = 'Other';
+    document.getElementById('expDescErr').textContent = '';
+    document.getElementById('expAmtErr').textContent  = '';
+    document.getElementById('expSplitErr').textContent= '';
+    buildExpCurrencyOpts(_current.currency);
+    buildMemberOpts();
+    document.getElementById('expPaidBy').value = ME;
+    document.getElementById('splitType').value = 'equal';
+    buildSplitRows(true);
+    openModal('modalExpense');
+    setTimeout(()=>document.getElementById('expDesc').focus(),100);
+  }
+
+  function openEditExpense() {
+    const exp = _current.expenses.find(e=>e.id===_editingExpId);
+    if (!exp) return;
+    document.getElementById('expTitle').textContent = 'Edit Expense';
+    document.getElementById('expDesc').value   = exp.description;
+    document.getElementById('expAmount').value = exp.amount;
+    document.getElementById('expDate').value   = exp.date;
+    document.getElementById('expCategory').value = exp.category;
+    document.getElementById('expDescErr').textContent = '';
+    document.getElementById('expAmtErr').textContent  = '';
+    document.getElementById('expSplitErr').textContent= '';
+    buildExpCurrencyOpts(exp.currency);
+    buildMemberOpts();
+    document.getElementById('expPaidBy').value = exp.paidBy;
+    const total = exp.splits.reduce((s,x)=>s+x.amount,0);
+    const per   = total/exp.splits.length;
+    const isEq  = exp.splits.every(s=>Math.abs(s.amount-per)<0.02);
+    document.getElementById('splitType').value = isEq?'equal':'custom';
+    buildSplitRows(false, exp.splits);
+    openModal('modalExpense');
+  }
+
+  function buildExpCurrencyOpts(selected) {
+    const opts = ['INR','AED','USD','EUR','GBP'].map(c=>`<option value="${c}"${c===selected?' selected':''}>${c}</option>`).join('');
+    document.getElementById('expCurrency').innerHTML = opts;
+  }
+
+  function buildMemberOpts() {
+    const opts = _current.members.map(m=>`<option value="${esc(m.email)}">${esc(m.name)}${m.email===ME?' (you)':''}</option>`).join('');
+    document.getElementById('expPaidBy').innerHTML = opts;
+  }
+
+  function buildSplitRows(allChecked=true, existing=null) {
+    const type = document.getElementById('splitType').value;
+    const rows = document.getElementById('splitRows');
+    rows.innerHTML = _current.members.map((m,i) => {
+      const checked = allChecked || (existing?existing.some(s=>s.email===m.email):true);
+      const share   = existing ? (existing.find(s=>s.email===m.email)?.amount||0) : 0;
+      if (type==='equal') {
+        return `<div class="split-member-row">
+          <input type="checkbox" id="sc${i}" value="${esc(m.email)}" ${checked?'checked':''} onchange="recalcSplits()" />
+          <label for="sc${i}">${esc(m.name)}${m.email===ME?' (you)':''}</label>
+          <span class="split-share" id="ss${i}">—</span>
+        </div>`;
+      } else {
+        return `<div class="split-member-row">
+          <input type="checkbox" id="sc${i}" value="${esc(m.email)}" ${checked?'checked':''} onchange="recalcSplits()" />
+          <label for="sc${i}">${esc(m.name)}${m.email===ME?' (you)':''}</label>
+          <input type="number" class="split-input" id="si${i}" value="${share>0?share.toFixed(2):''}" min="0" step="0.01" placeholder="0.00" oninput="updateSplitTotal()" />
+        </div>`;
+      }
+    }).join('');
+    if (type==='equal') recalcEqualShares(); else updateSplitTotal();
+  }
+
+  function recalcSplits() {
+    buildSplitRows(false, getSplits());
+  }
+
+  function recalcEqualShares() {
+    const amount  = parseFloat(document.getElementById('expAmount').value)||0;
+    const checked = getChecked();
+    _current.members.forEach((_,i) => {
+      const cb=document.getElementById('sc'+i), ss=document.getElementById('ss'+i);
+      if (cb&&ss) ss.textContent = cb.checked&&checked.length ? fmt(amount/checked.length, document.getElementById('expCurrency').value) : '—';
+    });
+    updateSplitTotal();
+  }
+
+  function getChecked() {
+    return _current.members.filter((_,i)=>document.getElementById('sc'+i)?.checked);
+  }
+
+  function getSplits() {
+    const type   = document.getElementById('splitType').value;
+    const amount = parseFloat(document.getElementById('expAmount').value)||0;
+    const checked= getChecked();
+    if (!checked.length) return [];
+    if (type==='equal') {
+      const per = amount/checked.length;
+      return checked.map(m=>({email:m.email,amount:per}));
+    }
+    return _current.members.map((m,i)=>{
+      const cb=document.getElementById('sc'+i), si=document.getElementById('si'+i);
+      if (!cb?.checked||!si) return null;
+      return {email:m.email,amount:parseFloat(si.value)||0};
+    }).filter(Boolean);
+  }
+
+  function updateSplitTotal() {
+    const splits = getSplits();
+    const total  = splits.reduce((s,x)=>s+x.amount,0);
+    const amount = parseFloat(document.getElementById('expAmount').value)||0;
+    const sym    = SYM[document.getElementById('expCurrency').value]||'';
+    const label  = document.getElementById('splitTotalLabel');
+    if (Math.abs(total-amount)<0.02) {
+      label.innerHTML = `<span class="split-ok">${sym}${total.toFixed(2)} ✓</span>`;
+    } else {
+      label.innerHTML = `<span class="split-err">${sym}${total.toFixed(2)} / ${sym}${amount.toFixed(2)}</span>`;
+    }
+  }
+
+  async function saveExpense() {
+    const desc   = document.getElementById('expDesc').value.trim();
+    const amount = parseFloat(document.getElementById('expAmount').value);
+    let ok = true;
+    if (!desc)         { document.getElementById('expDescErr').textContent='Description is required.'; ok=false; }
+    else                 document.getElementById('expDescErr').textContent='';
+    if (!amount||amount<=0) { document.getElementById('expAmtErr').textContent='Enter a valid amount.'; ok=false; }
+    else                       document.getElementById('expAmtErr').textContent='';
+    const splits = getSplits();
+    if (!splits.length) { document.getElementById('expSplitErr').textContent='Select at least one person.'; ok=false; }
+    else if (Math.abs(splits.reduce((s,x)=>s+x.amount,0)-amount)>0.02) {
+      document.getElementById('expSplitErr').textContent='Split must equal total.'; ok=false;
+    } else document.getElementById('expSplitErr').textContent='';
+    if (!ok) return;
+
+    const btn = document.getElementById('expSubmit');
+    btn.disabled=true; btn.textContent='Saving…';
+    const payload = {
+      description:desc, amount, splits,
+      currency: document.getElementById('expCurrency').value,
+      paidBy:   document.getElementById('expPaidBy').value,
+      date:     document.getElementById('expDate').value,
+      category: document.getElementById('expCategory').value,
+    };
+    try {
+      const grp = _current;
+      if (_editingExpId) {
+        await api('PATCH',`/api/tripshare/trips/${grp.tripId}/expenses/${_editingExpId}`,payload);
+        const idx = grp.expenses.findIndex(e=>e.id===_editingExpId);
+        if (idx>=0) grp.expenses[idx]={...grp.expenses[idx],...payload};
+        toast('Expense updated!');
+      } else {
+        const data = await api('POST',`/api/tripshare/trips/${grp.tripId}/expenses`,payload);
+        grp.expenses.push(data.expense);
+        toast('Expense added!');
+      }
+      closeModal('modalExpense');
+      if (_friendDetailMode) { _friendDetailMode=false; _current=null; renderFriendDetail(); }
+      else { renderDetail(); }
+    } catch(err) { toast(err.message,true); }
+    finally { btn.disabled=false; btn.textContent='Save Expense'; }
+  }
+
+  let _ctxExpId = null;
+  let _friendDetailMode = false;
+
+  function openFdExpMenu(e, tripId, expId) {
+    e.stopPropagation();
+    const grp = _groups.find(g => g.tripId === tripId);
+    if (!grp) return;
+    _current         = grp;
+    _editingExpId    = expId;
+    _ctxExpId        = expId;
+    _friendDetailMode = true;
+    const menu = document.getElementById('ctxExpense');
+    const rect = e.currentTarget.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    menu.style.right = (window.innerWidth - rect.right + 4) + 'px';
+    if (spaceBelow >= 80) {
+      menu.style.top = (rect.bottom + 4) + 'px'; menu.style.bottom = 'auto';
+    } else {
+      menu.style.bottom = (window.innerHeight - rect.top + 4) + 'px'; menu.style.top = 'auto';
+    }
+    menu.classList.add('open');
+  }
+
+  function openExpMenu(e, expId) {
+    e.stopPropagation();
+    _editingExpId = expId;
+    _ctxExpId     = expId;
+    const menu = document.getElementById('ctxExpense');
+    const rect = e.currentTarget.getBoundingClientRect();
+    menu.style.top  = (rect.bottom+4)+'px';
+    menu.style.right= '16px';
+    menu.classList.add('open');
+  }
+
+  async function deleteExpense() {
+    closeMenus();
+    if (!confirm('Delete this expense?')) return;
+    setLoading(true);
+    try {
+      await api('DELETE',`/api/tripshare/trips/${_current.tripId}/expenses/${_ctxExpId}`);
+      _current.expenses = _current.expenses.filter(e=>e.id!==_ctxExpId);
+      toast('Expense deleted.');
+      if (_friendDetailMode) { _friendDetailMode=false; _current=null; renderFriendDetail(); }
+      else { renderDetail(); }
+    } catch(err) { toast(err.message,true); }
+    finally { setLoading(false); }
+  }
+
+  // ── Settle Up ──────────────────────────────────────────────────────────────
+  function openSettleUpModal() {
+    const net = calcNet(_current);
+    const debts = simplify(net);
+    const mine  = debts.find(d => d.from === ME) || debts.find(d => d.to === ME);
+    const from  = mine ? mine.from : ME;
+    const to    = mine ? mine.to   : (_current.members.find(m=>m.email!==ME)?.email||ME);
+    const amt   = mine ? mine.amount.toFixed(2) : '';
+    openSettleModal(from, to, amt);
+  }
+
+  function openSettleModal(from, to, amount) {
+    const opts = _current.members.map(m=>`<option value="${esc(m.email)}">${esc(m.name)}</option>`).join('');
+    document.getElementById('stFrom').innerHTML = opts;
+    document.getElementById('stTo').innerHTML   = opts;
+    document.getElementById('stFrom').value   = from;
+    document.getElementById('stTo').value     = to;
+    document.getElementById('stAmount').value = amount;
+    document.getElementById('stDate').value   = today();
+    document.getElementById('stNote').value   = '';
+    document.getElementById('stAmtErr').textContent = '';
+    openModal('modalSettle');
+  }
+
+  async function saveSettlement() {
+    const amount = parseFloat(document.getElementById('stAmount').value);
+    if (!amount||amount<=0) { document.getElementById('stAmtErr').textContent='Enter a valid amount.'; return; }
+    document.getElementById('stAmtErr').textContent='';
+    const btn = document.getElementById('stSubmit');
+    btn.disabled=true; btn.textContent='Saving…';
+    try {
+      const data = await api('POST',`/api/tripshare/trips/${_current.tripId}/settlements`,{
+        from:   document.getElementById('stFrom').value,
+        to:     document.getElementById('stTo').value,
+        amount, currency:_current.currency,
+        date:   document.getElementById('stDate').value,
+        note:   document.getElementById('stNote').value.trim(),
+      });
+      _current.settlements.push(data.settlement);
+      closeModal('modalSettle');
+      renderDetail();
+      toast('Settlement recorded!');
+    } catch(err) { toast(err.message,true); }
+    finally { btn.disabled=false; btn.textContent='Record Settlement'; }
+  }
+
+  async function deleteSettlement(id) {
+    if (!confirm('Delete this settlement?')) return;
+    setLoading(true);
+    try {
+      await api('DELETE',`/api/tripshare/trips/${_current.tripId}/settlements/${id}`);
+      _current.settlements = _current.settlements.filter(s=>s.id!==id);
+      renderDetail();
+      toast('Settlement deleted.');
+    } catch(err) { toast(err.message,true); }
+    finally { setLoading(false); }
+  }
+
+  // ── Group settings ─────────────────────────────────────────────────────────
+  function openGroupMenu(e) {
+    e.stopPropagation();
+    const menu = document.getElementById('ctxGroup');
+    const rect = e.currentTarget.getBoundingClientRect();
+    menu.style.top  = (rect.bottom+4)+'px';
+    menu.style.right= '16px';
+    menu.classList.add('open');
+  }
+
+  function openEditGroupModal() {
+    closeMenus();
+    document.getElementById('egName').value = _current.name;
+    document.getElementById('egDesc').value = _current.description||'';
+    document.getElementById('egDelete').style.display = _current.createdBy===ME?'':'none';
+    openModal('modalEditGroup');
+  }
+
+  async function saveEditGroup() {
+    const name = document.getElementById('egName').value.trim();
+    if (!name) return;
+    setLoading(true);
+    try {
+      await api('PATCH',`/api/tripshare/trips/${_current.tripId}`,{
+        name, description:document.getElementById('egDesc').value.trim(),
+      });
+      _current.name = name;
+      _current.description = document.getElementById('egDesc').value.trim();
+      const idx = _groups.findIndex(g=>g.tripId===_current.tripId);
+      if (idx>=0) { _groups[idx].name=name; }
+      closeModal('modalEditGroup');
+      renderDetail();
+      toast('Group updated!');
+    } catch(err) { toast(err.message,true); }
+    finally { setLoading(false); }
+  }
+
+  async function confirmDeleteGroup() {
+    closeModal('modalEditGroup');
+    if (!confirm(`Delete "${_current.name}"? This cannot be undone.`)) return;
+    setLoading(true);
+    try {
+      await api('DELETE',`/api/tripshare/trips/${_current.tripId}`);
+      _groups = _groups.filter(g=>g.tripId!==_current.tripId);
+      toast('Group deleted.');
+      goBack();
+    } catch(err) { toast(err.message,true); }
+    finally { setLoading(false); }
+  }
+
+  // ── Add Expense Screen ────────────────────────────────────────────────────
+  function openAddExpenseScreen(fromGroupDetail) {
+    _aePaidBy = ME; _aeSplit = 'equal';
+    _aeDate   = today();
+
+    // Reset form fields
+    document.getElementById('aeDesc').value   = '';
+    document.getElementById('aeAmount').value = '';
+    document.getElementById('aeErrors').innerHTML = '';
+    document.getElementById('aePaidByPicker').style.display = 'none';
+    document.getElementById('aeSplitRows').style.display    = 'none';
+    document.getElementById('aeCurrPicker').style.display   = 'none';
+    document.getElementById('aeDatePicker').style.display   = 'none';
+    document.getElementById('aeDateLabel').textContent      = 'Today';
+
+    // Hide all main screens, show AE screen
+    ['Groups','Friends','Activity','Detail','Account'].forEach(s => {
+      const el = document.getElementById('screen'+s); if (el) el.style.display='none';
+    });
+    document.body.classList.add('ae-open');
+    document.getElementById('screenAddExpense').style.display = 'block';
+    window.scrollTo(0,0);
+
+    if (fromGroupDetail && _current) {
+      _aeSelId    = _current.tripId;
+      _expCtx     = { type:'group', trip:_current };
+      _aeCurrency = _current.currency;
+      document.getElementById('aeStep1').style.display = 'none';
+      document.getElementById('aeStep2').style.display = 'block';
+      setupAeStep2();
+      return;
+    }
+
+    _aeSelId = null; _expCtx = null; _aeCurrency = 'INR'; _soCustomSplits = null;
+    document.getElementById('aeStep1').style.display = 'block';
+    document.getElementById('aeStep2').style.display = 'none';
+    renderExpCtxList();
+    setTimeout(() => document.getElementById('aeSearch').focus(), 150);
+  }
+
+  function closeAddExpense() {
+    document.getElementById('screenAddExpense').style.display = 'none';
+    document.body.classList.remove('ae-open');
+    if (_currentFriend) {
+      openFriend(_currentFriend.email);
+    } else if (_current) {
+      document.getElementById('screenDetail').style.display = '';
+      setTopBar(true, _current.name);
+    } else {
+      const s = _mainTab.charAt(0).toUpperCase() + _mainTab.slice(1);
+      document.getElementById('screen'+s).style.display = '';
+      setTopBar(false, TAB_TITLES[_mainTab]||'TripShare');
+    }
+  }
+
+  function backToAeStep1() {
+    if (_currentFriend || _expCtx?.type === 'friend') { closeAddExpense(); return; }
+    _expCtx = null; _aeSelId = null;
+    document.getElementById('aeStep1').style.display = 'block';
+    document.getElementById('aeStep2').style.display = 'none';
+    renderExpCtxList();
+    window.scrollTo(0,0);
+  }
+
+  function renderExpCtxList(filter) {
+    const f = (filter||'').toLowerCase().trim();
+    const el = document.getElementById('aeCtxList');
+    let html = '';
+
+    const friends = _friends.filter(fr =>
+      !f || fr.name.toLowerCase().includes(f) || fr.email.toLowerCase().includes(f));
+    if (friends.length) {
+      html += `<div class="ae-section-label">Recent</div>`;
+      html += friends.map(fr => `
+        <div class="ae-pick-row" onclick="selectExpCtxFriend('${esc(fr.email)}','${esc(fr.name)}')">
+          <div class="ae-pick-avatar round">${initials(fr.name)}</div>
+          <div class="ae-pick-info">
+            <div class="ae-pick-name">${esc(fr.name)}</div>
+            <div class="ae-pick-sub">${esc(fr.email)}</div>
+          </div>
+          <div class="ae-radio${_aeSelId===fr.email?' selected':''}"></div>
+        </div>`).join('');
+    }
+
+    const groups = _groups.filter(g => g.description !== '__direct__' && (!f || g.name.toLowerCase().includes(f)));
+    if (groups.length) {
+      html += `<div class="ae-section-label">Groups</div>`;
+      html += groups.map(g => `
+        <div class="ae-pick-row" onclick="selectExpCtxGroup('${g.tripId}')">
+          <div class="ae-pick-avatar" style="font-size:1.3rem;border-radius:12px">✈️</div>
+          <div class="ae-pick-info">
+            <div class="ae-pick-name">${esc(g.name)}</div>
+            <div class="ae-pick-sub">${g.members.length} members · ${g.currency}</div>
+          </div>
+          <div class="ae-radio${_aeSelId===g.tripId?' selected':''}"></div>
+        </div>`).join('');
+    }
+
+    if (!html) html = `<div style="padding:40px;text-align:center;color:var(--muted)">No friends or groups found.</div>`;
+    el.innerHTML = html;
+  }
+
+  function filterExpCtx() { renderExpCtxList(document.getElementById('aeSearch').value); }
+
+  function selectExpCtxGroup(tripId) {
+    const grp = _groups.find(g => g.tripId === tripId);
+    if (!grp) { toast('Group not found', true); return; }
+    _aeSelId    = tripId;
+    _expCtx     = { type:'group', trip:grp };
+    _aeCurrency = grp.currency;
+    document.getElementById('aeStep1').style.display = 'none';
+    document.getElementById('aeStep2').style.display = 'block';
+    window.scrollTo(0,0);
+    setupAeStep2();
+  }
+
+  function goToAeStep2AsFriend(email, name, trip) {
+    _aeSelId    = email;
+    _expCtx     = { type:'friend', email, name, trip };
+    _aeCurrency = trip.currency;
+    document.getElementById('aeStep1').style.display = 'none';
+    document.getElementById('aeStep2').style.display = 'block';
+    window.scrollTo(0,0);
+    setupAeStep2();
+  }
+
+  async function selectExpCtxFriend(email, name) {
+    _aeSelId = email;
+    // Always use a hidden direct group — never show in Groups tab
+    const existing = _groups.find(g =>
+      g.description === '__direct__' &&
+      g.memberEmails.includes(email) && g.memberEmails.includes(ME) &&
+      g.members.length === 2
+    );
+    if (existing) {
+      goToAeStep2AsFriend(email, name, existing);
+    } else {
+      setLoading(true);
+      try {
+        const data = await api('POST', '/api/tripshare/trips', { name: `${name}`, description: '__direct__', currency: 'INR' });
+        const grp = data.trip;
+        await api('POST', `/api/tripshare/trips/${grp.tripId}/members`, { email, name });
+        const full = await api('GET', `/api/tripshare/trips/${grp.tripId}`);
+        _groups.unshift(full.trip);
+        goToAeStep2AsFriend(email, name, full.trip);
+      } catch(err) { toast(err.message, true); }
+      finally { setLoading(false); }
+    }
+  }
+
+  function setupAeStep2() {
+    const trip = _expCtx.trip;
+    document.getElementById('aeCurrency').value        = trip.currency;
+    document.getElementById('aeCurrencyIcon').textContent = SYM[trip.currency] || trip.currency;
+    _aePaidBy   = ME;
+    _aeSplitOpt = 0;
+    document.getElementById('aeGroupLabel').textContent = _expCtx.type === 'friend' ? _expCtx.name : trip.name;
+    if (_expCtx.type === 'friend') {
+      document.getElementById('aeChip').innerHTML = `
+        <div style="width:24px;height:24px;border-radius:50%;background:${avatarColor(_expCtx.name)};display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:700;color:#fff;flex-shrink:0">${initials(_expCtx.name)}</div>
+        <span>${esc(_expCtx.name)}</span>
+        <button class="chip-x" onclick="backToAeStep1()">✕</button>`;
+    } else {
+      document.getElementById('aeChip').innerHTML = `
+        <span>✈️</span>
+        <span>All of ${esc(trip.name)}</span>
+        <button class="chip-x" onclick="backToAeStep1()">✕</button>`;
+    }
+    _aeSplit = 'equal';
+    document.getElementById('aeSplitRows').style.display    = 'none';
+    document.getElementById('aePaidByPicker').style.display = 'none';
+    document.getElementById('aeCurrPicker').style.display   = 'none';
+    updateAeSplitSummary();
+    setTimeout(() => document.getElementById('aeDesc').focus(), 150);
+  }
+
+  function toggleAeCurrPicker() {
+    const p = document.getElementById('aeCurrPicker');
+    p.style.display = p.style.display === 'none' || !p.style.display ? '' : 'none';
+  }
+
+  function onAeCurrChange() {
+    _aeCurrency = document.getElementById('aeCurrency').value;
+    document.getElementById('aeCurrencyIcon').textContent = SYM[_aeCurrency] || _aeCurrency;
+    document.getElementById('aeCurrPicker').style.display = 'none';
+    if (_aeSplit === 'custom') updateAeSplitTotal();
+  }
+
+  function toggleAePaidByPicker() {
+    const p = document.getElementById('aePaidByPicker');
+    if (p.style.display === 'none' || !p.style.display) {
+      const trip = _expCtx?.trip;
+      if (!trip) return;
+      p.innerHTML = trip.members.map(m => `
+        <div class="ae-picker-row" onclick="selectAePaidBy('${esc(m.email)}')">
+          <div class="member-avatar" style="width:32px;height:32px;font-size:0.7rem">${initials(m.name)}</div>
+          <span class="ae-picker-name">${esc(m.name)}${m.email===ME?' (you)':''}</span>
+          ${_aePaidBy===m.email?'<span class="ae-picker-check">✓</span>':''}
+        </div>`).join('');
+      p.style.display = '';
+    } else {
+      p.style.display = 'none';
+    }
+  }
+
+  function selectAePaidBy(email) {
+    _aePaidBy = email;
+    document.getElementById('aePaidByPicker').style.display = 'none';
+    updateAeSplitSummary();
+  }
+
+  function openSplitPicker() {
+    const trip = _expCtx?.trip;
+    if (!trip) return;
+    const amount = parseFloat(document.getElementById('aeAmount').value) || 0;
+    const sym    = SYM[_aeCurrency] || _aeCurrency;
+    const other  = trip.members.find(m => m.email !== ME);
+    const oName  = other?.name || 'them';
+    const myColor = '#4f8ef7';
+    const oColor  = other ? avatarColor(oName) : '#aaa';
+    const half    = (amount / 2).toFixed(2);
+    const full    = amount.toFixed(2);
+
+    const twoP = trip.members.length === 2;
+    const opts = twoP ? [
+      { paidBy: ME,           type:'equal', title:'You paid, split equally.',
+        sub:`${oName} owes you ${sym}${half}.`,  cls:'green' },
+      { paidBy: ME,           type:'full',  title:'You are owed the full amount.',
+        sub:`${oName} owes you ${sym}${full}.`,  cls:'green' },
+      { paidBy: other?.email, type:'equal', title:`${oName} paid, split equally.`,
+        sub:`You owe ${oName} ${sym}${half}.`,   cls:'red' },
+      { paidBy: other?.email, type:'full',  title:`${oName} is owed the full amount.`,
+        sub:`You owe ${oName} ${sym}${full}.`,   cls:'red' },
+    ] : [
+      { paidBy: ME,           type:'equal', title:'You paid, split equally.',   sub:'', cls:'green' },
+      { paidBy: ME,           type:'custom', title:'You paid, split unequally.', sub:'', cls:'green' },
+    ];
+
+    const meInit = initials('You');
+    const oInit  = other ? initials(oName) : '?';
+
+    document.getElementById('splitPickerOpts').innerHTML = opts.map((opt, i) => {
+      const av1bg = opt.paidBy === ME ? myColor : oColor;
+      const av2bg = opt.paidBy === ME ? oColor  : myColor;
+      const av1in = opt.paidBy === ME ? meInit  : oInit;
+      const av2in = opt.paidBy === ME ? oInit   : meInit;
+      const checked = _aeSplitOpt === i;
+      return `<div class="split-opt-row" onclick="selectSplitOpt(${i})">
+        <div class="split-avatars">
+          <div class="split-av split-av-1" style="background:${av1bg};${checked?'border-color:var(--accent)':''}">${av1in}</div>
+          <div class="split-av split-av-2" style="background:${av2bg};${checked?'border-color:var(--accent)':''}">${av2in}</div>
+        </div>
+        <div style="flex:1">
+          <div class="split-opt-title">${opt.title}</div>
+          ${opt.sub ? `<div class="split-opt-sub ${opt.cls}">${opt.sub}</div>` : ''}
+        </div>
+        ${checked ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>` : ''}
+      </div>`;
+    }).join('');
+
+    openModal('modalSplitPicker');
+  }
+
+  function selectSplitOpt(idx) {
+    const trip  = _expCtx?.trip;
+    const other = trip?.members.find(m => m.email !== ME);
+    _aeSplitOpt = idx;
+    const twoP  = trip?.members.length === 2;
+    if (twoP) {
+      const opts = [
+        { paidBy: ME,           type: 'equal' },
+        { paidBy: ME,           type: 'full'  },
+        { paidBy: other?.email, type: 'equal' },
+        { paidBy: other?.email, type: 'full'  },
+      ];
+      const opt  = opts[idx] || opts[0];
+      _aePaidBy  = opt.paidBy;
+      _aeSplit   = opt.type === 'full' ? 'full' : 'equal';
+    } else {
+      _aePaidBy = idx === 0 ? ME : null;
+      _aeSplit  = idx === 1 ? 'custom' : 'equal';
+    }
+    document.getElementById('aeSplitRows').style.display = 'none';
+    closeModal('modalSplitPicker');
+    updateAeSplitSummary();
+  }
+
+  // ── Split Options screen ──────────────────────────────────────────────────
+  let _soType      = 'equal';
+  let _soPaidBy    = null;
+  let _soSelected  = {};   // for equal: { email: bool }
+  let _soCustomSplits = null; // final computed splits saved here
+
+  function openMoreSplitOptions() {
+    closeModal('modalSplitPicker');
+    const trip = _expCtx?.trip;
+    if (!trip) return;
+    _soType   = 'equal';
+    _soPaidBy = _aePaidBy || ME;
+    _soSelected = {};
+    trip.members.forEach(m => { _soSelected[m.email] = true; });
+    renderSoScreen();
+    document.getElementById('screenSplitOptions').style.display = 'flex';
+  }
+
+  function closeSplitOptions() {
+    document.getElementById('screenSplitOptions').style.display = 'none';
+  }
+
+  function saveSplitOptions() {
+    const trip   = _expCtx?.trip;
+    const amount = parseFloat(document.getElementById('aeAmount').value) || 0;
+    if (!trip) { closeSplitOptions(); return; }
+    _aePaidBy   = _soPaidBy;
+    _aeSplitOpt = -1;
+
+    if (_soType === 'equal') {
+      const selected = trip.members.filter(m => _soSelected[m.email] !== false);
+      const per = selected.length > 0 ? amount / selected.length : 0;
+      _soCustomSplits = trip.members.map(m => ({
+        email: m.email, amount: _soSelected[m.email] !== false ? per : 0,
+      }));
+      _aeSplit = 'custom';
+    } else if (_soType === 'amount') {
+      _soCustomSplits = trip.members.map((m, i) => ({
+        email: m.email, amount: parseFloat(document.getElementById(`soAmt_${i}`)?.value) || 0,
+      }));
+      _aeSplit = 'custom';
+    } else if (_soType === 'percent') {
+      _soCustomSplits = trip.members.map((m, i) => {
+        const pct = parseFloat(document.getElementById(`soPct_${i}`)?.value) || 0;
+        return { email: m.email, amount: amount * pct / 100 };
+      });
+      _aeSplit = 'custom';
+    }
+    closeSplitOptions();
+    updateAeSplitSummary();
+  }
+
+  function renderSoScreen() {
+    const trip = _expCtx?.trip;
+    if (!trip) return;
+    // Paid by
+    const payer = trip.members.find(m => m.email === _soPaidBy) || trip.members[0];
+    document.getElementById('soPaidAvatar').textContent  = initials(payer.name);
+    document.getElementById('soPaidAvatar').style.background = payer.email === ME ? '#4f8ef7' : avatarColor(payer.name);
+    document.getElementById('soPaidName').textContent = payer.email === ME ? 'You' : payer.name;
+    // Tabs
+    ['equal','amount','percent'].forEach(t => {
+      document.getElementById('soTab_'+t).classList.toggle('active', _soType === t);
+    });
+    // Type description
+    const descs = {
+      equal:   ['Split equally',   'Select which people owe an equal share.'],
+      amount:  ['Split by amounts', 'Enter the exact amount each person owes.'],
+      percent: ['Split by %',       'Enter the percentage each person owes.'],
+    };
+    const [title, sub] = descs[_soType];
+    document.getElementById('soTypeDesc').innerHTML = `<strong>${title}</strong><span>${sub}</span>`;
+    renderSoMembers();
+    renderSoFooter();
+  }
+
+  function renderSoMembers() {
+    const trip   = _expCtx?.trip;
+    const amount = parseFloat(document.getElementById('aeAmount').value) || 0;
+    const sym    = SYM[_aeCurrency] || _aeCurrency;
+    const sel    = trip.members.filter(m => _soSelected[m.email] !== false);
+    const per    = sel.length > 0 ? amount / sel.length : 0;
+
+    document.getElementById('soMemberRows').innerHTML = trip.members.map((m, i) => {
+      const isOn = _soSelected[m.email] !== false;
+      const color = m.email === ME ? '#4f8ef7' : avatarColor(m.name);
+      const name  = m.email === ME ? 'You' : m.name;
+
+      if (_soType === 'equal') {
+        return `<div class="so-member-row">
+          <div class="member-avatar" style="width:40px;height:40px;font-size:0.8rem;background:${color}">${initials(m.name)}</div>
+          <span style="flex:1;font-size:0.95rem;font-weight:500">${esc(name)}</span>
+          ${isOn ? `<span style="font-size:0.85rem;color:var(--muted);margin-right:10px">${sym}${per.toFixed(2)}</span>` : ''}
+          <div class="so-check-circle ${isOn?'on':''}" onclick="soToggleMember('${m.email}')">
+            ${isOn ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>` : ''}
+          </div>
+        </div>`;
+      } else if (_soType === 'amount') {
+        return `<div class="so-member-row">
+          <div class="member-avatar" style="width:40px;height:40px;font-size:0.8rem;background:${color}">${initials(m.name)}</div>
+          <span style="flex:1;font-size:0.95rem;font-weight:500">${esc(name)}</span>
+          <div style="display:flex;align-items:center;gap:4px">
+            <span style="font-size:0.9rem;color:var(--muted)">${sym}</span>
+            <input class="so-member-input" id="soAmt_${i}" type="number" min="0" step="0.01"
+              value="${per > 0 ? per.toFixed(2) : ''}" placeholder="0.00" oninput="renderSoFooter()" />
+          </div>
+        </div>`;
+      } else {
+        return `<div class="so-member-row">
+          <div class="member-avatar" style="width:40px;height:40px;font-size:0.8rem;background:${color}">${initials(m.name)}</div>
+          <span style="flex:1;font-size:0.95rem;font-weight:500">${esc(name)}</span>
+          <div style="display:flex;align-items:center;gap:4px">
+            <input class="so-member-input" id="soPct_${i}" type="number" min="0" max="100" step="1"
+              value="${Math.round(100/trip.members.length)}" placeholder="0" oninput="renderSoFooter()" />
+            <span style="font-size:0.9rem;color:var(--muted)">%</span>
+          </div>
+        </div>`;
+      }
+    }).join('');
+  }
+
+  function renderSoFooter() {
+    const trip   = _expCtx?.trip;
+    const amount = parseFloat(document.getElementById('aeAmount').value) || 0;
+    const sym    = SYM[_aeCurrency] || _aeCurrency;
+
+    if (_soType === 'equal') {
+      const sel = trip.members.filter(m => _soSelected[m.email] !== false);
+      const per = sel.length > 0 ? amount / sel.length : 0;
+      document.getElementById('soFooterAmt').textContent = `${sym}${per.toFixed(2)}/person`;
+      document.getElementById('soFooterSub').textContent = `(${sel.length} ${sel.length===1?'person':'people'})`;
+      const allOn = trip.members.every(m => _soSelected[m.email] !== false);
+      document.getElementById('soAllBtn').querySelector('.so-check-circle').className = `so-check-circle ${allOn?'on':''}`;
+      document.getElementById('soAllBtn').querySelector('.so-check-circle').innerHTML = allOn
+        ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>` : '';
+      document.getElementById('soAllBtn').style.display = '';
+    } else if (_soType === 'amount') {
+      let total = 0;
+      trip.members.forEach((_, i) => { total += parseFloat(document.getElementById(`soAmt_${i}`)?.value) || 0; });
+      const ok = Math.abs(total - amount) < 0.02;
+      document.getElementById('soFooterAmt').innerHTML = ok
+        ? `<span style="color:var(--green)">${sym}${total.toFixed(2)} ✓</span>`
+        : `<span style="color:var(--red)">${sym}${total.toFixed(2)} / ${sym}${amount.toFixed(2)}</span>`;
+      document.getElementById('soFooterSub').textContent = ok ? 'Totals match' : 'Totals must match';
+      document.getElementById('soAllBtn').style.display = 'none';
+    } else {
+      let total = 0;
+      trip.members.forEach((_, i) => { total += parseFloat(document.getElementById(`soPct_${i}`)?.value) || 0; });
+      const ok = Math.abs(total - 100) < 0.5;
+      document.getElementById('soFooterAmt').innerHTML = ok
+        ? `<span style="color:var(--green)">${total.toFixed(0)}% ✓</span>`
+        : `<span style="color:var(--red)">${total.toFixed(0)}% / 100%</span>`;
+      document.getElementById('soFooterSub').textContent = ok ? 'Totals match' : 'Must total 100%';
+      document.getElementById('soAllBtn').style.display = 'none';
+    }
+  }
+
+  function setSoType(type) {
+    _soType = type;
+    renderSoScreen();
+  }
+
+  function soToggleMember(email) {
+    _soSelected[email] = _soSelected[email] === false ? true : false;
+    renderSoMembers();
+    renderSoFooter();
+  }
+
+  function soToggleAll() {
+    const trip = _expCtx?.trip;
+    const allOn = trip.members.every(m => _soSelected[m.email] !== false);
+    trip.members.forEach(m => { _soSelected[m.email] = !allOn; });
+    renderSoMembers();
+    renderSoFooter();
+  }
+
+  function toggleSoPaidByPicker() {
+    const trip = _expCtx?.trip;
+    const el   = document.getElementById('soPaidByPickerSo');
+    if (el.style.display !== 'none') { el.style.display = 'none'; return; }
+    el.innerHTML = trip.members.map(m => `
+      <div class="ae-picker-row" onclick="selectSoPaidBy('${esc(m.email)}')">
+        <div class="member-avatar" style="width:32px;height:32px;font-size:0.7rem;background:${m.email===ME?'#4f8ef7':avatarColor(m.name)}">${initials(m.name)}</div>
+        <span class="ae-picker-name">${esc(m.email===ME?'You':m.name)}</span>
+        ${_soPaidBy===m.email?'<span class="ae-picker-check">✓</span>':''}
+      </div>`).join('');
+    el.style.display = '';
+  }
+
+  function selectSoPaidBy(email) {
+    _soPaidBy = email;
+    document.getElementById('soPaidByPickerSo').style.display = 'none';
+    renderSoScreen();
+  }
+
+  function updateAeSplitSummary() {
+    const trip   = _expCtx?.trip;
+    const amount = parseFloat(document.getElementById('aeAmount').value) || 0;
+    const sym    = SYM[_aeCurrency] || _aeCurrency;
+    const other  = trip?.members.find(m => m.email !== ME);
+    const oName  = other?.name || 'them';
+    const payer  = _aePaidBy || ME;
+    const payerName = payer === ME ? 'you' : (trip?.members.find(m=>m.email===payer)?.name || payer);
+    let title = '', desc = '';
+    if (_aeSplitOpt === 0 || (_aeSplit === 'equal' && payer === ME)) {
+      title = `Paid by ${payerName} and split equally`;
+      if (amount > 0 && other) desc = `${oName} owes you ${sym}${(amount/2).toFixed(2)}`;
+    } else if (_aeSplitOpt === 1) {
+      title = `Paid by you, owed full amount`;
+      if (amount > 0 && other) desc = `${oName} owes you ${sym}${amount.toFixed(2)}`;
+    } else if (_aeSplitOpt === 2) {
+      title = `Paid by ${oName}, split equally`;
+      if (amount > 0) desc = `You owe ${oName} ${sym}${(amount/2).toFixed(2)}`;
+    } else if (_aeSplitOpt === 3) {
+      title = `${oName} is owed the full amount`;
+      if (amount > 0) desc = `You owe ${oName} ${sym}${amount.toFixed(2)}`;
+    } else {
+      title = `Paid by ${payerName} and split unequally`;
+    }
+    document.getElementById('aeSplitSummaryTitle').textContent = title;
+    document.getElementById('aeSplitSummaryDesc').textContent  = desc;
+  }
+
+  function renderAeSplitRows() {
+    const trip = _expCtx?.trip;
+    if (!trip) return;
+    const amount = parseFloat(document.getElementById('aeAmount').value) || 0;
+    const per    = amount / trip.members.length;
+    document.getElementById('aeSplitRows').innerHTML =
+      `<div style="padding:0 16px 8px;border-bottom:1px solid var(--border)">` +
+      trip.members.map((m, i) => `
+        <div class="split-member-row">
+          <div class="member-avatar" style="width:30px;height:30px;font-size:0.68rem">${initials(m.name)}</div>
+          <span style="flex:1;font-size:0.86rem;margin-left:8px">${esc(m.name)}${m.email===ME?' (you)':''}</span>
+          <input type="number" class="split-input" id="aesi${i}" value="${per>0?per.toFixed(2):''}"
+            min="0" step="0.01" placeholder="0.00" oninput="updateAeSplitTotal()" />
+        </div>`).join('') +
+      `<div class="split-total-row"><span>Total split</span><span id="aeSplitTotalLabel"></span></div>` +
+      `</div>`;
+    updateAeSplitTotal();
+  }
+
+  function aeRecalcSplits() {
+    if (_aeSplit==='custom') renderAeSplitRows();
+    updateAeSplitSummary();
+  }
+
+  function updateAeSplitTotal() {
+    const trip = _expCtx?.trip; if (!trip) return;
+    const amount = parseFloat(document.getElementById('aeAmount').value) || 0;
+    let total = 0;
+    trip.members.forEach((_, i) => { total += parseFloat(document.getElementById('aesi'+i)?.value)||0; });
+    const sym = SYM[_aeCurrency]||'';
+    const el  = document.getElementById('aeSplitTotalLabel');
+    if (el) el.innerHTML = Math.abs(total-amount)<0.02
+      ? `<span class="split-ok">${sym}${total.toFixed(2)} ✓</span>`
+      : `<span class="split-err">${sym}${total.toFixed(2)} / ${sym}${amount.toFixed(2)}</span>`;
+  }
+
+  function toggleAeDatePicker() {
+    const p = document.getElementById('aeDatePicker');
+    if (p.style.display === 'none' || !p.style.display) {
+      document.getElementById('aeDate').value = _aeDate;
+      p.style.display = '';
+    } else {
+      p.style.display = 'none';
+    }
+  }
+
+  function onAeDateChange() {
+    _aeDate = document.getElementById('aeDate').value;
+    const d    = new Date(_aeDate+'T00:00:00');
+    const now  = new Date(); now.setHours(0,0,0,0);
+    const diff = Math.round((now-d)/86400000);
+    document.getElementById('aeDateLabel').textContent =
+      diff===0?'Today': diff===1?'Yesterday':
+      d.toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+    document.getElementById('aeDatePicker').style.display = 'none';
+  }
+
+  function getAeSplits(amount, trip) {
+    if (_soCustomSplits) {
+      const splits = _soCustomSplits;
+      _soCustomSplits = null;
+      return splits;
+    }
+    if (_aeSplit === 'full') {
+      // Payer is owed everything; everyone else owes their share
+      const payer = _aePaidBy || ME;
+      return trip.members.map(m => ({
+        email: m.email,
+        amount: m.email === payer ? 0 : amount / (trip.members.length - 1),
+      }));
+    }
+    if (_aeSplit === 'equal') {
+      const per = amount / trip.members.length;
+      return trip.members.map(m => ({ email:m.email, amount:per }));
+    }
+    const splits = trip.members.map((m, i) => {
+      const inp = document.getElementById('aesi'+i);
+      return { email:m.email, amount:parseFloat(inp?.value)||0 };
+    });
+    const total = splits.reduce((s,x)=>s+x.amount,0);
+    if (Math.abs(total-amount)>0.02) {
+      document.getElementById('aeErrors').innerHTML =
+        `<div class="form-error" style="padding:4px 0">Split total must equal ${fmt(amount,_aeCurrency)}.</div>`;
+      return null;
+    }
+    return splits;
+  }
+
+  async function saveExpenseFromScreen() {
+    const desc   = document.getElementById('aeDesc').value.trim();
+    const amount = parseFloat(document.getElementById('aeAmount').value);
+    const errs   = document.getElementById('aeErrors');
+    errs.innerHTML = '';
+
+    if (!desc) { errs.innerHTML='<div class="form-error" style="padding:4px 0">Description is required.</div>'; return; }
+    if (!amount||amount<=0) { errs.innerHTML='<div class="form-error" style="padding:4px 0">Enter a valid amount.</div>'; return; }
+    if (!_expCtx?.trip) { toast('Select who to split with first', true); return; }
+
+    const trip   = _expCtx.trip;
+    const splits = getAeSplits(amount, trip);
+    if (!splits) return;
+
+    const btn = document.getElementById('aeSave');
+    btn.disabled=true; btn.textContent='Saving…';
+
+    const payload = {
+      description:desc, amount, splits,
+      currency: document.getElementById('aeCurrency').value || trip.currency,
+      paidBy:   _aePaidBy || ME,
+      date:     _aeDate || today(),
+      category: 'Other',
+    };
+
+    try {
+      const data = await api('POST',`/api/tripshare/trips/${trip.tripId}/expenses`, payload);
+      const gi = _groups.findIndex(g=>g.tripId===trip.tripId);
+      if (gi>=0) _groups[gi].expenses.push(data.expense);
+      if (_expCtx?.type !== 'friend' && _current && _current.tripId===trip.tripId) {
+        _current.expenses.push(data.expense);
+        closeAddExpense();
+        renderDetail();
+      } else {
+        closeAddExpense();
+      }
+      toast('Expense added!');
+    } catch(err) { toast(err.message, true); }
+    finally { btn.disabled=false; btn.textContent='Save'; }
+  }
+
+  // ── Start ──────────────────────────────────────────────────────────────────
+  init();
+</script>
+<script src="session-guard.js"></script>
+</body>
+</html>
