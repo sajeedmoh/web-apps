@@ -499,6 +499,41 @@
     }
     .toast.show { opacity: 1; }
 
+    /* ── Record Payment modal ── */
+    .rp-body {
+      padding: 40px 24px 24px;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .rp-avatars { display: flex; align-items: center; gap: 20px; margin-bottom: 22px; }
+    .rp-avatar {
+      width: 72px; height: 72px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.25rem; font-weight: 700; color: #fff;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+    }
+    .rp-arrow { font-size: 1.6rem; color: #c0c8d2; line-height: 1; }
+    .rp-desc { font-size: 1.08rem; color: var(--text); margin-bottom: 22px; font-weight: 400; text-align: center; }
+    .rp-amount-row { display: flex; align-items: center; justify-content: center; gap: 4px; margin-bottom: 4px; }
+    .rp-sym { font-size: 2rem; font-weight: 300; color: var(--muted); line-height: 1; align-self: flex-start; margin-top: 8px; }
+    .rp-amount-input {
+      font-size: 3rem; font-weight: 700; color: var(--text); border: none; outline: none;
+      background: none; width: 170px; text-align: center; font-family: inherit;
+      -moz-appearance: textfield;
+    }
+    .rp-amount-input::-webkit-inner-spin-button,
+    .rp-amount-input::-webkit-outer-spin-button { -webkit-appearance: none; appearance: none; }
+    .rp-note {
+      display: flex; align-items: flex-start; gap: 12px;
+      background: #f3f4f6; border-radius: 12px; padding: 14px 16px;
+      width: 100%; margin-top: 24px;
+    }
+    .rp-note-icon {
+      width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+      border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center;
+      font-size: 0.78rem; font-weight: 700; color: var(--accent); margin-top: 1px;
+    }
+    .rp-note-text { font-size: 0.84rem; color: var(--text); line-height: 1.55; }
+
     @media (min-width: 480px) {
       .modal { border-radius: 20px; margin: auto; }
       .modal-backdrop { align-items: center; }
@@ -1209,6 +1244,37 @@
   </div>
 </div>
 
+<!-- Record Payment -->
+<div class="modal-backdrop" id="modalRecordPayment" onclick="closeBdrop(event,'modalRecordPayment')">
+  <div class="modal">
+    <div class="modal-header">
+      <button class="modal-close" onclick="closeModal('modalRecordPayment')">✕</button>
+      <div class="modal-title">Record a payment</div>
+      <div style="width:28px"></div>
+    </div>
+    <div class="rp-body">
+      <div class="rp-avatars">
+        <div id="rpPayerAvatar" class="rp-avatar"></div>
+        <div class="rp-arrow">→</div>
+        <div id="rpPayeeAvatar" class="rp-avatar"></div>
+      </div>
+      <div id="rpDesc" class="rp-desc"></div>
+      <div class="rp-amount-row">
+        <span id="rpSymbol" class="rp-sym"></span>
+        <input id="rpAmountInput" class="rp-amount-input" type="number" min="0.01" step="0.01" placeholder="0.00" />
+      </div>
+      <div class="form-error" id="rpAmtErr" style="text-align:center"></div>
+      <div class="rp-note">
+        <div class="rp-note-icon">i</div>
+        <div class="rp-note-text">You are recording a payment that happened outside TripShare. No money will be moved.</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-primary" id="rpSubmit" onclick="confirmRecordPayment()">Record payment</button>
+    </div>
+  </div>
+</div>
+
 <!-- Split Options Full-Screen -->
 <div id="screenSplitOptions" class="so-screen" style="display:none">
   <div class="so-top-bar">
@@ -1618,8 +1684,15 @@
                       :                    `${payer} paid ${payee} ${sym}${item.amount.toFixed(2)}.`;
           return `<div class="exp-row-v2" onclick="deleteSettlement(${item.id})">
             ${dateCol}
-            <div class="exp-icon-sq settle">💸</div>
-            <div class="exp-body-v2"><div class="exp-desc-v2" style="font-weight:400;color:var(--muted)">${desc}</div></div>
+            <div class="exp-icon-sq settle" style="background:rgba(22,163,74,0.12)">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="6" width="20" height="12" rx="2"/>
+                <circle cx="12" cy="12" r="3"/>
+                <line x1="2" y1="10" x2="4" y2="10"/><line x1="20" y1="10" x2="22" y2="10"/>
+                <line x1="2" y1="14" x2="4" y2="14"/><line x1="20" y1="14" x2="22" y2="14"/>
+              </svg>
+            </div>
+            <div class="exp-body-v2"><div class="exp-desc-v2" style="font-weight:400;color:var(--text)">${esc(desc)}</div></div>
           </div>`;
         }
 
@@ -1688,7 +1761,7 @@
       card.innerHTML += `<div style="padding:10px 16px 4px;font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted)">Settlements</div>`;
       card.innerHTML += [...g.settlements].reverse().map(s =>
         `<div class="settlement-row">
-          <div style="font-size:1.1rem">💸</div>
+          <div style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><line x1="2" y1="10" x2="4" y2="10"/><line x1="20" y1="10" x2="22" y2="10"/><line x1="2" y1="14" x2="4" y2="14"/><line x1="20" y1="14" x2="22" y2="14"/></svg></div>
           <div class="settlement-info">
             <div class="settlement-text">${esc(mname(s.from,g))} paid ${esc(mname(s.to,g))}</div>
             <div class="settlement-date">${s.date}${s.note?' · '+esc(s.note):''}</div>
@@ -1960,7 +2033,18 @@
         (g.expenses || []).forEach(e => {
           const myShare = (e.splits||[]).find(s=>s.email===ME)?.amount || 0;
           const frShare = (e.splits||[]).find(s=>s.email===f.email)?.amount || 0;
+          const isSettle = e.category === 'Settlement' || e.description === 'Settlement';
           let tag='', val=0, cls='';
+          if (isSettle) {
+            const settleAmt = Math.max(myShare, frShare);
+            if (settleAmt < 0.01) return;
+            const sym = SYM[g.currency] || g.currency;
+            const settleDesc = e.paidBy === ME
+              ? `You paid ${f.name} ${sym}${settleAmt.toFixed(2)}.`
+              : `${f.name} paid you ${sym}${settleAmt.toFixed(2)}.`;
+            rows.push({ ...e, currency: g.currency, tripId: g.tripId, groupName: '', tag: '', val: 0, cls: 'settle', _settleDesc: settleDesc });
+            return;
+          }
           if (e.paidBy === ME && frShare > 0) {
             tag = `${f.name} borrowed`; val = frShare; cls = 'lent';
           } else if (e.paidBy === f.email && myShare > 0) {
@@ -1995,6 +2079,22 @@
         const dayName = d.toLocaleDateString('en',{weekday:'short'});
         const dayNum  = d.getDate();
         const sym = SYM[e.currency]||e.currency;
+        if (e.cls === 'settle') {
+          return `<div class="fd-exp-row" style="cursor:pointer" onclick="openFdExpMenu(event,'${e.tripId}',${e.id})">
+            <div class="fd-exp-date"><div class="day">${dayName}</div><div class="num">${dayNum}</div></div>
+            <div class="fd-exp-icon" style="background:rgba(22,163,74,0.12)">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="6" width="20" height="12" rx="2"/>
+                <circle cx="12" cy="12" r="3"/>
+                <line x1="2" y1="10" x2="4" y2="10"/><line x1="20" y1="10" x2="22" y2="10"/>
+                <line x1="2" y1="14" x2="4" y2="14"/><line x1="20" y1="14" x2="22" y2="14"/>
+              </svg>
+            </div>
+            <div class="fd-exp-info">
+              <div class="fd-exp-desc" style="font-weight:400;color:var(--text)">${esc(e._settleDesc)}</div>
+            </div>
+          </div>`;
+        }
         const sub = e.groupName ? `${e.groupName} · ${sym}${e.amount.toFixed(2)}` : `${sym}${e.amount.toFixed(2)}`;
         return `<div class="fd-exp-row" style="cursor:pointer" onclick="openFdExpMenu(event,'${e.tripId}',${e.id})">
           <div class="fd-exp-date"><div class="day">${dayName}</div><div class="num">${dayNum}</div></div>
@@ -2099,7 +2199,17 @@
     goToAeStep2AsFriend(f.email, f.name, trip);
   }
 
-  async function settleUpFriend() {
+  function myName() {
+    for (const g of _groups) {
+      const m = g.members?.find(m => m.email === ME);
+      if (m) return m.name;
+    }
+    return 'You';
+  }
+
+  let _rpData = null;
+
+  function settleUpFriend() {
     const f = _currentFriend;
     const bals = friendBalances(f.email);
     const nonZero = Object.entries(bals).filter(([,v]) => Math.abs(v) > 0.01);
@@ -2107,29 +2217,75 @@
     const [cur, val] = nonZero[0];
     const sym = SYM[cur] || cur;
     const absVal = Math.abs(val).toFixed(2);
-    const payer  = val > 0 ? ME : f.email;       // who pays whom
-    const payee  = val > 0 ? f.email : ME;
-    const payerName = val > 0 ? 'You' : f.name;
-    if (!confirm(`Record ${payerName} paying ${sym}${absVal} to settle up?`)) return;
-    // Find/create direct group
-    const direct = _groups.find(g => g.description === '__direct__' && g.memberEmails.includes(f.email) && g.memberEmails.includes(ME));
-    if (!direct) { toast('No shared expenses to settle', true); return; }
-    setLoading(true);
-    try {
-      const splits = [
-        { email: payer, amount: 0 },
-        { email: payee, amount: parseFloat(absVal) },
-      ];
-      const data = await api('POST', `/api/tripshare/trips/${direct.tripId}/expenses`, {
-        description: 'Settlement', amount: parseFloat(absVal),
-        splits, currency: cur, paidBy: payer, date: today(), category: 'Settlement',
+    const payer = val > 0 ? f.email : ME;
+    const payee = val > 0 ? ME : f.email;
+
+    // Collect every group (any type) that has a direct payer→payee debt in this currency
+    const groupDebts = [];
+    _groups
+      .filter(g => g.currency === cur && g.memberEmails.includes(f.email) && g.memberEmails.includes(ME))
+      .forEach(g => {
+        simplify(calcNet(g)).forEach(d => {
+          if (d.from === payer && d.to === payee && d.amount > 0.01)
+            groupDebts.push({ g, amount: d.amount });
+        });
       });
-      const gi = _groups.findIndex(g => g.tripId === direct.tripId);
-      if (gi >= 0) _groups[gi].expenses.push(data.expense);
+
+    if (!groupDebts.length) { toast('No outstanding balance to settle', true); return; }
+
+    _rpData = { payer, payee, cur, groupDebts, f };
+
+    const meName    = myName();
+    const payerName = payer === ME ? meName : f.name;
+    const payeeName = payee === ME ? meName : f.name;
+    const isMePayer = payer === ME;
+
+    document.getElementById('rpPayerAvatar').textContent  = initials(payerName);
+    document.getElementById('rpPayerAvatar').style.background = isMePayer ? '#4f8ef7' : avatarColor(f.name);
+    document.getElementById('rpPayeeAvatar').textContent  = initials(payeeName);
+    document.getElementById('rpPayeeAvatar').style.background = isMePayer ? avatarColor(f.name) : '#4f8ef7';
+    document.getElementById('rpDesc').textContent = isMePayer ? `You paid ${f.name}` : `${f.name} paid you`;
+    document.getElementById('rpSymbol').textContent = sym;
+    document.getElementById('rpAmountInput').value = absVal;
+    document.getElementById('rpAmtErr').textContent = '';
+    document.getElementById('rpSubmit').disabled = false;
+    document.getElementById('rpSubmit').textContent = 'Record payment';
+    openModal('modalRecordPayment');
+  }
+
+  async function confirmRecordPayment() {
+    const v = parseFloat(document.getElementById('rpAmountInput').value);
+    if (!v || v <= 0) { document.getElementById('rpAmtErr').textContent = 'Enter a valid amount.'; return; }
+    document.getElementById('rpAmtErr').textContent = '';
+    const btn = document.getElementById('rpSubmit');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    const { payer, payee, cur, groupDebts, f } = _rpData;
+    // Scale per-group amounts if the user edited the total
+    const totalBalance = groupDebts.reduce((s, x) => s + x.amount, 0);
+    const scale = totalBalance > 0.01 ? v / totalBalance : 1;
+    try {
+      for (const { g: grp, amount } of groupDebts) {
+        const settleAmt = Math.round(amount * scale * 100) / 100;
+        if (settleAmt < 0.01) continue;
+        const data = await api('POST', `/api/tripshare/trips/${grp.tripId}/settlements`, {
+          from: payer, to: payee,
+          amount: settleAmt, currency: cur,
+          date: today(), note: '',
+        });
+        const gi = _groups.findIndex(g => g.tripId === grp.tripId);
+        if (gi >= 0) {
+          const saved = data.settlement || data;
+          _groups[gi].settlements.push({
+            id: saved.id, from: payer, to: payee,
+            amount: settleAmt, currency: cur, date: today(), note: '',
+          });
+        }
+      }
+      closeModal('modalRecordPayment');
       renderFriendDetail();
-      toast('Settlement recorded!');
+      toast('Payment recorded!');
     } catch(err) { toast(err.message, true); }
-    finally { setLoading(false); }
+    finally { btn.disabled = false; btn.textContent = 'Record payment'; }
   }
 
   async function removeFriend(email) {
@@ -2177,7 +2333,7 @@
         </div>`;
       } else {
         return `<div class="activity-row">
-          <div class="activity-icon settle">💸</div>
+          <div class="activity-icon settle" style="display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><line x1="2" y1="10" x2="4" y2="10"/><line x1="20" y1="10" x2="22" y2="10"/><line x1="2" y1="14" x2="4" y2="14"/><line x1="20" y1="14" x2="22" y2="14"/></svg></div>
           <div class="activity-info">
             <div class="activity-text"><span class="bold">${esc(ev.from)}</span> paid <span class="bold">${esc(ev.to)}</span></div>
             <div class="activity-meta">${esc(ev.grpName)} · ${relDate(ev.date)}</div>
@@ -2609,7 +2765,15 @@
         date:   document.getElementById('stDate').value,
         note:   document.getElementById('stNote').value.trim(),
       });
-      _current.settlements.push(data.settlement);
+      const stFrom = document.getElementById('stFrom').value;
+      const stTo   = document.getElementById('stTo').value;
+      const stDate = document.getElementById('stDate').value;
+      const stNote = document.getElementById('stNote').value.trim();
+      const saved  = data.settlement || data;
+      _current.settlements.push({
+        id: saved.id, from: stFrom, to: stTo,
+        amount, currency: _current.currency, date: stDate, note: stNote,
+      });
       closeModal('modalSettle');
       renderDetail();
       toast('Settlement recorded!');
