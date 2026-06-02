@@ -33,7 +33,6 @@
       padding: 76px 24px 60px;
     }
 
-    /* ── Back bar ─────────────────────────────── */
     .back-bar {
       position: fixed;
       top: 0; left: 0; right: 0;
@@ -59,16 +58,12 @@
 
     .back-link:hover { color: var(--accent); }
 
-    /* ── Layout ───────────────────────────────── */
     .page-wrap {
       max-width: 700px;
       margin: 0 auto;
     }
 
-    /* ── Page header ─────────────────────────── */
-    .page-header {
-      margin-bottom: 24px;
-    }
+    .page-header { margin-bottom: 20px; }
 
     .page-title {
       font-size: 1.75rem;
@@ -82,7 +77,143 @@
       color: var(--muted);
     }
 
-    /* ── Cycle summary bar ────────────────────── */
+    /* Consumer selector */
+    .consumer-section { margin-bottom: 20px; }
+
+    .consumer-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .consumer-tab {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 13px;
+      border-radius: 9px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.03);
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 500;
+      font-family: inherit;
+      transition: border-color 0.15s, background 0.15s, color 0.15s;
+      user-select: none;
+    }
+
+    .consumer-tab:hover:not(.active) {
+      border-color: rgba(255,255,255,0.15);
+      color: var(--text);
+    }
+
+    .consumer-tab.active {
+      border-color: var(--accent-border);
+      background: var(--accent-bg);
+      color: var(--accent);
+    }
+
+    .tab-actions {
+      display: flex;
+      gap: 1px;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .consumer-tab:hover .tab-actions,
+    .consumer-tab.active .tab-actions {
+      opacity: 1;
+    }
+
+    .tab-action-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: currentColor;
+      opacity: 0.45;
+      font-size: 0.72rem;
+      padding: 1px 3px;
+      line-height: 1;
+      font-family: inherit;
+      border-radius: 3px;
+      transition: opacity 0.15s, background 0.15s;
+    }
+
+    .tab-action-btn:hover {
+      opacity: 1;
+      background: rgba(255,255,255,0.08);
+    }
+
+    .btn-add-consumer {
+      padding: 8px 13px;
+      border-radius: 9px;
+      border: 1px dashed rgba(255,255,255,0.12);
+      background: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-family: inherit;
+      font-weight: 500;
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    .btn-add-consumer:hover {
+      border-color: var(--accent-border);
+      color: var(--accent);
+    }
+
+    .add-consumer-panel {
+      margin-top: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+    }
+
+    .add-consumer-panel .form-grid { margin-bottom: 0; }
+
+    .add-consumer-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .btn-save-consumer {
+      padding: 9px 18px;
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      color: #000;
+      font-size: 0.84rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: filter 0.15s;
+    }
+
+    .btn-save-consumer:hover { filter: brightness(1.1); }
+    .btn-save-consumer:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .btn-cancel-consumer {
+      padding: 9px 18px;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 0.84rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    .btn-cancel-consumer:hover {
+      border-color: rgba(255,255,255,0.2);
+      color: var(--text);
+    }
+
+    /* Cycle summary bar */
     .cycle-bar {
       background: var(--accent-bg);
       border: 1px solid var(--accent-border);
@@ -126,9 +257,7 @@
       margin-top: 3px;
     }
 
-    .cycle-bar-right {
-      text-align: right;
-    }
+    .cycle-bar-right { text-align: right; }
 
     .last-reading-label {
       font-size: 0.72rem;
@@ -143,7 +272,7 @@
       color: var(--text);
     }
 
-    /* ── Card ─────────────────────────────────── */
+    /* Card */
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -161,7 +290,7 @@
       margin-bottom: 18px;
     }
 
-    /* ── Form grid ────────────────────────────── */
+    /* Form grid */
     .form-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -202,7 +331,7 @@
     .field input:focus { border-color: var(--accent); }
     .field input::placeholder { color: rgba(240,240,240,0.2); }
 
-    /* Usage preview pill */
+    /* Usage preview */
     .usage-preview {
       display: inline-flex;
       align-items: center;
@@ -218,11 +347,8 @@
       color: var(--green);
     }
 
-    /* ── Entry type selector ──────────────────── */
-    .type-group {
-      display: flex;
-      gap: 10px;
-    }
+    /* Entry type selector */
+    .type-group { display: flex; gap: 10px; }
 
     .type-option {
       flex: 1;
@@ -270,7 +396,7 @@
       flex-shrink: 0;
     }
 
-    /* ── Submit button ────────────────────────── */
+    /* Submit button */
     .btn-add {
       width: 100%;
       padding: 12px;
@@ -289,13 +415,8 @@
     .btn-add:hover { filter: brightness(1.1); }
     .btn-add:active { transform: scale(0.98); }
 
-    /* ── Entries section ──────────────────────── */
+    /* Entries */
     .entries-section { margin-top: 8px; }
-
-    /* Cycle group */
-    .cycle-group {
-      margin-bottom: 20px;
-    }
 
     .cycle-header {
       display: flex;
@@ -321,25 +442,13 @@
       color: rgba(34,197,94,0.6);
     }
 
-    /* Current (open) cycle header */
-    .cycle-header.open {
-      background: var(--accent-bg);
-      border-color: var(--accent-border);
-      border-radius: 10px;
-      margin-bottom: 8px;
-    }
-
-    .cycle-header.open .cycle-header-left { color: var(--accent); }
-    .cycle-header.open .cycle-header-right { color: rgba(245,158,11,0.6); }
-
-    /* Entry row */
     .entry-row {
       background: var(--surface);
       border: 1px solid var(--border);
       border-top: none;
       padding: 13px 16px;
       display: grid;
-      grid-template-columns: 90px 1fr 70px 70px auto;
+      grid-template-columns: 90px 1fr 70px 70px 65px auto;
       align-items: center;
       gap: 12px;
       transition: background 0.15s;
@@ -380,9 +489,19 @@
       color: var(--text);
     }
 
-    .entry-usage.bill-reset {
-      color: var(--green);
+    .entry-avg {
+      font-size: 0.78rem;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+      color: var(--muted);
     }
+
+    .entry-avg .avg-val {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .entry-usage.bill-reset { color: var(--green); }
 
     .badge {
       font-size: 0.65rem;
@@ -406,7 +525,6 @@
       border: 1px solid var(--green-border);
     }
 
-    /* Entry actions */
     .entry-actions {
       display: flex;
       gap: 6px;
@@ -430,7 +548,6 @@
       background: var(--red-bg);
     }
 
-    /* Empty state */
     .empty-state {
       text-align: center;
       padding: 48px 24px;
@@ -442,10 +559,9 @@
 
     .empty-state .icon { font-size: 2rem; margin-bottom: 10px; }
 
-    /* Table column headers */
     .entry-col-headers {
       display: grid;
-      grid-template-columns: 90px 1fr 70px 70px auto;
+      grid-template-columns: 90px 1fr 70px 70px 65px auto;
       gap: 12px;
       padding: 6px 16px 8px;
       font-size: 0.65rem;
@@ -455,23 +571,18 @@
     }
 
     .entry-col-headers span:nth-child(3),
-    .entry-col-headers span:nth-child(4) { text-align: right; }
+    .entry-col-headers span:nth-child(4),
+    .entry-col-headers span:nth-child(5) { text-align: right; }
 
-    /* ── Responsive ───────────────────────────── */
+    /* Responsive */
     @media (max-width: 580px) {
       body { padding: 68px 14px 48px; }
-
       .form-grid { grid-template-columns: 1fr; }
       .form-grid .span2 { grid-column: span 1; }
-
-      /* Scroll table horizontally — keep all columns visible */
       .entries-section { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-      .entry-row,
-      .entry-col-headers { min-width: 480px; }
-
+      .entry-row, .entry-col-headers { min-width: 540px; }
       .cycle-bar { flex-direction: column; align-items: flex-start; }
       .cycle-bar-right { text-align: left; }
-
       .page-title { font-size: 1.4rem; }
     }
   </style>
@@ -484,14 +595,35 @@
 
 <div class="page-wrap">
 
-  <!-- ── Page header ── -->
   <div class="page-header">
     <h1 class="page-title">&#9889; Electricity Tracker</h1>
     <div class="page-subtitle">Log meter readings and track usage across billing cycles</div>
   </div>
 
-  <!-- ── Current cycle summary ── -->
-  <div class="cycle-bar" id="cycleBar">
+  <!-- Consumer selector -->
+  <div class="consumer-section">
+    <div class="consumer-bar" id="consumerBar"></div>
+    <div class="add-consumer-panel" id="addConsumerPanel" style="display:none">
+      <div class="card-title" id="consumerPanelTitle">Add Consumer</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Label</label>
+          <input type="text" id="newConsumerLabel" placeholder="e.g. Home, Office" maxlength="40" />
+        </div>
+        <div class="field">
+          <label>Consumer Number</label>
+          <input type="text" id="newConsumerNumber" placeholder="Optional" maxlength="40" />
+        </div>
+      </div>
+      <div class="add-consumer-actions">
+        <button class="btn-save-consumer" id="btnSaveConsumer" onclick="saveConsumerForm()">Add Consumer</button>
+        <button class="btn-cancel-consumer" onclick="toggleAddConsumer(false)">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Current cycle summary -->
+  <div class="cycle-bar">
     <div>
       <div class="cycle-bar-label">Current Cycle Usage</div>
       <div>
@@ -500,13 +632,21 @@
       </div>
       <div class="cycle-bar-meta" id="cycleSince">No entries yet</div>
     </div>
+    <div>
+      <div class="cycle-bar-label">Avg Daily Usage</div>
+      <div>
+        <span class="cycle-bar-value" id="tillDateAvgVal" style="font-size:1.5rem">&#8212;</span>
+        <span class="cycle-bar-unit">units/day</span>
+      </div>
+      <div class="cycle-bar-meta">till date</div>
+    </div>
     <div class="cycle-bar-right">
       <div class="last-reading-label">Last meter reading</div>
-      <div class="last-reading-val" id="lastReadingVal">—</div>
+      <div class="last-reading-val" id="lastReadingVal">&#8212;</div>
     </div>
   </div>
 
-  <!-- ── Add entry form ── -->
+  <!-- Add entry form -->
   <div class="card">
     <div class="card-title">Add Entry</div>
 
@@ -526,7 +666,7 @@
 
       <div class="field span2">
         <label>Comments</label>
-        <input type="text" id="entryComment" placeholder="Optional note…" maxlength="120" />
+        <input type="text" id="entryComment" placeholder="Optional note&hellip;" maxlength="120" />
       </div>
 
       <div class="field span2">
@@ -543,7 +683,7 @@
             <input type="radio" name="entryType" id="typeBill" value="bill" />
             <label for="typeBill">
               <span class="type-dot"></span>
-              Bill received — reset cycle
+              Bill received &#8212; reset cycle
             </label>
           </div>
         </div>
@@ -554,14 +694,13 @@
     <button class="btn-add" onclick="addEntry()">+ Add Entry</button>
   </div>
 
-  <!-- ── Entries list ── -->
+  <!-- Entries list -->
   <div class="entries-section" id="entriesSection"></div>
 
 </div>
 
 <script src="config.js"></script>
 <script>
-  /* ── Auth & API ───────────────────────────────────────────────────── */
   const token    = localStorage.getItem('auth_token');
   const API_BASE = window.API_BASE || '';
 
@@ -569,23 +708,43 @@
     return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
   }
 
-  /* ── In-memory cache ──────────────────────────────────────────────── */
-  let _entries = [];
+  // _entries: regular meter entries only (consumer_meta filtered out)
+  // _consumers: derived from consumer_meta entries stored in the same API table
+  let _entries           = [];
+  let _consumers         = [];
+  let _activeId          = null;
+  let _editingConsumerId = null;
 
-  /* ── API calls ────────────────────────────────────────────────────── */
-  async function fetchEntries() {
+  /* ── API calls ────────────────────────────────────────────────── */
+  async function fetchAll() {
     const res  = await fetch(API_BASE + '/api/electricity', { headers: authHeaders() });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to load entries');
-    _entries = data.entries || [];
+    if (!res.ok) throw new Error(data.error || 'Failed to load');
+    const all = data.entries || [];
+    _consumers = all
+      .filter(function(e) { return e.type === 'consumer_meta'; })
+      .map(function(e) {
+        var label = 'Consumer', number = '';
+        // label+number are encoded in the comment field as JSON
+        try {
+          var meta = JSON.parse(e.comment || '');
+          label  = meta.label  || label;
+          number = meta.number || number;
+        } catch (err) {
+          // older entry with plain text comment or no comment
+          if (e.comment) label = e.comment;
+        }
+        return { id: String(e.id), label: label, number: number, metaEntryId: e.id };
+      });
+    _entries = all.filter(function(e) { return e.type !== 'consumer_meta'; });
   }
 
-  async function apiAddEntry(entry) {
+  async function apiPostEntry(entry) {
     const res  = await fetch(API_BASE + '/api/electricity', {
       method: 'POST', headers: authHeaders(), body: JSON.stringify(entry),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to save entry');
+    if (!res.ok) throw new Error(data.error || 'Failed to save');
   }
 
   async function apiDeleteEntry(id) {
@@ -593,41 +752,196 @@
       method: 'DELETE', headers: authHeaders(),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to delete entry');
+    if (!res.ok) throw new Error(data.error || 'Failed to delete');
   }
 
-  /* ── Button loading state ─────────────────────────────────────────── */
+  /* ── Consumer management ──────────────────────────────────────── */
+  async function apiCreateConsumer(label, number) {
+    const id = Date.now();
+    await apiPostEntry({
+      id:           id,
+      type:         'consumer_meta',
+      date:         new Date().toISOString().slice(0, 10),
+      meterReading: 0,
+      usage:        0,
+      comment:      JSON.stringify({ label: label, number: number }),
+    });
+    return String(id);
+  }
+
+  async function apiUpdateConsumer(consumer, label, number) {
+    // Delete then re-create with the same ID to keep consumerId links valid
+    await apiDeleteEntry(consumer.metaEntryId);
+    await apiPostEntry({
+      id:           consumer.metaEntryId,
+      type:         'consumer_meta',
+      date:         new Date().toISOString().slice(0, 10),
+      meterReading: 0,
+      usage:        0,
+      comment:      JSON.stringify({ label: label, number: number }),
+    });
+  }
+
+  function getEntriesForConsumer(id) {
+    const isFirst = _consumers.length > 0 && _consumers[0].id === id;
+    return _entries.filter(function(e) {
+      if (String(e.consumerId) === id) return true;
+      // Entries without consumerId belong to the first consumer (backward compat)
+      if (isFirst && !e.consumerId) return true;
+      return false;
+    });
+  }
+
+  function getActiveEntries() {
+    return _activeId ? getEntriesForConsumer(_activeId) : [];
+  }
+
+  function resolveActiveId() {
+    const stored = localStorage.getItem('electricity_active_consumer');
+    if (stored && _consumers.find(function(c) { return c.id === stored; })) {
+      _activeId = stored;
+    } else {
+      _activeId = _consumers.length > 0 ? _consumers[0].id : null;
+      if (_activeId) localStorage.setItem('electricity_active_consumer', _activeId);
+    }
+  }
+
+  function renderConsumerBar() {
+    const bar = document.getElementById('consumerBar');
+    let html  = '';
+    _consumers.forEach(function(c) {
+      const isActive = c.id === _activeId;
+      const editBtn  = '<button class="tab-action-btn" onclick="event.stopPropagation();editConsumer(\'' + c.id + '\')" title="Edit">&#9998;</button>';
+      const delBtn   = _consumers.length > 1
+        ? '<button class="tab-action-btn" onclick="event.stopPropagation();deleteConsumer(\'' + c.id + '\')" title="Remove">&#10005;</button>'
+        : '';
+      html += '<div class="consumer-tab ' + (isActive ? 'active' : '') + '" onclick="switchConsumer(\'' + c.id + '\')">'
+        + '<span>' + escapeHtml(c.label) + '</span>'
+        + '<span class="tab-actions">' + editBtn + delBtn + '</span>'
+        + '</div>';
+    });
+    html += '<button class="btn-add-consumer" onclick="toggleAddConsumer(true)">+ Add Consumer</button>';
+    bar.innerHTML = html;
+  }
+
+  function switchConsumer(id) {
+    if (_activeId === id) return;
+    _activeId = id;
+    localStorage.setItem('electricity_active_consumer', id);
+    toggleAddConsumer(false);
+    renderConsumerBar();
+    renderAll();
+  }
+
+  function toggleAddConsumer(show) {
+    const panel = document.getElementById('addConsumerPanel');
+    panel.style.display = show ? '' : 'none';
+    if (show) {
+      document.getElementById('newConsumerLabel').value  = '';
+      document.getElementById('newConsumerNumber').value = '';
+      setTimeout(function() { document.getElementById('newConsumerLabel').focus(); }, 50);
+    } else {
+      _editingConsumerId = null;
+      document.getElementById('consumerPanelTitle').textContent = 'Add Consumer';
+      document.getElementById('btnSaveConsumer').textContent    = 'Add Consumer';
+      document.getElementById('btnSaveConsumer').disabled       = false;
+    }
+  }
+
+  function editConsumer(id) {
+    const consumer = _consumers.find(function(c) { return c.id === id; });
+    if (!consumer) return;
+    _editingConsumerId = id;
+    document.getElementById('newConsumerLabel').value         = consumer.label;
+    document.getElementById('newConsumerNumber').value        = consumer.number;
+    document.getElementById('consumerPanelTitle').textContent = 'Edit Consumer';
+    document.getElementById('btnSaveConsumer').textContent    = 'Save Changes';
+    document.getElementById('addConsumerPanel').style.display = '';
+    setTimeout(function() { document.getElementById('newConsumerLabel').focus(); }, 50);
+  }
+
+  async function saveConsumerForm() {
+    const label  = document.getElementById('newConsumerLabel').value.trim();
+    const number = document.getElementById('newConsumerNumber').value.trim();
+    if (!label) { alert('Please enter a label.'); return; }
+    const btn    = document.getElementById('btnSaveConsumer');
+    const isEdit = !!_editingConsumerId;
+    btn.disabled    = true;
+    btn.textContent = 'Saving…';
+    try {
+      if (isEdit) {
+        const consumer = _consumers.find(function(c) { return c.id === _editingConsumerId; });
+        await apiUpdateConsumer(consumer, label, number);
+      } else {
+        const newId = await apiCreateConsumer(label, number);
+        _activeId   = newId;
+        localStorage.setItem('electricity_active_consumer', newId);
+      }
+      await fetchAll();
+      toggleAddConsumer(false);
+      renderConsumerBar();
+      renderAll();
+    } catch (err) {
+      alert('Error: ' + err.message);
+      btn.disabled    = false;
+      btn.textContent = isEdit ? 'Save Changes' : 'Add Consumer';
+    }
+  }
+
+  async function deleteConsumer(id) {
+    if (_consumers.length <= 1) { alert('Cannot remove the only consumer.'); return; }
+    const consumer = _consumers.find(function(c) { return c.id === id; });
+    if (!consumer) return;
+    const count = getEntriesForConsumer(id).length;
+    const msg   = count > 0
+      ? 'Remove "' + consumer.label + '"? It has ' + count + ' entr' + (count === 1 ? 'y' : 'ies') + ' — they will no longer be shown.'
+      : 'Remove "' + consumer.label + '"?';
+    if (!confirm(msg)) return;
+    try {
+      await apiDeleteEntry(consumer.metaEntryId);
+      await fetchAll();
+      if (_activeId === id) {
+        _activeId = _consumers.length > 0 ? _consumers[0].id : null;
+        if (_activeId) localStorage.setItem('electricity_active_consumer', _activeId);
+      }
+      renderConsumerBar();
+      renderAll();
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
+  }
+
+  /* ── Button loading state ─────────────────────────────────────── */
   function setBusy(on) {
-    const btn = document.querySelector('.btn-add');
+    const btn       = document.querySelector('.btn-add');
     btn.disabled    = on;
     btn.textContent = on ? 'Saving…' : '+ Add Entry';
     document.getElementById('entriesSection').style.opacity = on ? '0.5' : '1';
   }
 
-  /* ── Set today's date as default ──────────────────────────────────── */
   document.getElementById('entryDate').value = new Date().toISOString().slice(0, 10);
 
-  /* ── Usage preview (uses in-memory cache) ─────────────────────────── */
+  /* ── Usage preview ────────────────────────────────────────────── */
   function previewUsage() {
     const val = parseFloat(document.getElementById('meterReading').value);
     const el  = document.getElementById('usagePreview');
-
     if (isNaN(val) || document.getElementById('meterReading').value === '') {
       el.innerHTML = ''; return;
     }
-    if (_entries.length === 0) {
+    const ae = getActiveEntries();
+    if (ae.length === 0) {
       el.innerHTML = '<span>First entry — usage will be 0</span>'; return;
     }
-    const prev  = _entries[_entries.length - 1].meterReading;
+    const prev  = ae[ae.length - 1].meterReading;
     const usage = val - prev;
     if (usage < 0) {
-      el.innerHTML = '<span style="color:var(--red)">⚠ Reading is lower than previous (' + prev + ')</span>';
+      el.innerHTML = '<span style="color:var(--red)">&#9888; Reading is lower than previous (' + prev + ')</span>';
     } else {
       el.innerHTML = 'Usage since last entry: <span class="uval">+' + usage + ' units</span>';
     }
   }
 
-  /* ── Add entry ────────────────────────────────────────────────────── */
+  /* ── Add entry ────────────────────────────────────────────────── */
   async function addEntry() {
     const date    = document.getElementById('entryDate').value;
     const reading = parseFloat(document.getElementById('meterReading').value);
@@ -638,23 +952,26 @@
     if (isNaN(reading) || document.getElementById('meterReading').value === '') {
       alert('Please enter a meter reading.'); return;
     }
+    if (!_activeId) { alert('Please add a consumer first.'); return; }
 
-    const prev  = _entries.length > 0 ? _entries[_entries.length - 1].meterReading : reading;
+    const ae    = getActiveEntries();
+    const prev  = ae.length > 0 ? ae[ae.length - 1].meterReading : reading;
     const usage = reading - prev;
 
-    if (usage < 0 && !confirm(`Meter reading (${reading}) is lower than previous (${prev}). Add anyway?`)) return;
+    if (usage < 0 && !confirm('Meter reading (' + reading + ') is lower than previous (' + prev + '). Add anyway?')) return;
 
     setBusy(true);
     try {
-      await apiAddEntry({
+      await apiPostEntry({
         id:           Date.now(),
-        date,
+        date:         date,
         meterReading: reading,
-        usage:        _entries.length === 0 ? 0 : usage,
-        comment,
-        type,
+        usage:        ae.length === 0 ? 0 : usage,
+        comment:      comment,
+        type:         type,
+        consumerId:   _activeId,
       });
-      await fetchEntries();
+      await fetchAll();
       document.getElementById('meterReading').value  = '';
       document.getElementById('entryComment').value  = '';
       document.getElementById('entryDate').value     = new Date().toISOString().slice(0, 10);
@@ -668,13 +985,13 @@
     }
   }
 
-  /* ── Delete entry ─────────────────────────────────────────────────── */
+  /* ── Delete entry ─────────────────────────────────────────────── */
   async function deleteEntry(id) {
     if (!confirm('Delete this entry?')) return;
     setBusy(true);
     try {
       await apiDeleteEntry(id);
-      await fetchEntries();
+      await fetchAll();
       renderAll();
     } catch (err) {
       alert('Error: ' + err.message);
@@ -683,25 +1000,54 @@
     }
   }
 
-  /* ── Format date ──────────────────────────────────────────────────── */
+  /* ── XSS prevention ───────────────────────────────────────────── */
+  function escapeHtml(str) {
+    return String(str == null ? '' : str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  /* ── Format date ──────────────────────────────────────────────── */
   function fmtDate(iso) {
     const d = new Date(iso + 'T00:00:00');
     return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' });
   }
 
-  /* ── Render all ───────────────────────────────────────────────────── */
+  /* ── Render all ───────────────────────────────────────────────── */
   function renderAll() {
-    updateCycleBar(_entries);
-    renderEntries(_entries);
+    const ae = getActiveEntries();
+    updateCycleBar(ae);
+    renderEntries(ae);
     previewUsage();
   }
 
-  /* ── Cycle bar ────────────────────────────────────────────────────── */
+  /* ── Days between two ISO date strings ───────────────────────── */
+  function daysBetween(iso1, iso2) {
+    return Math.round((new Date(iso2 + 'T00:00:00') - new Date(iso1 + 'T00:00:00')) / 86400000);
+  }
+
+  /* ── Per-entry avg daily usage map ───────────────────────────── */
+  function computeAvgPerEntry(entries) {
+    const map = {};
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      if (i === 0 || e.usage <= 0) { map[e.id] = null; continue; }
+      const days = daysBetween(entries[i - 1].date, e.date);
+      map[e.id]  = days > 0 ? (e.usage / days).toFixed(1) : null;
+    }
+    return map;
+  }
+
+  /* ── Cycle bar ────────────────────────────────────────────────── */
   function updateCycleBar(entries) {
     if (entries.length === 0) {
       document.getElementById('cycleUsageVal').textContent  = '0';
       document.getElementById('cycleSince').textContent     = 'No entries yet';
       document.getElementById('lastReadingVal').textContent = '—';
+      document.getElementById('tillDateAvgVal').textContent = '—';
       return;
     }
     const last = entries[entries.length - 1];
@@ -712,18 +1058,23 @@
       if (entries[i].type === 'bill') { cycleStartIdx = i + 1; break; }
     }
     const cycleEntries = entries.slice(cycleStartIdx);
-    const cycleUsage   = cycleEntries.reduce((sum, e) => sum + (e.usage > 0 ? e.usage : 0), 0);
+    const cycleUsage   = cycleEntries.reduce(function(sum, e) { return sum + (e.usage > 0 ? e.usage : 0); }, 0);
     document.getElementById('cycleUsageVal').textContent = cycleUsage;
-    document.getElementById('cycleSince').textContent = cycleEntries.length > 0
+    document.getElementById('cycleSince').textContent    = cycleEntries.length > 0
       ? 'Since ' + fmtDate(cycleEntries[0].date) + ' · ' + cycleEntries.length + ' entr' + (cycleEntries.length === 1 ? 'y' : 'ies')
       : 'New cycle started';
+
+    const totalUsage = entries.reduce(function(sum, e) { return sum + (e.usage > 0 ? e.usage : 0); }, 0);
+    const totalDays  = daysBetween(entries[0].date, last.date);
+    document.getElementById('tillDateAvgVal').textContent =
+      totalDays > 0 ? (totalUsage / totalDays).toFixed(1) : '—';
   }
 
-  /* ── Render entries list ──────────────────────────────────────────── */
+  /* ── Render entries list ──────────────────────────────────────── */
   function renderEntries(entries) {
     const section = document.getElementById('entriesSection');
     if (entries.length === 0) {
-      section.innerHTML = `<div class="empty-state"><div class="icon">&#9889;</div>No entries yet. Add your first meter reading above.</div>`;
+      section.innerHTML = '<div class="empty-state"><div class="icon">&#9889;</div>No entries yet. Add your first meter reading above.</div>';
       return;
     }
 
@@ -736,44 +1087,60 @@
     if (current.length > 0) cycles.push([...current]);
     cycles.reverse();
 
+    const avgMap = computeAvgPerEntry(entries);
+
     let html = '';
-    cycles.forEach((cycle, ci) => {
+    cycles.forEach(function(cycle, ci) {
       const isOpen = ci === 0 && cycle[cycle.length - 1].type !== 'bill';
-      const total  = cycle.reduce((sum, e) => sum + (e.usage > 0 ? e.usage : 0), 0);
+      const total  = cycle.reduce(function(sum, e) { return sum + (e.usage > 0 ? e.usage : 0); }, 0);
       const from   = fmtDate(cycle[0].date);
       const to     = fmtDate(cycle[cycle.length - 1].date);
 
       html += isOpen
-        ? `<div class="entry-col-headers"><span>Date</span><span>Comment</span><span>Meter</span><span>Usage</span><span></span></div>`
-        : `<div class="cycle-header"><div class="cycle-header-left">&#10003; Billing cycle &nbsp;·&nbsp; ${from} → ${to}</div><div class="cycle-header-right">Total: ${total} units</div></div>`;
+        ? '<div class="entry-col-headers"><span>Date</span><span>Comment</span><span>Meter</span><span>Usage</span><span>Avg/day</span><span></span></div>'
+        : '<div class="cycle-header"><div class="cycle-header-left">&#10003; Billing cycle &nbsp;&middot;&nbsp; ' + from + ' &rarr; ' + to + '</div><div class="cycle-header-right">Total: ' + total + ' units</div></div>';
 
-      [...cycle].reverse().forEach(entry => {
+      [...cycle].reverse().forEach(function(entry) {
         const isBill   = entry.type === 'bill';
         const usageTxt = (entry.usage === 0 && entry === cycle[0]) ? '—' : (entry.usage >= 0 ? '+' + entry.usage : entry.usage) + ' u';
-        html += `
-          <div class="entry-row">
-            <span class="entry-date">${fmtDate(entry.date)}</span>
-            <span class="entry-comment ${entry.comment ? '' : 'empty'}">${entry.comment || 'No comment'}</span>
-            <span class="entry-meter">${entry.meterReading}</span>
-            <span class="entry-usage ${isBill ? 'bill-reset' : ''}">${usageTxt}</span>
-            <span class="entry-actions">
-              <span class="badge ${isBill ? 'badge-bill' : 'badge-entry'}">${isBill ? 'Bill' : 'Entry'}</span>
-              <button class="btn-del" onclick="deleteEntry(${entry.id})" title="Delete">&#10005;</button>
-            </span>
-          </div>`;
+        const avg      = avgMap[entry.id];
+        const avgTxt   = avg !== null ? '<span class="avg-val">' + avg + '</span> u/d' : '—';
+        html += '<div class="entry-row">'
+          + '<span class="entry-date">' + fmtDate(entry.date) + '</span>'
+          + '<span class="entry-comment ' + (entry.comment ? '' : 'empty') + '">' + (entry.comment ? escapeHtml(entry.comment) : 'No comment') + '</span>'
+          + '<span class="entry-meter">' + entry.meterReading + '</span>'
+          + '<span class="entry-usage ' + (isBill ? 'bill-reset' : '') + '">' + usageTxt + '</span>'
+          + '<span class="entry-avg">' + avgTxt + '</span>'
+          + '<span class="entry-actions">'
+          + '<span class="badge ' + (isBill ? 'badge-bill' : 'badge-entry') + '">' + (isBill ? 'Bill' : 'Entry') + '</span>'
+          + '<button class="btn-del" onclick="deleteEntry(' + entry.id + ')" title="Delete">&#10005;</button>'
+          + '</span></div>';
       });
     });
     section.innerHTML = html;
   }
 
-  /* ── Init ─────────────────────────────────────────────────────────── */
+  /* ── Init ─────────────────────────────────────────────────────── */
   document.getElementById('entriesSection').innerHTML =
-    `<div class="empty-state"><div class="icon">&#9889;</div>Loading…</div>`;
-  fetchEntries()
-    .then(() => renderAll())
-    .catch(err => {
+    '<div class="empty-state"><div class="icon">&#9889;</div>Loading…</div>';
+
+  fetchAll()
+    .then(async function() {
+      if (_consumers.length === 0) {
+        // Auto-create a Default consumer on first use
+        const newId = await apiCreateConsumer('Default', '');
+        await fetchAll();
+        _activeId = newId;
+        localStorage.setItem('electricity_active_consumer', newId);
+      } else {
+        resolveActiveId();
+      }
+      renderConsumerBar();
+      renderAll();
+    })
+    .catch(function(err) {
       document.getElementById('entriesSection').innerHTML =
-        `<div class="empty-state" style="color:var(--red)">Failed to load: ${err.message}</div>`;
+        '<div class="empty-state" style="color:var(--red)">Failed to load: ' + escapeHtml(err.message) + '</div>';
     });
 </script>
 <script src="session-guard.js"></script>
