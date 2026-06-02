@@ -736,7 +736,27 @@
         }
         return { id: String(e.id), label: label, number: number, metaEntryId: e.id };
       });
-    _entries = all.filter(function(e) { return e.type !== 'consumer_meta'; });
+    _entries = all
+      .filter(function(e) { return e.type !== 'consumer_meta'; })
+      .map(parseEntry);
+  }
+
+  // consumerId is encoded inside the comment field as JSON {_cid, text}
+  // because the backend only persists the standard entry fields.
+  function parseEntry(e) {
+    var raw        = e.comment || '';
+    var comment    = raw;
+    var consumerId = e.consumerId ? String(e.consumerId) : null;
+    if (raw.charAt(0) === '{') {
+      try {
+        var m = JSON.parse(raw);
+        if ('_cid' in m) {
+          consumerId = m._cid || null;
+          comment    = m.text || '';
+        }
+      } catch (err) {}
+    }
+    return { id: e.id, date: e.date, meterReading: e.meterReading, usage: e.usage, comment: comment, type: e.type, consumerId: consumerId };
   }
 
   async function apiPostEntry(entry) {
@@ -967,9 +987,8 @@
         date:         date,
         meterReading: reading,
         usage:        ae.length === 0 ? 0 : usage,
-        comment:      comment,
+        comment:      JSON.stringify({ _cid: _activeId, text: comment }),
         type:         type,
-        consumerId:   _activeId,
       });
       await fetchAll();
       document.getElementById('meterReading').value  = '';
