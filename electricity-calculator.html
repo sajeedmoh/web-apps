@@ -63,7 +63,7 @@
       margin: 0 auto;
     }
 
-    .page-header { margin-bottom: 24px; }
+    .page-header { margin-bottom: 20px; }
 
     .page-title {
       font-size: 1.75rem;
@@ -75,6 +75,101 @@
     .page-subtitle {
       font-size: 0.85rem;
       color: var(--muted);
+    }
+
+    /* Session tabs */
+    .session-section { margin-bottom: 20px; }
+
+    .session-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .session-tab {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 13px;
+      border-radius: 9px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.03);
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 500;
+      font-family: inherit;
+      transition: border-color 0.15s, background 0.15s, color 0.15s;
+      user-select: none;
+    }
+
+    .session-tab:hover:not(.active) {
+      border-color: rgba(255,255,255,0.15);
+      color: var(--text);
+    }
+
+    .session-tab.active {
+      border-color: var(--accent-border);
+      background: var(--accent-bg);
+      color: var(--accent);
+    }
+
+    .tab-actions {
+      display: flex;
+      gap: 1px;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .session-tab:hover .tab-actions,
+    .session-tab.active .tab-actions { opacity: 1; }
+
+    .tab-action-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: currentColor;
+      opacity: 0.45;
+      font-size: 0.72rem;
+      padding: 1px 3px;
+      line-height: 1;
+      font-family: inherit;
+      border-radius: 3px;
+      transition: opacity 0.15s, background 0.15s;
+    }
+
+    .tab-action-btn:hover { opacity: 1; background: rgba(255,255,255,0.08); }
+
+    .btn-add-session {
+      padding: 8px 13px;
+      border-radius: 9px;
+      border: 1px dashed rgba(255,255,255,0.12);
+      background: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-family: inherit;
+      font-weight: 500;
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    .btn-add-session:hover { border-color: var(--accent-border); color: var(--accent); }
+
+    .session-panel {
+      margin-top: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+    }
+
+    .session-panel .panel-title { margin-bottom: 14px; }
+
+    .session-panel-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
     }
 
     /* Summary bar */
@@ -119,7 +214,6 @@
       margin-top: 3px;
     }
 
-    /* Unit rate input */
     .rate-row {
       display: flex;
       align-items: center;
@@ -217,15 +311,10 @@
 
     .field input::-webkit-outer-spin-button,
     .field input::-webkit-inner-spin-button { -webkit-appearance: none; }
-
-    .field input:focus,
-    .field select:focus { border-color: var(--accent); }
+    .field input:focus, .field select:focus { border-color: var(--accent); }
     .field input::placeholder { color: rgba(240,240,240,0.2); }
 
-    /* custom name sub-field */
-    .custom-name-field {
-      margin-top: 10px;
-    }
+    .custom-name-field { margin-top: 10px; }
 
     .custom-name-field input {
       width: 100%;
@@ -243,10 +332,7 @@
     .custom-name-field input:focus { border-color: var(--accent); }
     .custom-name-field input::placeholder { color: rgba(240,240,240,0.2); }
 
-    .panel-actions {
-      display: flex;
-      gap: 10px;
-    }
+    .panel-actions { display: flex; gap: 10px; }
 
     .btn-primary {
       padding: 10px 20px;
@@ -263,6 +349,7 @@
 
     .btn-primary:hover { filter: brightness(1.1); }
     .btn-primary:active { transform: scale(0.98); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
 
     .btn-secondary {
       padding: 10px 18px;
@@ -276,10 +363,7 @@
       transition: border-color 0.15s, color 0.15s;
     }
 
-    .btn-secondary:hover {
-      border-color: rgba(255,255,255,0.2);
-      color: var(--text);
-    }
+    .btn-secondary:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
 
     /* Appliance table */
     .col-headers {
@@ -346,13 +430,8 @@
 
     .row-input::-webkit-outer-spin-button,
     .row-input::-webkit-inner-spin-button { -webkit-appearance: none; }
-
     .row-input:hover:not(:focus) { border-color: var(--border); }
-
-    .row-input:focus {
-      border-color: var(--accent-border);
-      background: var(--accent-bg);
-    }
+    .row-input:focus { border-color: var(--accent-border); background: var(--accent-bg); }
 
     .kwh-cell {
       text-align: right;
@@ -362,12 +441,7 @@
       color: var(--accent);
     }
 
-    .kwh-cell .u {
-      font-size: 0.68rem;
-      font-weight: 400;
-      opacity: 0.55;
-      margin-left: 2px;
-    }
+    .kwh-cell .u { font-size: 0.68rem; font-weight: 400; opacity: 0.55; margin-left: 2px; }
 
     .btn-del {
       background: none;
@@ -414,7 +488,7 @@
       font-variant-numeric: tabular-nums;
     }
 
-    /* Add button */
+    /* Add appliance button */
     .btn-add-row {
       width: 100%;
       padding: 11px;
@@ -430,10 +504,8 @@
       margin-top: 4px;
     }
 
-    .btn-add-row:hover {
-      border-color: var(--accent-border);
-      color: var(--accent);
-    }
+    .btn-add-row:hover { border-color: var(--accent-border); color: var(--accent); }
+    .btn-add-row:disabled { opacity: 0.5; cursor: not-allowed; }
 
     /* Empty state */
     .empty-state {
@@ -447,6 +519,17 @@
     }
 
     .empty-state .icon { font-size: 2rem; margin-bottom: 10px; }
+
+    /* Saving indicator */
+    .save-status {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-left: auto;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .save-status.visible { opacity: 1; }
 
     /* Responsive */
     @media (max-width: 640px) {
@@ -463,13 +546,33 @@
 
 <nav class="back-bar">
   <a href="dashboard.html" class="back-link">&#8592; Back to Dashboard</a>
+  <span class="save-status" id="saveStatus">Saving...</span>
 </nav>
 
 <div class="page-wrap">
 
   <div class="page-header">
     <h1 class="page-title">&#9889; Electricity Calculator</h1>
-    <div class="page-subtitle">Estimate monthly consumption by adding appliances and their daily usage</div>
+    <div class="page-subtitle">Estimate monthly consumption per location by adding appliances and their daily usage</div>
+  </div>
+
+  <!-- Session selector -->
+  <div class="session-section">
+    <div class="session-bar" id="sessionBar"></div>
+    <div class="session-panel" id="sessionPanel" style="display:none">
+      <div class="panel-title" id="sessionPanelTitle">New Session</div>
+      <div class="field">
+        <label>Session Name</label>
+        <input type="text" id="sessionNameInput"
+               placeholder="e.g. Home, Apartment, Office"
+               maxlength="50"
+               onkeydown="if(event.key==='Enter') saveSessionForm()" />
+      </div>
+      <div class="session-panel-actions">
+        <button class="btn-primary" id="btnSaveSession" onclick="saveSessionForm()">Create Session</button>
+        <button class="btn-secondary" onclick="closeSessionPanel()">Cancel</button>
+      </div>
+    </div>
   </div>
 
   <!-- Summary -->
@@ -493,8 +596,8 @@
       <div class="s-label">Unit Rate</div>
       <div class="rate-row">
         <span class="rate-sym">&#8377;</span>
-        <input type="number" class="rate-input" id="unitRate" placeholder="0.00"
-               min="0" step="0.01" oninput="onRateChange()" />
+        <input type="number" class="rate-input" id="unitRate"
+               placeholder="0.00" min="0" step="0.01" oninput="onRateChange()" />
       </div>
       <div class="s-sub">per kWh</div>
     </div>
@@ -528,8 +631,8 @@
       </div>
     </div>
     <div class="panel-actions">
-      <button class="btn-primary" onclick="addAppliance()">Add Appliance</button>
-      <button class="btn-secondary" onclick="closePanel()">Cancel</button>
+      <button class="btn-primary" id="btnAddAppl" onclick="addAppliance()">Add Appliance</button>
+      <button class="btn-secondary" onclick="closeAddPanel()">Cancel</button>
     </div>
   </div>
 
@@ -537,77 +640,350 @@
   <div class="appl-section" id="applianceSection"></div>
 
   <!-- Add button -->
-  <button class="btn-add-row" id="btnAddRow" onclick="openPanel()">+ Add Appliance</button>
+  <button class="btn-add-row" id="btnAddRow" onclick="openAddPanel()">+ Add Appliance</button>
 
 </div>
 
 <script src="config.js"></script>
 <script>
-  /* ── Default appliances catalogue ────────────────────────── */
-  const DEFAULTS = [
-    { name: 'Air Conditioner (1 ton)',       watts: 900  },
-    { name: 'Air Conditioner (1.5 ton)',     watts: 1500 },
-    { name: 'Air Conditioner (2 ton)',       watts: 2000 },
-    { name: 'Ceiling Fan',                   watts: 75   },
-    { name: 'Table / Pedestal Fan',          watts: 55   },
-    { name: 'Refrigerator (Single door)',    watts: 150  },
-    { name: 'Refrigerator (Double door)',    watts: 250  },
-    { name: 'Washing Machine (Top load)',    watts: 500  },
-    { name: 'Washing Machine (Front load)',  watts: 800  },
-    { name: 'Dishwasher',                    watts: 1200 },
-    { name: 'Microwave Oven',                watts: 1000 },
-    { name: 'Electric Kettle',               watts: 1500 },
-    { name: 'Induction Cooktop',             watts: 1800 },
-    { name: 'Water Heater / Geyser (Storage)',watts: 2000},
-    { name: 'Instant Geyser',                watts: 3000 },
-    { name: 'Iron',                          watts: 1000 },
-    { name: 'Hair Dryer',                    watts: 1200 },
-    { name: 'Vacuum Cleaner',                watts: 1000 },
-    { name: 'LED TV (32")',                  watts: 40   },
-    { name: 'LED TV (43")',                  watts: 70   },
-    { name: 'LED TV (55")',                  watts: 100  },
-    { name: 'Laptop',                        watts: 65   },
-    { name: 'Desktop Computer + Monitor',    watts: 250  },
-    { name: 'WiFi Router',                   watts: 10   },
-    { name: 'Mixer / Grinder',               watts: 750  },
-    { name: 'Water Pump (0.5 HP)',           watts: 375  },
-    { name: 'Water Pump (1 HP)',             watts: 750  },
-    { name: 'Submersible Pump (1 HP)',       watts: 1000 },
-    { name: 'Exhaust Fan',                   watts: 35   },
-    { name: 'LED Bulb (7W)',                 watts: 7    },
-    { name: 'LED Bulb (9W)',                 watts: 9    },
-    { name: 'LED Bulb (15W)',                watts: 15   },
-    { name: 'Tube Light / LED Batten (20W)', watts: 20   },
-    { name: 'CFL Bulb',                      watts: 23   },
-    { name: 'Electric Oven (OTG)',           watts: 1500 },
-    { name: 'Treadmill',                     watts: 600  },
-    { name: 'Room Heater',                   watts: 1500 },
+  /* ── Default appliances catalogue ─────────────────────────────── */
+  var DEFAULTS = [
+    { name: 'Air Conditioner (1 ton)',        watts: 900  },
+    { name: 'Air Conditioner (1.5 ton)',      watts: 1500 },
+    { name: 'Air Conditioner (2 ton)',        watts: 2000 },
+    { name: 'Ceiling Fan',                    watts: 75   },
+    { name: 'Table / Pedestal Fan',           watts: 55   },
+    { name: 'Refrigerator (Single door)',     watts: 150  },
+    { name: 'Refrigerator (Double door)',     watts: 250  },
+    { name: 'Washing Machine (Top load)',     watts: 500  },
+    { name: 'Washing Machine (Front load)',   watts: 800  },
+    { name: 'Dishwasher',                     watts: 1200 },
+    { name: 'Microwave Oven',                 watts: 1000 },
+    { name: 'Electric Kettle',                watts: 1500 },
+    { name: 'Induction Cooktop',              watts: 1800 },
+    { name: 'Water Heater / Geyser (Storage)',watts: 2000 },
+    { name: 'Instant Geyser',                 watts: 3000 },
+    { name: 'Iron',                           watts: 1000 },
+    { name: 'Hair Dryer',                     watts: 1200 },
+    { name: 'Vacuum Cleaner',                 watts: 1000 },
+    { name: 'LED TV (32")',                   watts: 40   },
+    { name: 'LED TV (43")',                   watts: 70   },
+    { name: 'LED TV (55")',                   watts: 100  },
+    { name: 'Laptop',                         watts: 65   },
+    { name: 'Desktop Computer + Monitor',     watts: 250  },
+    { name: 'WiFi Router',                    watts: 10   },
+    { name: 'Mixer / Grinder',                watts: 750  },
+    { name: 'Water Pump (0.5 HP)',            watts: 375  },
+    { name: 'Water Pump (1 HP)',              watts: 750  },
+    { name: 'Submersible Pump (1 HP)',        watts: 1000 },
+    { name: 'Exhaust Fan',                    watts: 35   },
+    { name: 'LED Bulb (7W)',                  watts: 7    },
+    { name: 'LED Bulb (9W)',                  watts: 9    },
+    { name: 'LED Bulb (15W)',                 watts: 15   },
+    { name: 'Tube Light / LED Batten (20W)',  watts: 20   },
+    { name: 'CFL Bulb',                       watts: 23   },
+    { name: 'Electric Oven (OTG)',            watts: 1500 },
+    { name: 'Treadmill',                      watts: 600  },
+    { name: 'Room Heater',                    watts: 1500 },
   ];
 
-  /* ── State ────────────────────────────────────────────────── */
-  var appliances = [];  // [{id, name, watts, qty, hours}]
-  var unitRate   = 0;
+  /* ── Auth ──────────────────────────────────────────────────────── */
+  var token = localStorage.getItem('auth_token');
 
-  /* ── Persistence ──────────────────────────────────────────── */
-  function loadData() {
-    var a = localStorage.getItem('elec_calc_appliances');
-    var r = localStorage.getItem('elec_calc_rate');
-    appliances = a ? JSON.parse(a) : [];
-    unitRate   = r ? parseFloat(r) : 0;
-    if (unitRate) document.getElementById('unitRate').value = unitRate;
+  function authHeaders() {
+    return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
   }
 
-  function saveAppliances() {
-    localStorage.setItem('elec_calc_appliances', JSON.stringify(appliances));
+  /* ── State ─────────────────────────────────────────────────────── */
+  var _sessions          = [];   // [{id:str, name, rate, _eid:num}]
+  var _sessionAppliances = {};   // {sessionId: [{id:num, name, watts, qty, hours}]}
+  var appliances         = [];   // reference to _sessionAppliances[activeSessionId]
+  var unitRate           = 0;
+  var activeSessionId    = null;
+  var editingSessionId   = null;
+  var _saveTimers        = {};
+  var _rateSaveTimer     = null;
+
+  /* ── API helpers ───────────────────────────────────────────────── */
+  async function apiFetch() {
+    var res  = await fetch(API_BASE + '/api/electricity', { headers: authHeaders() });
+    var data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to load');
+    return data.entries || [];
   }
 
+  async function apiPost(entry) {
+    var res  = await fetch(API_BASE + '/api/electricity', {
+      method: 'POST', headers: authHeaders(), body: JSON.stringify(entry)
+    });
+    var data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to save');
+    return data;
+  }
+
+  async function apiDel(id) {
+    var res = await fetch(API_BASE + '/api/electricity/' + id, {
+      method: 'DELETE', headers: authHeaders()
+    });
+    if (!res.ok) throw new Error('Failed to delete entry ' + id);
+  }
+
+  function today() { return new Date().toISOString().slice(0, 10); }
+
+  /* ── Load all data ─────────────────────────────────────────────── */
+  async function fetchAll() {
+    var all = await apiFetch();
+
+    _sessions = all
+      .filter(function(e) { return e.type === 'calc_session'; })
+      .map(function(e) {
+        var m = {};
+        try { m = JSON.parse(e.comment || '{}'); } catch(ex) {}
+        return { id: String(e.id), name: m.name || 'Session', rate: parseFloat(m.rate) || 0, _eid: e.id };
+      });
+
+    _sessionAppliances = {};
+    all.filter(function(e) { return e.type === 'calc_appliance'; })
+       .forEach(function(e) {
+         var m = {};
+         try { m = JSON.parse(e.comment || '{}'); } catch(ex) {}
+         var sid = String(m._sid || '');
+         if (!_sessionAppliances[sid]) _sessionAppliances[sid] = [];
+         _sessionAppliances[sid].push({
+           id:    e.id,
+           name:  m.name  || '',
+           watts: parseFloat(m.watts) || 0,
+           qty:   parseInt(m.qty)     || 1,
+           hours: parseFloat(m.hours) || 0
+         });
+       });
+  }
+
+  /* ── Session CRUD ──────────────────────────────────────────────── */
+  async function apiCreateSession(name) {
+    var id = Date.now();
+    await apiPost({ id: id, type: 'calc_session',
+      date: today(), meterReading: 0, usage: 0,
+      comment: JSON.stringify({ name: name, rate: 0 }) });
+    var sess = { id: String(id), name: name, rate: 0, _eid: id };
+    _sessions.push(sess);
+    _sessionAppliances[String(id)] = [];
+    return String(id);
+  }
+
+  async function apiUpdateSession(sess) {
+    await apiDel(sess._eid);
+    await apiPost({ id: sess._eid, type: 'calc_session',
+      date: today(), meterReading: 0, usage: 0,
+      comment: JSON.stringify({ name: sess.name, rate: sess.rate }) });
+  }
+
+  async function apiDeleteSession(sess) {
+    var appls = _sessionAppliances[sess.id] || [];
+    await apiDel(sess._eid);
+    for (var i = 0; i < appls.length; i++) {
+      await apiDel(appls[i].id);
+    }
+    delete _sessionAppliances[sess.id];
+    _sessions = _sessions.filter(function(s) { return s.id !== sess.id; });
+  }
+
+  /* ── Appliance CRUD ────────────────────────────────────────────── */
+  async function apiCreateAppliance(appl) {
+    var id = Date.now();
+    await apiPost({ id: id, type: 'calc_appliance',
+      date: today(), meterReading: 0, usage: 0,
+      comment: JSON.stringify({ _sid: activeSessionId, name: appl.name,
+        watts: appl.watts, qty: appl.qty, hours: appl.hours }) });
+    return id;
+  }
+
+  async function apiUpdateAppliance(appl) {
+    await apiDel(appl.id);
+    await apiPost({ id: appl.id, type: 'calc_appliance',
+      date: today(), meterReading: 0, usage: 0,
+      comment: JSON.stringify({ _sid: activeSessionId, name: appl.name,
+        watts: appl.watts, qty: appl.qty, hours: appl.hours }) });
+  }
+
+  /* ── Debounced saves ───────────────────────────────────────────── */
+  function showSaving() {
+    var el = document.getElementById('saveStatus');
+    el.textContent = 'Saving...';
+    el.classList.add('visible');
+  }
+
+  function hideSaving() {
+    var el = document.getElementById('saveStatus');
+    el.classList.remove('visible');
+  }
+
+  function debounceSaveAppl(appl) {
+    clearTimeout(_saveTimers[appl.id]);
+    showSaving();
+    _saveTimers[appl.id] = setTimeout(async function() {
+      try { await apiUpdateAppliance(appl); } catch(ex) { console.error('Appliance save failed:', ex); }
+      hideSaving();
+    }, 1000);
+  }
+
+  function debounceSaveRate() {
+    clearTimeout(_rateSaveTimer);
+    showSaving();
+    _rateSaveTimer = setTimeout(async function() {
+      var sess = _sessions.find(function(s) { return s.id === activeSessionId; });
+      if (sess) {
+        sess.rate = unitRate;
+        try { await apiUpdateSession(sess); } catch(ex) { console.error('Rate save failed:', ex); }
+      }
+      hideSaving();
+    }, 1000);
+  }
+
+  /* ── Active session helpers ────────────────────────────────────── */
+  function getActiveSession() {
+    return _sessions.find(function(s) { return s.id === activeSessionId; });
+  }
+
+  function loadActiveAppliances() {
+    if (!_sessionAppliances[activeSessionId]) _sessionAppliances[activeSessionId] = [];
+    appliances = _sessionAppliances[activeSessionId];
+  }
+
+  /* ── Session tabs render ───────────────────────────────────────── */
+  function renderSessionTabs() {
+    var bar  = document.getElementById('sessionBar');
+    var html = '';
+    _sessions.forEach(function(s) {
+      var isActive = s.id === activeSessionId;
+      var editBtn  = '<button class="tab-action-btn" onclick="event.stopPropagation();openEditSession(\'' + s.id + '\')" title="Rename">&#9998;</button>';
+      var delBtn   = _sessions.length > 1
+        ? '<button class="tab-action-btn" onclick="event.stopPropagation();deleteSession(\'' + s.id + '\')" title="Delete">&#10005;</button>'
+        : '';
+      html += '<div class="session-tab ' + (isActive ? 'active' : '') + '" onclick="switchSession(\'' + s.id + '\')">'
+        + '<span>' + esc(s.name) + '</span>'
+        + '<span class="tab-actions">' + editBtn + delBtn + '</span>'
+        + '</div>';
+    });
+    html += '<button class="btn-add-session" onclick="openAddSession()">+ New Session</button>';
+    bar.innerHTML = html;
+  }
+
+  /* ── Switch session ────────────────────────────────────────────── */
+  function switchSession(id) {
+    if (id === activeSessionId) return;
+    closeAddPanel();
+    closeSessionPanel();
+    activeSessionId = id;
+    localStorage.setItem('elec_calc_active', id);
+    loadActiveAppliances();
+    var sess = getActiveSession();
+    unitRate = sess ? sess.rate : 0;
+    document.getElementById('unitRate').value = unitRate || '';
+    renderSessionTabs();
+    render();
+  }
+
+  /* ── Session panel (add / rename) ──────────────────────────────── */
+  function openAddSession() {
+    editingSessionId = null;
+    document.getElementById('sessionPanelTitle').textContent = 'New Session';
+    document.getElementById('sessionNameInput').value        = '';
+    document.getElementById('btnSaveSession').textContent    = 'Create Session';
+    document.getElementById('btnSaveSession').disabled       = false;
+    document.getElementById('sessionPanel').style.display   = '';
+    setTimeout(function() { document.getElementById('sessionNameInput').focus(); }, 30);
+  }
+
+  function openEditSession(id) {
+    var sess = _sessions.find(function(s) { return s.id === id; });
+    if (!sess) return;
+    editingSessionId = id;
+    document.getElementById('sessionPanelTitle').textContent = 'Rename Session';
+    document.getElementById('sessionNameInput').value        = sess.name;
+    document.getElementById('btnSaveSession').textContent    = 'Save';
+    document.getElementById('btnSaveSession').disabled       = false;
+    document.getElementById('sessionPanel').style.display   = '';
+    setTimeout(function() {
+      var el = document.getElementById('sessionNameInput');
+      el.focus(); el.select();
+    }, 30);
+  }
+
+  function closeSessionPanel() {
+    document.getElementById('sessionPanel').style.display = 'none';
+    editingSessionId = null;
+  }
+
+  async function saveSessionForm() {
+    var name = document.getElementById('sessionNameInput').value.trim();
+    if (!name) { alert('Please enter a session name.'); return; }
+    var btn = document.getElementById('btnSaveSession');
+    btn.disabled    = true;
+    btn.textContent = 'Saving...';
+
+    try {
+      if (editingSessionId) {
+        var sess = _sessions.find(function(s) { return s.id === editingSessionId; });
+        if (sess) {
+          sess.name = name;
+          await apiUpdateSession(sess);
+        }
+        closeSessionPanel();
+        renderSessionTabs();
+      } else {
+        var newId = await apiCreateSession(name);
+        activeSessionId = newId;
+        localStorage.setItem('elec_calc_active', newId);
+        loadActiveAppliances();
+        unitRate = 0;
+        document.getElementById('unitRate').value = '';
+        closeSessionPanel();
+        renderSessionTabs();
+        render();
+      }
+    } catch(ex) {
+      alert('Error: ' + ex.message);
+      btn.disabled    = false;
+      btn.textContent = editingSessionId ? 'Save' : 'Create Session';
+    }
+  }
+
+  async function deleteSession(id) {
+    if (_sessions.length <= 1) { alert('Cannot delete the only session.'); return; }
+    var sess = _sessions.find(function(s) { return s.id === id; });
+    if (!sess) return;
+    var count = (_sessionAppliances[id] || []).length;
+    var msg   = count > 0
+      ? 'Delete session "' + sess.name + '"? It has ' + count + ' appliance' + (count !== 1 ? 's' : '') + '.'
+      : 'Delete session "' + sess.name + '"?';
+    if (!confirm(msg)) return;
+
+    try {
+      await apiDeleteSession(sess);
+      if (activeSessionId === id) {
+        activeSessionId = _sessions[0].id;
+        localStorage.setItem('elec_calc_active', activeSessionId);
+        loadActiveAppliances();
+        var activeSess = getActiveSession();
+        unitRate = activeSess ? activeSess.rate : 0;
+        document.getElementById('unitRate').value = unitRate || '';
+      }
+      renderSessionTabs();
+      render();
+    } catch(ex) {
+      alert('Error deleting session: ' + ex.message);
+    }
+  }
+
+  /* ── Rate change ───────────────────────────────────────────────── */
   function onRateChange() {
     unitRate = parseFloat(document.getElementById('unitRate').value) || 0;
-    localStorage.setItem('elec_calc_rate', String(unitRate));
     updateSummary();
+    debounceSaveRate();
   }
 
-  /* ── Build select options ─────────────────────────────────── */
+  /* ── Build appliance select ────────────────────────────────────── */
   function buildSelect() {
     var sel = document.getElementById('appSelect');
     DEFAULTS.forEach(function(d) {
@@ -632,27 +1008,28 @@
     }
   }
 
-  /* ── Panel open / close ───────────────────────────────────── */
-  function openPanel() {
-    var panel = document.getElementById('addPanel');
-    panel.style.display = '';
-    document.getElementById('appSelect').value          = '';
-    document.getElementById('customName').value         = '';
+  /* ── Add appliance panel ───────────────────────────────────────── */
+  function openAddPanel() {
+    document.getElementById('addPanel').style.display  = '';
+    document.getElementById('btnAddRow').style.display = 'none';
+    document.getElementById('appSelect').value               = '';
+    document.getElementById('customName').value              = '';
     document.getElementById('customNameField').style.display = 'none';
-    document.getElementById('fWatts').value             = '';
-    document.getElementById('fQty').value               = '1';
-    document.getElementById('fHours').value             = '';
-    document.getElementById('btnAddRow').style.display  = 'none';
+    document.getElementById('fWatts').value  = '';
+    document.getElementById('fQty').value    = '1';
+    document.getElementById('fHours').value  = '';
     setTimeout(function() { document.getElementById('appSelect').focus(); }, 30);
   }
 
-  function closePanel() {
+  function closeAddPanel() {
     document.getElementById('addPanel').style.display  = 'none';
     document.getElementById('btnAddRow').style.display = '';
+    var btn = document.getElementById('btnAddAppl');
+    btn.disabled    = false;
+    btn.textContent = 'Add Appliance';
   }
 
-  /* ── Add appliance ────────────────────────────────────────── */
-  function addAppliance() {
+  async function addAppliance() {
     var selVal = document.getElementById('appSelect').value;
     var name   = selVal === '__custom__'
       ? document.getElementById('customName').value.trim()
@@ -666,20 +1043,36 @@
     if (!hours || hours<=0) { alert('Please enter daily usage hours.'); return; }
     if (hours > 24)         { alert('Hours per day cannot exceed 24.'); return; }
 
-    appliances.push({ id: Date.now(), name: name, watts: watts, qty: qty, hours: hours });
-    saveAppliances();
-    closePanel();
-    render();
+    var btn = document.getElementById('btnAddAppl');
+    btn.disabled    = true;
+    btn.textContent = 'Saving...';
+
+    try {
+      var newAppl = { name: name, watts: watts, qty: qty, hours: hours };
+      var id      = await apiCreateAppliance(newAppl);
+      newAppl.id  = id;
+      appliances.push(newAppl);
+      closeAddPanel();
+      render();
+    } catch(ex) {
+      alert('Error saving appliance: ' + ex.message);
+      btn.disabled    = false;
+      btn.textContent = 'Add Appliance';
+    }
   }
 
-  /* ── Remove appliance ─────────────────────────────────────── */
-  function removeAppliance(id) {
-    appliances = appliances.filter(function(a) { return a.id !== id; });
-    saveAppliances();
-    render();
+  /* ── Remove appliance ──────────────────────────────────────────── */
+  async function removeAppliance(id) {
+    try {
+      await apiDel(id);
+      _sessionAppliances[activeSessionId] = appliances = appliances.filter(function(a) { return a.id !== id; });
+      render();
+    } catch(ex) {
+      alert('Error removing appliance: ' + ex.message);
+    }
   }
 
-  /* ── Inline field update ──────────────────────────────────── */
+  /* ── Inline field update ───────────────────────────────────────── */
   function updateField(id, field, rawVal) {
     var a = appliances.find(function(a) { return a.id === id; });
     if (!a) return;
@@ -688,19 +1081,18 @@
     } else {
       a[field] = parseFloat(rawVal) || 0;
     }
-    saveAppliances();
-    // Update just the KWH cell for this row without a full re-render
     var el = document.getElementById('kwh_' + id);
     if (el) el.innerHTML = kwhDay(a).toFixed(3) + '<span class="u">kWh</span>';
     updateSummary();
+    debounceSaveAppl(a);
   }
 
-  /* ── Calculate KWH/day for one appliance ─────────────────── */
+  /* ── KWH calculation ───────────────────────────────────────────── */
   function kwhDay(a) {
     return (a.watts * (a.qty || 1) * a.hours) / 1000;
   }
 
-  /* ── Update summary numbers ───────────────────────────────── */
+  /* ── Summary ───────────────────────────────────────────────────── */
   function updateSummary() {
     var day   = appliances.reduce(function(s, a) { return s + kwhDay(a); }, 0);
     var month = day * 30;
@@ -710,21 +1102,21 @@
       document.getElementById('sCost').innerHTML    = '&#8377;' + Math.round(month * unitRate).toLocaleString('en-IN');
       document.getElementById('sCostSub').innerHTML = 'at &#8377;' + unitRate + '/kWh';
     } else {
-      document.getElementById('sCost').innerHTML    = '&#8212;';
+      document.getElementById('sCost').innerHTML      = '&#8212;';
       document.getElementById('sCostSub').textContent = 'set unit rate';
     }
     var el = document.getElementById('totalKwh');
     if (el) el.textContent = day.toFixed(3) + ' kWh/day';
   }
 
-  /* ── XSS helper ───────────────────────────────────────────── */
+  /* ── XSS helper ────────────────────────────────────────────────── */
   function esc(str) {
     return String(str == null ? '' : str)
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
       .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
 
-  /* ── Render appliance table ───────────────────────────────── */
+  /* ── Render appliance table ────────────────────────────────────── */
   function render() {
     var section = document.getElementById('applianceSection');
 
@@ -776,10 +1168,46 @@
     updateSummary();
   }
 
-  /* ── Init ─────────────────────────────────────────────────── */
+  /* ── Init ──────────────────────────────────────────────────────── */
   buildSelect();
-  loadData();
-  render();
+
+  document.getElementById('applianceSection').innerHTML =
+    '<div class="empty-state"><div>Loading...</div></div>';
+  document.getElementById('btnAddRow').disabled = true;
+
+  var _savedActive = localStorage.getItem('elec_calc_active');
+
+  fetchAll().then(function() {
+    if (_sessions.length === 0) {
+      return apiCreateSession('Home').then(function(newId) {
+        activeSessionId = newId;
+        localStorage.setItem('elec_calc_active', newId);
+        loadActiveAppliances();
+        unitRate = 0;
+        document.getElementById('unitRate').value = '';
+        document.getElementById('btnAddRow').disabled = false;
+        renderSessionTabs();
+        render();
+      });
+    }
+
+    var validActive = _savedActive && _sessions.find(function(s) { return s.id === _savedActive; });
+    activeSessionId = validActive ? _savedActive : _sessions[0].id;
+    localStorage.setItem('elec_calc_active', activeSessionId);
+
+    loadActiveAppliances();
+    var sess = getActiveSession();
+    unitRate = sess ? sess.rate : 0;
+    document.getElementById('unitRate').value = unitRate || '';
+    document.getElementById('btnAddRow').disabled = false;
+
+    renderSessionTabs();
+    render();
+  }).catch(function(err) {
+    document.getElementById('applianceSection').innerHTML =
+      '<div class="empty-state"><div>Error loading data: ' + esc(err.message) + '</div></div>';
+    document.getElementById('btnAddRow').disabled = false;
+  });
 </script>
 <script src="session-guard.js"></script>
 </body>
