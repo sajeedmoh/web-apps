@@ -1168,6 +1168,54 @@
     updateSummary();
   }
 
+  /* ── One-time migration from localStorage to DynamoDB ─────────── */
+  async function migrateFromLocalStorage() {
+    var raw = localStorage.getItem('elec_calc_sessions');
+    if (!raw) return;
+    var oldSessions;
+    try { oldSessions = JSON.parse(raw); } catch(ex) { return; }
+    if (!oldSessions || !oldSessions.length) return;
+
+    document.getElementById('applianceSection').innerHTML =
+      '<div class="empty-state"><div>Migrating your saved data to the cloud...</div></div>';
+
+    for (var i = 0; i < oldSessions.length; i++) {
+      var s    = oldSessions[i];
+      var rate = parseFloat(localStorage.getItem('elec_calc_rate_' + s.id)) || 0;
+
+      var newSessId = await apiCreateSession(s.name);
+      var newSess   = _sessions.find(function(x) { return x.id === newSessId; });
+
+      if (rate > 0 && newSess) {
+        newSess.rate = rate;
+        await apiUpdateSession(newSess);
+      }
+
+      var applRaw = localStorage.getItem('elec_calc_appliances_' + s.id);
+      if (applRaw) {
+        var oldAppls;
+        try { oldAppls = JSON.parse(applRaw); } catch(ex) { oldAppls = []; }
+        var prevActive = activeSessionId;
+        activeSessionId = newSessId;
+        for (var j = 0; j < oldAppls.length; j++) {
+          var a = oldAppls[j];
+          var newId = await apiCreateAppliance({
+            name: a.name, watts: a.watts || 0, qty: a.qty || 1, hours: a.hours || 0
+          });
+          if (!_sessionAppliances[newSessId]) _sessionAppliances[newSessId] = [];
+          _sessionAppliances[newSessId].push({
+            id: newId, name: a.name, watts: a.watts || 0, qty: a.qty || 1, hours: a.hours || 0
+          });
+        }
+        activeSessionId = prevActive;
+      }
+
+      localStorage.removeItem('elec_calc_appliances_' + s.id);
+      localStorage.removeItem('elec_calc_rate_' + s.id);
+    }
+    localStorage.removeItem('elec_calc_sessions');
+  }
+
   /* ── Init ──────────────────────────────────────────────────────── */
   buildSelect();
 
@@ -1177,37 +1225,41 @@
 
   var _savedActive = localStorage.getItem('elec_calc_active');
 
-  fetchAll().then(function() {
-    if (_sessions.length === 0) {
-      return apiCreateSession('Home').then(function(newId) {
+  (async function() {
+    try {
+      await fetchAll();
+
+      // Migrate old localStorage data if no DynamoDB sessions exist yet
+      if (_sessions.length === 0 && localStorage.getItem('elec_calc_sessions')) {
+        await migrateFromLocalStorage();
+      }
+
+      if (_sessions.length === 0) {
+        var newId = await apiCreateSession('Home');
         activeSessionId = newId;
         localStorage.setItem('elec_calc_active', newId);
         loadActiveAppliances();
         unitRate = 0;
         document.getElementById('unitRate').value = '';
-        document.getElementById('btnAddRow').disabled = false;
-        renderSessionTabs();
-        render();
-      });
+      } else {
+        var validActive = _savedActive && _sessions.find(function(s) { return s.id === _savedActive; });
+        activeSessionId = validActive ? _savedActive : _sessions[0].id;
+        localStorage.setItem('elec_calc_active', activeSessionId);
+        loadActiveAppliances();
+        var sess = getActiveSession();
+        unitRate = sess ? sess.rate : 0;
+        document.getElementById('unitRate').value = unitRate || '';
+      }
+
+      document.getElementById('btnAddRow').disabled = false;
+      renderSessionTabs();
+      render();
+    } catch(err) {
+      document.getElementById('applianceSection').innerHTML =
+        '<div class="empty-state"><div>Error loading data: ' + esc(err.message) + '</div></div>';
+      document.getElementById('btnAddRow').disabled = false;
     }
-
-    var validActive = _savedActive && _sessions.find(function(s) { return s.id === _savedActive; });
-    activeSessionId = validActive ? _savedActive : _sessions[0].id;
-    localStorage.setItem('elec_calc_active', activeSessionId);
-
-    loadActiveAppliances();
-    var sess = getActiveSession();
-    unitRate = sess ? sess.rate : 0;
-    document.getElementById('unitRate').value = unitRate || '';
-    document.getElementById('btnAddRow').disabled = false;
-
-    renderSessionTabs();
-    render();
-  }).catch(function(err) {
-    document.getElementById('applianceSection').innerHTML =
-      '<div class="empty-state"><div>Error loading data: ' + esc(err.message) + '</div></div>';
-    document.getElementById('btnAddRow').disabled = false;
-  });
+  })();
 </script>
 <script src="session-guard.js"></script>
 </body>
