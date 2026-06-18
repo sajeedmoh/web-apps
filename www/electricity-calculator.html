@@ -1170,11 +1170,9 @@
 
   /* ── One-time migration from localStorage to DynamoDB ─────────── */
   async function migrateFromLocalStorage() {
-    var raw = localStorage.getItem('elec_calc_sessions');
-    if (!raw) return false;
-    var oldSessions;
-    try { oldSessions = JSON.parse(raw); } catch(ex) { return false; }
-    if (!oldSessions || !oldSessions.length) return false;
+    var hasSessions = !!localStorage.getItem('elec_calc_sessions');
+    var hasFlat     = !!localStorage.getItem('elec_calc_appliances');
+    if (!hasSessions && !hasFlat) return false;
 
     document.getElementById('applianceSection').innerHTML =
       '<div class="empty-state"><div>Migrating your saved data to the cloud...</div></div>';
@@ -1189,41 +1187,81 @@
       }
     }
 
-    for (var i = 0; i < oldSessions.length; i++) {
-      var s    = oldSessions[i];
-      var rate = parseFloat(localStorage.getItem('elec_calc_rate_' + s.id)) || 0;
+    // Original version: single flat list under elec_calc_appliances / elec_calc_rate
+    if (hasFlat) {
+      var flatRaw  = localStorage.getItem('elec_calc_appliances');
+      var flatRate = parseFloat(localStorage.getItem('elec_calc_rate')) || 0;
+      var flatAppls;
+      try { flatAppls = JSON.parse(flatRaw); } catch(ex) { flatAppls = []; }
 
-      var newSessId = await apiCreateSession(s.name);
-      var newSess   = _sessions.find(function(x) { return x.id === newSessId; });
-
-      if (rate > 0 && newSess) {
-        newSess.rate = rate;
-        await apiUpdateSession(newSess);
-      }
-
-      var applRaw = localStorage.getItem('elec_calc_appliances_' + s.id);
-      if (applRaw) {
-        var oldAppls;
-        try { oldAppls = JSON.parse(applRaw); } catch(ex) { oldAppls = []; }
+      if (flatAppls && flatAppls.length > 0) {
+        var flatSessId = await apiCreateSession('Home');
+        var flatSess   = _sessions.find(function(x) { return x.id === flatSessId; });
+        if (flatRate > 0 && flatSess) {
+          flatSess.rate = flatRate;
+          await apiUpdateSession(flatSess);
+        }
         var prevActive = activeSessionId;
-        activeSessionId = newSessId;
-        for (var j = 0; j < oldAppls.length; j++) {
-          var a = oldAppls[j];
-          var newId = await apiCreateAppliance({
-            name: a.name, watts: a.watts || 0, qty: a.qty || 1, hours: a.hours || 0
+        activeSessionId = flatSessId;
+        for (var fi = 0; fi < flatAppls.length; fi++) {
+          var fa = flatAppls[fi];
+          var fid = await apiCreateAppliance({
+            name: fa.name, watts: fa.watts || 0, qty: fa.qty || 1, hours: fa.hours || 0
           });
-          if (!_sessionAppliances[newSessId]) _sessionAppliances[newSessId] = [];
-          _sessionAppliances[newSessId].push({
-            id: newId, name: a.name, watts: a.watts || 0, qty: a.qty || 1, hours: a.hours || 0
+          if (!_sessionAppliances[flatSessId]) _sessionAppliances[flatSessId] = [];
+          _sessionAppliances[flatSessId].push({
+            id: fid, name: fa.name, watts: fa.watts || 0, qty: fa.qty || 1, hours: fa.hours || 0
           });
         }
         activeSessionId = prevActive;
       }
-
-      localStorage.removeItem('elec_calc_appliances_' + s.id);
-      localStorage.removeItem('elec_calc_rate_' + s.id);
+      localStorage.removeItem('elec_calc_appliances');
+      localStorage.removeItem('elec_calc_rate');
     }
-    localStorage.removeItem('elec_calc_sessions');
+
+    // Session-based version: elec_calc_sessions + elec_calc_appliances_${id}
+    if (hasSessions) {
+      var raw = localStorage.getItem('elec_calc_sessions');
+      var oldSessions;
+      try { oldSessions = JSON.parse(raw); } catch(ex) { oldSessions = []; }
+
+      for (var i = 0; i < oldSessions.length; i++) {
+        var s    = oldSessions[i];
+        var rate = parseFloat(localStorage.getItem('elec_calc_rate_' + s.id)) || 0;
+
+        var newSessId = await apiCreateSession(s.name);
+        var newSess   = _sessions.find(function(x) { return x.id === newSessId; });
+
+        if (rate > 0 && newSess) {
+          newSess.rate = rate;
+          await apiUpdateSession(newSess);
+        }
+
+        var applRaw = localStorage.getItem('elec_calc_appliances_' + s.id);
+        if (applRaw) {
+          var oldAppls;
+          try { oldAppls = JSON.parse(applRaw); } catch(ex) { oldAppls = []; }
+          var prev = activeSessionId;
+          activeSessionId = newSessId;
+          for (var j = 0; j < oldAppls.length; j++) {
+            var a = oldAppls[j];
+            var newId = await apiCreateAppliance({
+              name: a.name, watts: a.watts || 0, qty: a.qty || 1, hours: a.hours || 0
+            });
+            if (!_sessionAppliances[newSessId]) _sessionAppliances[newSessId] = [];
+            _sessionAppliances[newSessId].push({
+              id: newId, name: a.name, watts: a.watts || 0, qty: a.qty || 1, hours: a.hours || 0
+            });
+          }
+          activeSessionId = prev;
+        }
+
+        localStorage.removeItem('elec_calc_appliances_' + s.id);
+        localStorage.removeItem('elec_calc_rate_' + s.id);
+      }
+      localStorage.removeItem('elec_calc_sessions');
+    }
+
     return true;
   }
 
@@ -1240,8 +1278,8 @@
     try {
       await fetchAll();
 
-      // Always migrate if old localStorage data exists (regardless of DB session count)
-      if (localStorage.getItem('elec_calc_sessions')) {
+      // Migrate old localStorage data (both original flat format and session-based format)
+      if (localStorage.getItem('elec_calc_sessions') || localStorage.getItem('elec_calc_appliances')) {
         await migrateFromLocalStorage();
       }
 
