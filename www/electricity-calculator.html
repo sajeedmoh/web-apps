@@ -1171,13 +1171,23 @@
   /* ── One-time migration from localStorage to DynamoDB ─────────── */
   async function migrateFromLocalStorage() {
     var raw = localStorage.getItem('elec_calc_sessions');
-    if (!raw) return;
+    if (!raw) return false;
     var oldSessions;
-    try { oldSessions = JSON.parse(raw); } catch(ex) { return; }
-    if (!oldSessions || !oldSessions.length) return;
+    try { oldSessions = JSON.parse(raw); } catch(ex) { return false; }
+    if (!oldSessions || !oldSessions.length) return false;
 
     document.getElementById('applianceSection').innerHTML =
       '<div class="empty-state"><div>Migrating your saved data to the cloud...</div></div>';
+
+    // Delete any empty DynamoDB sessions that were auto-created before migration
+    for (var k = _sessions.length - 1; k >= 0; k--) {
+      var dbSess = _sessions[k];
+      if ((_sessionAppliances[dbSess.id] || []).length === 0) {
+        try { await apiDel(dbSess._eid); } catch(ex) {}
+        _sessions.splice(k, 1);
+        delete _sessionAppliances[dbSess.id];
+      }
+    }
 
     for (var i = 0; i < oldSessions.length; i++) {
       var s    = oldSessions[i];
@@ -1214,6 +1224,7 @@
       localStorage.removeItem('elec_calc_rate_' + s.id);
     }
     localStorage.removeItem('elec_calc_sessions');
+    return true;
   }
 
   /* ── Init ──────────────────────────────────────────────────────── */
@@ -1229,8 +1240,8 @@
     try {
       await fetchAll();
 
-      // Migrate old localStorage data if no DynamoDB sessions exist yet
-      if (_sessions.length === 0 && localStorage.getItem('elec_calc_sessions')) {
+      // Always migrate if old localStorage data exists (regardless of DB session count)
+      if (localStorage.getItem('elec_calc_sessions')) {
         await migrateFromLocalStorage();
       }
 
