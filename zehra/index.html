@@ -354,17 +354,28 @@
     }
 
     .about-visual {
-      aspect-ratio: 1;
-      background:
-        radial-gradient(circle at 30% 30%, rgba(201,106,58,0.18), transparent 50%),
-        radial-gradient(circle at 70% 70%, rgba(90,122,90,0.14), transparent 50%),
-        rgba(201,106,58,0.07);
+      aspect-ratio: 3/4;
       border-radius: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 8rem;
-      border: 1px solid var(--border);
+      overflow: hidden;
+      border: 4px solid var(--blush);
+      box-shadow: 0 20px 60px rgba(44,36,22,0.15);
+      position: relative;
+    }
+
+    .about-visual img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center top;
+      display: block;
+    }
+
+    .about-visual::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(201,106,58,0.18) 0%, transparent 40%);
+      pointer-events: none;
     }
 
     .about-text .section-subtitle { margin-bottom: 32px; }
@@ -706,12 +717,14 @@
 <section id="about">
   <div class="section-inner">
     <div class="about-grid">
-      <div class="about-visual">&#127912;</div>
+      <div class="about-visual">
+        <img src="https://zehrafarheen.sajeed.online/zehra.jpg" alt="Zehra Farheen Sajeed" />
+      </div>
       <div class="about-text">
         <span class="section-tag">The Artist</span>
-        <h2 class="section-title">Hi, I'm Zehra!</h2>
-        <p class="section-subtitle">I love making things with my hands. Every craft I create is a little piece of my heart — something I've put time, thought, and creativity into, just for you.</p>
-        <p style="font-size:0.92rem;color:var(--muted);line-height:1.8;">From paper flowers to hand-decorated gift boxes, I make things that bring smiles. If you can dream it, I'll try to craft it! Feel free to reach out for custom orders — I love making personalised pieces for special people and occasions.</p>
+        <h2 class="section-title">Assalamualaikum! &#128075;</h2>
+        <p class="section-subtitle">I'm <strong>Zehra Farheen Sajeed</strong> — a young craft lover who finds joy in making beautiful things with my own hands.</p>
+        <p style="font-size:0.92rem;color:var(--muted);line-height:1.8;">Every piece I create comes straight from my heart. Whether it's a paper flower, a decorated gift box, or a hand-drawn greeting card — I put real love and care into everything I make. I believe every handmade thing carries a little piece of the person who made it, and I hope my crafts bring warmth and smiles to your home. Custom orders are always welcome — just reach out and let's create something special together!</p>
         <div class="about-stats">
           <div class="stat-card">
             <div class="stat-num">50+</div>
