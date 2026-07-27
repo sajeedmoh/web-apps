@@ -751,6 +751,7 @@
          if (!_sessionAppliances[sid]) _sessionAppliances[sid] = [];
          _sessionAppliances[sid].push({
            id:    e.id,
+           _sid:  sid,
            name:  m.name  || '',
            watts: parseFloat(m.watts) || 0,
            qty:   parseInt(m.qty)     || 1,
@@ -771,11 +772,19 @@
     return String(id);
   }
 
+  async function apiPatch(id, fields) {
+    var res  = await fetch(API_BASE + '/api/electricity/' + id, {
+      method: 'PATCH', headers: authHeaders(), body: JSON.stringify(fields)
+    });
+    var data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to update');
+    return data;
+  }
+
   async function apiUpdateSession(sess) {
-    await apiDel(sess._eid);
-    await apiPost({ id: sess._eid, type: 'calc_session',
-      date: today(), meterReading: 0, usage: 0,
-      comment: JSON.stringify({ name: sess.name, rate: sess.rate }) });
+    await apiPatch(sess._eid, {
+      comment: JSON.stringify({ name: sess.name, rate: sess.rate })
+    });
   }
 
   async function apiDeleteSession(sess) {
@@ -799,11 +808,10 @@
   }
 
   async function apiUpdateAppliance(appl) {
-    await apiDel(appl.id);
-    await apiPost({ id: appl.id, type: 'calc_appliance',
-      date: today(), meterReading: 0, usage: 0,
-      comment: JSON.stringify({ _sid: activeSessionId, name: appl.name,
-        watts: appl.watts, qty: appl.qty, hours: appl.hours }) });
+    await apiPatch(appl.id, {
+      comment: JSON.stringify({ _sid: appl._sid || activeSessionId, name: appl.name,
+        watts: appl.watts, qty: appl.qty, hours: appl.hours })
+    });
   }
 
   /* ── Debounced saves ───────────────────────────────────────────── */
@@ -1048,7 +1056,7 @@
     btn.textContent = 'Saving...';
 
     try {
-      var newAppl = { name: name, watts: watts, qty: qty, hours: hours };
+      var newAppl = { name: name, watts: watts, qty: qty, hours: hours, _sid: activeSessionId };
       var id      = await apiCreateAppliance(newAppl);
       newAppl.id  = id;
       appliances.push(newAppl);

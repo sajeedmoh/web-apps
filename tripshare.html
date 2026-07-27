@@ -652,14 +652,18 @@
       background: var(--surface); font-family: inherit; letter-spacing: -0.02em;
     }
     .ae-amount-input::placeholder { color: rgba(0,0,0,0.18); font-weight: 400; font-size: 1.3rem; }
-    .ae-split-summary {
-      display: flex; align-items: center; padding: 14px 16px; gap: 12px;
-      border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.12s;
-      background: var(--surface);
+    .ae-paid-split-row {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      padding: 12px 16px; border-bottom: 1px solid var(--border);
     }
-    .ae-split-summary:active { background: var(--surface2); }
-    .ae-split-sum-title { font-size: 0.88rem; font-weight: 600; color: var(--text); }
-    .ae-split-sum-desc  { font-size: 0.74rem; color: var(--muted); margin-top: 2px; }
+    .ae-ps-label { font-size: 0.88rem; color: var(--text); }
+    .ae-ps-pill {
+      padding: 5px 14px; border-radius: 20px; border: 1.5px solid var(--border);
+      background: var(--surface); font-size: 0.88rem; font-weight: 600;
+      color: var(--accent); cursor: pointer; font-family: inherit;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .ae-ps-pill:active { background: var(--surface2); border-color: var(--accent); }
 
     /* Split picker modal */
     .split-opt-row {
@@ -898,13 +902,12 @@
         </button>
         <input class="ae-amount-input" id="aeAmount" type="number" placeholder="0.00" min="0" step="0.01" oninput="aeRecalcSplits()" />
       </div>
-      <!-- Paid by / split — tappable summary row -->
-      <div class="ae-split-summary" onclick="openSplitPicker()">
-        <div style="flex:1">
-          <div class="ae-split-sum-title" id="aeSplitSummaryTitle">Paid by you and split equally</div>
-          <div class="ae-split-sum-desc"  id="aeSplitSummaryDesc"></div>
-        </div>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+      <!-- Paid by / split — pill row -->
+      <div class="ae-paid-split-row">
+        <span class="ae-ps-label">Paid by</span>
+        <button class="ae-ps-pill" id="aePaidByPill" onclick="toggleAePaidByPicker()">you</button>
+        <span class="ae-ps-label">and split</span>
+        <button class="ae-ps-pill" id="aeSplitMethodPill" onclick="openSplitMethodPicker()">equally</button>
       </div>
       <!-- Paid-by picker (used by More options) -->
       <div id="aePaidByPicker" style="display:none;border-bottom:1px solid var(--border)"></div>
@@ -1135,7 +1138,7 @@
 <div class="modal-backdrop" id="modalSettle" onclick="closeBdrop(event,'modalSettle')">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title">Record Settlement</div>
+      <div class="modal-title" id="stModalTitle">Record Settlement</div>
       <button class="modal-close" onclick="closeModal('modalSettle')">✕</button>
     </div>
     <div class="modal-body">
@@ -1335,10 +1338,15 @@
 <!-- Context menus -->
 <div class="ctx-menu" id="ctxGroup">
   <button class="ctx-item" onclick="openEditGroupModal()">Edit group</button>
+  <button class="ctx-item danger" onclick="resetGroupTransactions()">Reset all transactions</button>
 </div>
 <div class="ctx-menu" id="ctxExpense">
   <button class="ctx-item" onclick="openEditExpense()">Edit expense</button>
   <button class="ctx-item danger" onclick="deleteExpense()">Delete expense</button>
+</div>
+<div class="ctx-menu" id="ctxSettlement">
+  <button class="ctx-item" onclick="editSettlementFromCtx()">Edit settlement</button>
+  <button class="ctx-item danger" onclick="deleteSettlementFromCtx()">Delete settlement</button>
 </div>
 
 <!-- Loading / Toast -->
@@ -1413,7 +1421,7 @@
       net[e.paidBy] = (net[e.paidBy]||0) + e.amount;
       e.splits.forEach(s => { net[s.email] = (net[s.email]||0) - s.amount; });
     });
-    grp.settlements.forEach(s => {
+    (grp.settlements||[]).forEach(s => {
       net[s.from] = (net[s.from]||0) + s.amount;
       net[s.to]   = (net[s.to]||0)   - s.amount;
     });
@@ -1496,6 +1504,11 @@
         ab.className = 'top-btn';
         ab.style.cssText = 'color:var(--accent);font-weight:700;font-size:0.88rem;min-width:auto';
         ab.onclick = openCreateGroupModal;
+      } else if (tab === 'activity') {
+        ab.innerHTML = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>';
+        ab.className = 'top-action-btn';
+        ab.style.cssText = 'background:#dc2626';
+        ab.onclick = clearAllActivity;
       } else {
         ab.textContent = '+';
         ab.className = 'top-action-btn';
@@ -1682,7 +1695,7 @@
           const desc  = item.from === ME ? `You paid ${payee} ${sym}${item.amount.toFixed(2)}.`
                       : item.to === ME   ? `${payer} paid you ${sym}${item.amount.toFixed(2)}.`
                       :                    `${payer} paid ${payee} ${sym}${item.amount.toFixed(2)}.`;
-          return `<div class="exp-row-v2" onclick="deleteSettlement(${item.id})">
+          return `<div class="exp-row-v2" onclick="openSettlementMenu(event,'${_current.tripId}',${item.id})">
             ${dateCol}
             <div class="exp-icon-sq settle" style="background:rgba(22,163,74,0.12)">
               <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -2052,27 +2065,37 @@
           } else { return; }
           rows.push({ ...e, currency: g.currency, tripId: g.tripId, groupName: g.description==='__direct__'?'':g.name, tag, val, cls });
         });
+
+        // Include actual settlements involving this friend
+        (g.settlements||[]).forEach(s => {
+          if (!((s.from === ME && s.to === f.email) || (s.from === f.email && s.to === ME))) return;
+          const sym = SYM[g.currency] || g.currency;
+          const settleDesc = s.from === ME
+            ? `You paid ${f.name} ${sym}${s.amount.toFixed(2)}.`
+            : `${f.name} paid you ${sym}${s.amount.toFixed(2)}.`;
+          rows.push({ id: s.id, date: s.date, createdAt: s.createdAt, currency: g.currency, tripId: g.tripId, cls: 'settle', _settleDesc: settleDesc, _isSettlement: true });
+        });
       });
 
-    rows.sort((a,b) => b.date.localeCompare(a.date));
+    rows.sort((a,b) => (b.createdAt||b.date).localeCompare(a.createdAt||a.date));
 
     const empty = document.getElementById('fdEmpty');
     const list  = document.getElementById('fdExpList');
     if (!rows.length) { empty.style.display=''; list.innerHTML=''; return; }
     empty.style.display = 'none';
 
-    // Group by month
-    const months = {};
+    // Group by month — array-based to preserve sort order
+    const monthGroups = [];
+    let curMonth = null;
     rows.forEach(r => {
-      const [y,m] = r.date.split('-');
-      const key = `${y}-${m}`;
-      if (!months[key]) months[key] = [];
-      months[key].push(r);
+      const ym = r.date.slice(0, 7);
+      if (!curMonth || curMonth.ym !== ym) { curMonth = { ym, items: [] }; monthGroups.push(curMonth); }
+      curMonth.items.push(r);
     });
 
     const MONTHS = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
-    list.innerHTML = Object.entries(months).map(([key, exps]) => {
-      const [y,m] = key.split('-');
+    list.innerHTML = monthGroups.map(({ ym, items: exps }) => {
+      const [y,m] = ym.split('-');
       const label = `${MONTHS[+m]} ${y}`;
       const expHtml = exps.map(e => {
         const d = new Date(e.date+'T00:00:00');
@@ -2080,7 +2103,10 @@
         const dayNum  = d.getDate();
         const sym = SYM[e.currency]||e.currency;
         if (e.cls === 'settle') {
-          return `<div class="fd-exp-row" style="cursor:pointer" onclick="openFdExpMenu(event,'${e.tripId}',${e.id})">
+          const clickHandler = e._isSettlement
+            ? `openSettlementMenu(event,'${e.tripId}',${e.id})`
+            : `openFdExpMenu(event,'${e.tripId}',${e.id})`;
+          return `<div class="fd-exp-row" style="cursor:pointer" onclick="${clickHandler}">
             <div class="fd-exp-date"><div class="day">${dayName}</div><div class="num">${dayNum}</div></div>
             <div class="fd-exp-icon" style="background:rgba(22,163,74,0.12)">
               <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -2278,6 +2304,7 @@
           _groups[gi].settlements.push({
             id: saved.id, from: payer, to: payee,
             amount: settleAmt, currency: cur, date: today(), note: '',
+            createdAt: saved.createdAt || new Date().toISOString(),
           });
         }
       }
@@ -2310,18 +2337,19 @@
       g.expenses.forEach(e => events.push({
         type:'expense', grpName:g.name, grpId:g.tripId, currency:e.currency,
         desc:e.description, amount:e.amount, paidBy:mname(e.paidBy,g),
-        date: e.createdAt||e.date,
+        date: e.createdAt||e.date, itemId: e.id,
       }));
-      g.settlements.forEach(s => events.push({
+      (g.settlements||[]).forEach(s => events.push({
         type:'settlement', grpName:g.name, grpId:g.tripId, currency:s.currency,
         from:mname(s.from,g), to:mname(s.to,g), amount:s.amount,
-        date: s.createdAt||s.date,
+        date: s.createdAt||s.date, itemId: s.id,
       }));
     });
     events.sort((a,b)=>b.date.localeCompare(a.date));
     if (!events.length) { card.style.display='none'; empty.style.display=''; return; }
     card.style.display=''; empty.style.display='none';
     card.innerHTML = events.slice(0,60).map(ev => {
+      const delBtn = `<button onclick="deleteActivityItem('${ev.type}','${ev.grpId}',${ev.itemId},event)" style="background:none;border:none;cursor:pointer;padding:6px 4px;color:var(--muted);font-size:1rem;flex-shrink:0" title="Delete">✕</button>`;
       if (ev.type==='expense') {
         return `<div class="activity-row">
           <div class="activity-icon">💳</div>
@@ -2330,6 +2358,7 @@
             <div class="activity-meta">${esc(ev.grpName)} · ${relDate(ev.date)}</div>
           </div>
           <div class="activity-amount">${fmt(ev.amount,ev.currency)}</div>
+          ${delBtn}
         </div>`;
       } else {
         return `<div class="activity-row">
@@ -2339,9 +2368,47 @@
             <div class="activity-meta">${esc(ev.grpName)} · ${relDate(ev.date)}</div>
           </div>
           <div class="activity-amount" style="color:var(--green)">${fmt(ev.amount,ev.currency)}</div>
+          ${delBtn}
         </div>`;
       }
     }).join('');
+  }
+
+  async function deleteActivityItem(type, grpId, itemId, e) {
+    e.stopPropagation();
+    if (!confirm('Delete this transaction?')) return;
+    setLoading(true);
+    try {
+      const endpoint = type === 'expense'
+        ? `/api/tripshare/trips/${grpId}/expenses/${itemId}`
+        : `/api/tripshare/trips/${grpId}/settlements/${itemId}`;
+      await api('DELETE', endpoint);
+      const g = _groups.find(g => g.tripId === grpId);
+      if (g) {
+        if (type === 'expense')    g.expenses    = g.expenses.filter(x => x.id !== itemId);
+        else                       g.settlements = (g.settlements||[]).filter(x => x.id !== itemId);
+      }
+      renderActivity();
+      toast('Transaction deleted.');
+    } catch(err) { toast(err.message, true); }
+    finally { setLoading(false); }
+  }
+
+  async function clearAllActivity() {
+    const total = _groups.reduce((n,g) => n + g.expenses.length + (g.settlements||[]).length, 0);
+    if (!total) { toast('No transactions to delete.'); return; }
+    if (!confirm(`Delete all ${total} transaction${total>1?'s':''} across all groups? This cannot be undone.`)) return;
+    setLoading(true);
+    try {
+      await Promise.all(_groups.flatMap(g => [
+        ...g.expenses.map(e    => api('DELETE', `/api/tripshare/trips/${g.tripId}/expenses/${e.id}`)),
+        ...(g.settlements||[]).map(s => api('DELETE', `/api/tripshare/trips/${g.tripId}/settlements/${s.id}`)),
+      ]));
+      _groups.forEach(g => { g.expenses = []; g.settlements = []; });
+      renderActivity();
+      toast('All transactions deleted.');
+    } catch(err) { toast(err.message, true); }
+    finally { setLoading(false); }
   }
 
   // ── Create Group ───────────────────────────────────────────────────────────
@@ -2708,9 +2775,24 @@
     _ctxExpId     = expId;
     const menu = document.getElementById('ctxExpense');
     const rect = e.currentTarget.getBoundingClientRect();
-    menu.style.top  = (rect.bottom+4)+'px';
-    menu.style.right= '16px';
+    menu.style.top   = (rect.bottom+4)+'px';
+    menu.style.right = (window.innerWidth - rect.right + 4)+'px';
     menu.classList.add('open');
+  }
+
+  async function fdDeleteSettlement(tripId, id, e) {
+    e.stopPropagation();
+    if (!confirm('Delete this settlement?')) return;
+    setLoading(true);
+    try {
+      await api('DELETE', `/api/tripshare/trips/${tripId}/settlements/${id}`);
+      const g = _groups.find(g => g.tripId === tripId);
+      if (g) g.settlements = (g.settlements||[]).filter(s => s.id !== id);
+      if (_current && _current.tripId === tripId) _current.settlements = _current.settlements.filter(s => s.id !== id);
+      renderFriendDetail();
+      toast('Settlement deleted.');
+    } catch(err) { toast(err.message, true); }
+    finally { setLoading(false); }
   }
 
   async function deleteExpense() {
@@ -2738,7 +2820,12 @@
     openSettleModal(from, to, amt);
   }
 
+  let _editingSettleId   = null;
+  let _editingSettleTripId = null;
+
   function openSettleModal(from, to, amount) {
+    _editingSettleId = null;
+    _editingSettleTripId = null;
     const opts = _current.members.map(m=>`<option value="${esc(m.email)}">${esc(m.name)}</option>`).join('');
     document.getElementById('stFrom').innerHTML = opts;
     document.getElementById('stTo').innerHTML   = opts;
@@ -2748,6 +2835,8 @@
     document.getElementById('stDate').value   = today();
     document.getElementById('stNote').value   = '';
     document.getElementById('stAmtErr').textContent = '';
+    document.getElementById('stModalTitle').textContent = 'Record Settlement';
+    document.getElementById('stSubmit').textContent = 'Record Settlement';
     openModal('modalSettle');
   }
 
@@ -2757,28 +2846,41 @@
     document.getElementById('stAmtErr').textContent='';
     const btn = document.getElementById('stSubmit');
     btn.disabled=true; btn.textContent='Saving…';
+    const tripId = _editingSettleTripId || _current.tripId;
+    const grp    = _groups.find(g=>g.tripId===tripId) || _current;
     try {
-      const data = await api('POST',`/api/tripshare/trips/${_current.tripId}/settlements`,{
-        from:   document.getElementById('stFrom').value,
-        to:     document.getElementById('stTo').value,
-        amount, currency:_current.currency,
-        date:   document.getElementById('stDate').value,
-        note:   document.getElementById('stNote').value.trim(),
-      });
       const stFrom = document.getElementById('stFrom').value;
       const stTo   = document.getElementById('stTo').value;
       const stDate = document.getElementById('stDate').value;
       const stNote = document.getElementById('stNote').value.trim();
-      const saved  = data.settlement || data;
-      _current.settlements.push({
-        id: saved.id, from: stFrom, to: stTo,
-        amount, currency: _current.currency, date: stDate, note: stNote,
-      });
-      closeModal('modalSettle');
-      renderDetail();
-      toast('Settlement recorded!');
+      if (_editingSettleId) {
+        const data = await api('PATCH',`/api/tripshare/trips/${tripId}/settlements/${_editingSettleId}`,{
+          from: stFrom, to: stTo, amount, date: stDate, note: stNote,
+        });
+        const saved = data.settlement || data;
+        const arr = grp === _current ? _current.settlements : grp.settlements;
+        const idx = arr.findIndex(s=>s.id===_editingSettleId);
+        if (idx>=0) arr[idx] = { ...arr[idx], from: stFrom, to: stTo, amount, date: stDate, note: stNote };
+        closeModal('modalSettle');
+        if (_currentFriend) renderFriendDetail(); else renderDetail();
+        toast('Settlement updated!');
+      } else {
+        const data = await api('POST',`/api/tripshare/trips/${tripId}/settlements`,{
+          from: stFrom, to: stTo, amount, currency: grp.currency,
+          date: stDate, note: stNote,
+        });
+        const saved = data.settlement || data;
+        (_current?.tripId===tripId ? _current.settlements : grp.settlements).push({
+          id: saved.id, from: stFrom, to: stTo,
+          amount, currency: grp.currency, date: stDate, note: stNote,
+          createdAt: saved.createdAt || new Date().toISOString(),
+        });
+        closeModal('modalSettle');
+        if (_currentFriend) renderFriendDetail(); else renderDetail();
+        toast('Settlement recorded!');
+      }
     } catch(err) { toast(err.message,true); }
-    finally { btn.disabled=false; btn.textContent='Record Settlement'; }
+    finally { btn.disabled=false; btn.textContent = _editingSettleId ? 'Save Changes' : 'Record Settlement'; }
   }
 
   async function deleteSettlement(id) {
@@ -2793,13 +2895,71 @@
     finally { setLoading(false); }
   }
 
+  let _ctxSettleId = null, _ctxSettleTripId = null;
+
+  function openSettlementMenu(e, tripId, id) {
+    e.stopPropagation();
+    _ctxSettleId     = id;
+    _ctxSettleTripId = tripId;
+    const menu = document.getElementById('ctxSettlement');
+    const rect = e.currentTarget.getBoundingClientRect();
+    menu.style.right = (window.innerWidth - rect.right + 4) + 'px';
+    if (window.innerHeight - rect.bottom >= 80) {
+      menu.style.top = (rect.bottom + 4) + 'px'; menu.style.bottom = 'auto';
+    } else {
+      menu.style.bottom = (window.innerHeight - rect.top + 4) + 'px'; menu.style.top = 'auto';
+    }
+    menu.classList.add('open');
+  }
+
+  function editSettlementFromCtx() {
+    closeMenus();
+    const tripId = _ctxSettleTripId;
+    const id     = _ctxSettleId;
+    const grp    = (_current?.tripId === tripId ? _current : null) || _groups.find(g => g.tripId === tripId);
+    if (!grp) return;
+    const s = grp.settlements.find(s => s.id === id);
+    if (!s) return;
+    _editingSettleId    = id;
+    _editingSettleTripId = tripId;
+    const opts = grp.members.map(m => `<option value="${esc(m.email)}">${esc(m.name)}</option>`).join('');
+    document.getElementById('stFrom').innerHTML = opts;
+    document.getElementById('stTo').innerHTML   = opts;
+    document.getElementById('stFrom').value   = s.from;
+    document.getElementById('stTo').value     = s.to;
+    document.getElementById('stAmount').value = s.amount;
+    document.getElementById('stDate').value   = s.date;
+    document.getElementById('stNote').value   = s.note || '';
+    document.getElementById('stAmtErr').textContent = '';
+    document.getElementById('stModalTitle').textContent = 'Edit Settlement';
+    document.getElementById('stSubmit').textContent = 'Save Changes';
+    openModal('modalSettle');
+  }
+
+  async function deleteSettlementFromCtx() {
+    closeMenus();
+    if (!confirm('Delete this settlement?')) return;
+    const tripId = _ctxSettleTripId;
+    const id     = _ctxSettleId;
+    setLoading(true);
+    try {
+      await api('DELETE', `/api/tripshare/trips/${tripId}/settlements/${id}`);
+      const grp = _groups.find(g => g.tripId === tripId);
+      if (grp) grp.settlements = grp.settlements.filter(s => s.id !== id);
+      if (_current?.tripId === tripId) _current.settlements = _current.settlements.filter(s => s.id !== id);
+      if (_currentFriend) renderFriendDetail(); else renderDetail();
+      toast('Settlement deleted.');
+    } catch(err) { toast(err.message, true); }
+    finally { setLoading(false); }
+  }
+
   // ── Group settings ─────────────────────────────────────────────────────────
   function openGroupMenu(e) {
     e.stopPropagation();
     const menu = document.getElementById('ctxGroup');
     const rect = e.currentTarget.getBoundingClientRect();
-    menu.style.top  = (rect.bottom+4)+'px';
-    menu.style.right= '16px';
+    menu.style.top   = (rect.bottom+4)+'px';
+    menu.style.right = (window.innerWidth - rect.right + 4)+'px';
     menu.classList.add('open');
   }
 
@@ -2840,6 +3000,32 @@
       toast('Group deleted.');
       goBack();
     } catch(err) { toast(err.message,true); }
+    finally { setLoading(false); }
+  }
+
+  async function resetGroupTransactions() {
+    closeMenus();
+    const hasExpenses    = _current.expenses.length > 0;
+    const hasSettlements = _current.settlements.length > 0;
+    if (!hasExpenses && !hasSettlements) { toast('No transactions to reset.'); return; }
+    if (!confirm('Delete all expenses and settlements in this group? This cannot be undone.')) return;
+    setLoading(true);
+    try {
+      await Promise.all([
+        ..._current.expenses.map(e =>
+          api('DELETE', `/api/tripshare/trips/${_current.tripId}/expenses/${e.id}`)
+        ),
+        ..._current.settlements.map(s =>
+          api('DELETE', `/api/tripshare/trips/${_current.tripId}/settlements/${s.id}`)
+        ),
+      ]);
+      _current.expenses    = [];
+      _current.settlements = [];
+      const idx = _groups.findIndex(g => g.tripId === _current.tripId);
+      if (idx >= 0) { _groups[idx].expenses = []; _groups[idx].settlements = []; }
+      renderDetail();
+      toast('All transactions cleared.');
+    } catch(err) { toast(err.message, true); }
     finally { setLoading(false); }
   }
 
@@ -3106,6 +3292,17 @@
     openModal('modalSplitPicker');
   }
 
+  function openSplitMethodPicker() {
+    const trip = _expCtx?.trip;
+    if (!trip) return;
+    _soPaidBy = _aePaidBy || ME;
+    _soType   = (_aeSplit === 'custom' && _soType !== 'equal') ? _soType : 'equal';
+    _soSelected = {};
+    trip.members.forEach(m => { _soSelected[m.email] = true; });
+    renderSoScreen();
+    document.getElementById('screenSplitOptions').style.display = 'flex';
+  }
+
   function selectSplitOpt(idx) {
     const trip  = _expCtx?.trip;
     const other = trip?.members.find(m => m.email !== ME);
@@ -3326,31 +3523,22 @@
   }
 
   function updateAeSplitSummary() {
-    const trip   = _expCtx?.trip;
-    const amount = parseFloat(document.getElementById('aeAmount').value) || 0;
-    const sym    = SYM[_aeCurrency] || _aeCurrency;
-    const other  = trip?.members.find(m => m.email !== ME);
-    const oName  = other?.name || 'them';
-    const payer  = _aePaidBy || ME;
-    const payerName = payer === ME ? 'you' : (trip?.members.find(m=>m.email===payer)?.name || payer);
-    let title = '', desc = '';
-    if (_aeSplitOpt === 0 || (_aeSplit === 'equal' && payer === ME)) {
-      title = `Paid by ${payerName} and split equally`;
-      if (amount > 0 && other) desc = `${oName} owes you ${sym}${(amount/2).toFixed(2)}`;
-    } else if (_aeSplitOpt === 1) {
-      title = `Paid by you, owed full amount`;
-      if (amount > 0 && other) desc = `${oName} owes you ${sym}${amount.toFixed(2)}`;
-    } else if (_aeSplitOpt === 2) {
-      title = `Paid by ${oName}, split equally`;
-      if (amount > 0) desc = `You owe ${oName} ${sym}${(amount/2).toFixed(2)}`;
-    } else if (_aeSplitOpt === 3) {
-      title = `${oName} is owed the full amount`;
-      if (amount > 0) desc = `You owe ${oName} ${sym}${amount.toFixed(2)}`;
-    } else {
-      title = `Paid by ${payerName} and split unequally`;
+    const trip  = _expCtx?.trip;
+    const payer = _aePaidBy || ME;
+    const payerName = payer === ME ? 'you'
+      : (trip?.members.find(m => m.email === payer)?.name?.split(' ')[0] || payer);
+
+    let splitLabel = 'equally';
+    if (_aeSplit === 'full') splitLabel = 'full amount';
+    else if (_aeSplit === 'custom') {
+      if (_soType === 'amount')  splitLabel = 'by amount';
+      else if (_soType === 'percent') splitLabel = 'by %';
     }
-    document.getElementById('aeSplitSummaryTitle').textContent = title;
-    document.getElementById('aeSplitSummaryDesc').textContent  = desc;
+
+    const paidByPill    = document.getElementById('aePaidByPill');
+    const splitPill     = document.getElementById('aeSplitMethodPill');
+    if (paidByPill) paidByPill.textContent  = payerName;
+    if (splitPill)  splitPill.textContent   = splitLabel;
   }
 
   function renderAeSplitRows() {
@@ -3468,8 +3656,6 @@
 
     try {
       const data = await api('POST',`/api/tripshare/trips/${trip.tripId}/expenses`, payload);
-      const gi = _groups.findIndex(g=>g.tripId===trip.tripId);
-      if (gi>=0) _groups[gi].expenses.push(data.expense);
       if (_expCtx?.type !== 'friend' && _current && _current.tripId===trip.tripId) {
         _current.expenses.push(data.expense);
         closeAddExpense();

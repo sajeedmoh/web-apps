@@ -737,7 +737,7 @@
         return { id: String(e.id), label: label, number: number, metaEntryId: e.id };
       });
     _entries = all
-      .filter(function(e) { return e.type !== 'consumer_meta'; })
+      .filter(function(e) { return e.type !== 'consumer_meta' && e.type !== 'calc_session' && e.type !== 'calc_appliance'; })
       .map(parseEntry);
   }
 
