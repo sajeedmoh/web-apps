@@ -804,12 +804,16 @@
 
   function getEntriesForConsumer(id) {
     const isFirst = _consumers.length > 0 && _consumers[0].id === id;
-    return _entries.filter(function(e) {
-      if (String(e.consumerId) === id) return true;
-      // Entries without consumerId belong to the first consumer (backward compat)
-      if (isFirst && !e.consumerId) return true;
-      return false;
-    });
+    return _entries
+      .filter(function(e) {
+        if (String(e.consumerId) === id) return true;
+        // Entries without consumerId belong to the first consumer (backward compat)
+        if (isFirst && !e.consumerId) return true;
+        return false;
+      })
+      // Cycle detection, per-entry usage and the day-span average all assume
+      // chronological order — sort by date so we don't rely on API ordering.
+      .sort(function(a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
   }
 
   function getActiveEntries() {
@@ -1083,10 +1087,13 @@
       ? 'Since ' + fmtDate(cycleEntries[0].date) + ' · ' + cycleEntries.length + ' entr' + (cycleEntries.length === 1 ? 'y' : 'ies')
       : 'New cycle started';
 
-    const totalUsage = entries.reduce(function(sum, e) { return sum + (e.usage > 0 ? e.usage : 0); }, 0);
-    const totalDays  = daysBetween(entries[0].date, last.date);
+    // Avg daily usage for the CURRENT cycle only: usage accrued since the last
+    // bill, divided by the days since that bill (or since the first reading if
+    // no bill has been logged yet). The average resets whenever a bill is added.
+    const cycleStartDate = cycleStartIdx > 0 ? entries[cycleStartIdx - 1].date : entries[0].date;
+    const cycleDays      = daysBetween(cycleStartDate, last.date);
     document.getElementById('tillDateAvgVal').textContent =
-      totalDays > 0 ? (totalUsage / totalDays).toFixed(1) : '—';
+      cycleDays > 0 ? (cycleUsage / cycleDays).toFixed(1) : '—';
   }
 
   /* ── Render entries list ──────────────────────────────────────── */
