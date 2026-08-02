@@ -1105,26 +1105,34 @@
     }
 
     const cycles = [];
-    let current  = [];
+    let current    = [];
+    let cycleStart = entries[0].date;   // first cycle is measured from the first reading
     for (const entry of entries) {
       current.push(entry);
-      if (entry.type === 'bill') { cycles.push([...current]); current = []; }
+      if (entry.type === 'bill') {
+        cycles.push({ items: [...current], start: cycleStart });
+        cycleStart = entry.date;        // the next cycle starts at this bill's date
+        current = [];
+      }
     }
-    if (current.length > 0) cycles.push([...current]);
+    if (current.length > 0) cycles.push({ items: [...current], start: cycleStart });
     cycles.reverse();
 
     const avgMap = computeAvgPerEntry(entries);
 
     let html = '';
-    cycles.forEach(function(cycle, ci) {
-      const isOpen = ci === 0 && cycle[cycle.length - 1].type !== 'bill';
-      const total  = cycle.reduce(function(sum, e) { return sum + (e.usage > 0 ? e.usage : 0); }, 0);
-      const from   = fmtDate(cycle[0].date);
-      const to     = fmtDate(cycle[cycle.length - 1].date);
+    cycles.forEach(function(c, ci) {
+      const cycle    = c.items;
+      const isOpen   = ci === 0 && cycle[cycle.length - 1].type !== 'bill';
+      const total    = cycle.reduce(function(sum, e) { return sum + (e.usage > 0 ? e.usage : 0); }, 0);
+      const from     = fmtDate(c.start);
+      const to       = fmtDate(cycle[cycle.length - 1].date);
+      const days     = daysBetween(c.start, cycle[cycle.length - 1].date);
+      const cycleAvg = days > 0 ? (total / days).toFixed(1) : null;
 
       html += isOpen
         ? '<div class="entry-col-headers"><span>Date</span><span>Comment</span><span>Meter</span><span>Usage</span><span>Avg/day</span><span></span></div>'
-        : '<div class="cycle-header"><div class="cycle-header-left">&#10003; Billing cycle &nbsp;&middot;&nbsp; ' + from + ' &rarr; ' + to + '</div><div class="cycle-header-right">Total: ' + total + ' units</div></div>';
+        : '<div class="cycle-header"><div class="cycle-header-left">&#10003; Billing cycle &nbsp;&middot;&nbsp; ' + from + ' &rarr; ' + to + '</div><div class="cycle-header-right">Total: ' + total + ' units' + (cycleAvg !== null ? ' &nbsp;&middot;&nbsp; Avg: ' + cycleAvg + ' u/d' : '') + '</div></div>';
 
       [...cycle].reverse().forEach(function(entry) {
         const isBill   = entry.type === 'bill';
