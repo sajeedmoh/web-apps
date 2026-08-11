@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zehra's Daily Routine</title>
+  <script>if (!localStorage.getItem('auth_session')) window.location.replace('login.html');</script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f7;
+      color: #1c1c1e;
+      min-height: 100vh;
+      padding: 0 0 60px;
+    }
+
+    /* Top nav */
+    .top-nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(245,245,247,0.88);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(0,0,0,0.07);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      height: 48px;
+      gap: 12px;
+    }
+    .back-link {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.82rem;
+      color: #636366;
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .back-link:hover { color: #1c1c1e; }
+
+    .save-badge {
+      margin-left: auto;
+      font-size: 0.72rem;
+      color: #636366;
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+    .save-badge.visible { opacity: 1; }
+
+    /* Main content */
+    .page-wrap {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 36px 24px 0;
+    }
+
+    /* Progress strip */
+    .progress-strip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+    .progress-bar-bg {
+      flex: 1;
+      height: 4px;
+      background: #e5e5ea;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .progress-bar-fg {
+      height: 100%;
+      background: #34c759;
+      border-radius: 99px;
+      transition: width 0.4s ease;
+    }
+    .progress-label {
+      font-size: 0.78rem;
+      color: #636366;
+      white-space: nowrap;
+    }
+
+    /* Date header */
+    .date-heading {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 6px;
+      color: #1c1c1e;
+    }
+    .date-sub {
+      font-size: 0.85rem;
+      color: #aeaeb2;
+      margin-bottom: 28px;
+    }
+
+    /* Add item row (admin) */
+    .add-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      align-items: center;
+    }
+    .add-row-circle {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #e5e5ea;
+      flex-shrink: 0;
+    }
+    .add-input {
+      flex: 1;
+      border: none;
+      background: none;
+      font-size: 0.95rem;
+      font-family: inherit;
+      color: #1c1c1e;
+      outline: none;
+      padding: 6px 0;
+      border-bottom: 1.5px solid #d1d1d6;
+      transition: border-color 0.15s;
+    }
+    .add-input:focus { border-color: #007aff; }
+    .add-input::placeholder { color: #c7c7cc; }
+    .btn-add {
+      padding: 7px 16px;
+      background: #007aff;
+      color: #fff;
+      border: none;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .btn-add:hover { background: #0062cc; }
+    .btn-add:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Checklist */
+    .checklist {
+      background: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+    }
+
+    .routine-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 15px 18px;
+      border-bottom: 1px solid #f2f2f7;
+      transition: background 0.12s;
+      position: relative;
+    }
+    .routine-item:last-child { border-bottom: none; }
+    .routine-item:active { background: #f9f9fb; }
+
+    /* Colored circle checkbox */
+    .check-circle {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2.5px solid var(--item-color, #aeaeb2);
+      background: none;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.18s, border-color 0.18s, transform 0.12s;
+      padding: 0;
+    }
+    .check-circle:active { transform: scale(0.9); }
+    .routine-item.done .check-circle {
+      background: var(--item-color, #aeaeb2);
+      border-color: var(--item-color, #aeaeb2);
+    }
+    .check-circle svg { display: none; }
+    .routine-item.done .check-circle svg { display: block; }
+
+    .item-text {
+      flex: 1;
+      font-size: 0.95rem;
+      color: #1c1c1e;
+      line-height: 1.4;
+      transition: color 0.2s;
+    }
+    .routine-item.done .item-text {
+      color: #aeaeb2;
+      text-decoration: line-through;
+      text-decoration-color: #c7c7cc;
+    }
+
+    .btn-del-item {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #c7c7cc;
+      font-size: 1rem;
+      padding: 4px 6px;
+      border-radius: 50%;
+      line-height: 1;
+      transition: color 0.15s, background 0.15s;
+      flex-shrink: 0;
+    }
+    .btn-del-item:hover { color: #ff3b30; background: rgba(255,59,48,0.08); }
+
+    /* Empty state */
+    .empty-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 60px 24px;
+      text-align: center;
+      color: #aeaeb2;
+      font-size: 0.9rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .empty-card .icon { font-size: 2.4rem; margin-bottom: 12px; }
+
+    /* All done banner */
+    .all-done {
+      margin-top: 16px;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 12px;
+      padding: 14px 18px;
+      text-align: center;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #15803d;
+      display: none;
+    }
+    .all-done.visible { display: block; }
+
+    @media (max-width: 480px) {
+      .page-wrap { padding: 24px 16px 0; }
+      .date-heading { font-size: 1.6rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="dashboard.html" class="back-link">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    Dashboard
+  </a>
+  <span class="save-badge" id="saveBadge">Saving…</span>
+</nav>
+
+<div class="page-wrap">
+
+  <!-- Progress -->
+  <div class="progress-strip">
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fg" id="progressFg" style="width:0%"></div>
+    </div>
+    <span class="progress-label" id="progressLabel">0 / 0</span>
+  </div>
+
+  <!-- Date -->
+  <div class="date-heading" id="dateHeading">Today</div>
+  <div class="date-sub" id="dateSub"></div>
+
+  <!-- Admin: add item -->
+  <div class="add-row" id="addRow" style="display:none">
+    <div class="add-row-circle"></div>
+    <input class="add-input" id="newItemText"
+           placeholder="Add a routine item…"
+           maxlength="120"
+           onkeydown="if(event.key==='Enter') addItem()" />
+    <button class="btn-add" id="btnAdd" onclick="addItem()">Add</button>
+  </div>
+
+  <!-- List -->
+  <div id="listWrap">
+    <div class="empty-card"><div>Loading…</div></div>
+  </div>
+
+  <div class="all-done" id="allDone">🎉 Amazing! All tasks done for today!</div>
+
+</div>
+
+<script src="config.js"></script>
+<script src="permissions.js"></script>
+<script>
+  /* ── Access check ──────────────────────────────────────────────────── */
+  var _session = JSON.parse(localStorage.getItem('auth_session') || 'null');
+  var _token   = localStorage.getItem('auth_token');
+  var isAdmin  = _session && _session.role === 'admin';
+
+  // Permission check runs after config.js sets API_BASE
+  window.addEventListener('load', function() {
+    checkAppAccess('zehra-daily-routine');
+  });
+
+  /* ── Color palette for circles ─────────────────────────────────────── */
+  var COLORS = ['#ff6b6b','#ff9f43','#54a0ff','#5f27cd','#00d2d3',
+                '#1dd1a1','#feca57','#ff6b81','#48dbfb','#ff9ff3'];
+
+  /* ── State ─────────────────────────────────────────────────────────── */
+  var _items       = [];
+  var _completions = {};
+  var _today       = new Date().toISOString().slice(0, 10);
+
+  /* ── Date header ───────────────────────────────────────────────────── */
+  (function() {
+    var d = new Date();
+    var days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    var months = ['January','February','March','April','May','June',
+                  'July','August','September','October','November','December'];
+    document.getElementById('dateSub').textContent =
+      days[d.getDay()] + ', ' + d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+  })();
+
+  /* ── Auth ──────────────────────────────────────────────────────────── */
+  function authHeaders() {
+    return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _token };
+  }
+
+  /* ── Save indicator ────────────────────────────────────────────────── */
+  var _hideTimer = null;
+  function showSaving() {
+    clearTimeout(_hideTimer);
+    var el = document.getElementById('saveBadge');
+    el.textContent = 'Saving…';
+    el.classList.add('visible');
+  }
+  function hideSaving() {
+    _hideTimer = setTimeout(function() {
+      document.getElementById('saveBadge').classList.remove('visible');
+    }, 900);
+  }
+
+  /* ── Fetch ─────────────────────────────────────────────────────────── */
+  async function fetchAll() {
+    var res  = await fetch(API_BASE + '/api/zehra-routine', { headers: authHeaders() });
+    var data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to load');
+    _items       = data.items       || [];
+    _completions = data.completions || {};
+  }
+
+  function todayDone() { return _completions[_today] || []; }
+  function isDone(id)  { return todayDone().indexOf(id) !== -1; }
+
+  /* ── Render ────────────────────────────────────────────────────────── */
+  function render() {
+    var wrap = document.getElementById('listWrap');
+
+    if (_items.length === 0) {
+      wrap.innerHTML = '<div class="empty-card"><div class="icon">📋</div>'
+        + (isAdmin ? 'No items yet — add one above.' : 'No routine items added yet.') + '</div>';
+      setProgress(0, 0);
+      return;
+    }
+
+    var doneCount = 0;
+    var html = '<div class="checklist">';
+    _items.forEach(function(item, i) {
+      var done  = isDone(item.id);
+      var color = COLORS[i % COLORS.length];
+      if (done) doneCount++;
+      html += '<div class="routine-item' + (done ? ' done' : '') + '" id="ri_' + item.id + '" style="--item-color:' + color + '">'
+        + '<button class="check-circle" onclick="toggleItem(' + item.id + ')" title="' + (done ? 'Uncheck' : 'Mark done') + '">'
+        + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+        + '</button>'
+        + '<span class="item-text">' + esc(item.text) + '</span>'
+        + (isAdmin ? '<button class="btn-del-item" onclick="deleteItem(' + item.id + ')" title="Remove">×</button>' : '')
+        + '</div>';
+    });
+    html += '</div>';
+    wrap.innerHTML = html;
+    setProgress(doneCount, _items.length);
+
+    var banner = document.getElementById('allDone');
+    banner.classList.toggle('visible', doneCount === _items.length && _items.length > 0);
+  }
+
+  function setProgress(done, total) {
+    var pct = total > 0 ? Math.round(done / total * 100) : 0;
+    document.getElementById('progressFg').style.width    = pct + '%';
+    document.getElementById('progressLabel').textContent = done + ' / ' + total;
+  }
+
+  /* ── Toggle ────────────────────────────────────────────────────────── */
+  async function toggleItem(id) {
+    var row = document.getElementById('ri_' + id);
+    if (row) row.style.opacity = '0.5';
+    showSaving();
+    try {
+      var res  = await fetch(API_BASE + '/api/zehra-routine/toggle', {
+        method: 'POST', headers: authHeaders(),
+        body: JSON.stringify({ itemId: id, date: _today })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      _completions[_today] = data.completed;
+      render();
+    } catch(ex) {
+      alert('Could not save: ' + ex.message);
+      if (row) row.style.opacity = '1';
+    }
+    hideSaving();
+  }
+
+  /* ── Add item (admin) ──────────────────────────────────────────────── */
+  async function addItem() {
+    var text = document.getElementById('newItemText').value.trim();
+    if (!text) { document.getElementById('newItemText').focus(); return; }
+    var btn = document.getElementById('btnAdd');
+    btn.disabled = true; btn.textContent = '…';
+    showSaving();
+    try {
+      var res  = await fetch(API_BASE + '/api/zehra-routine/items', {
+        method: 'POST', headers: authHeaders(),
+        body: JSON.stringify({ text: text })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      _items.push(data.item);
+      document.getElementById('newItemText').value = '';
+      render();
+      document.getElementById('newItemText').focus();
+    } catch(ex) { alert('Error: ' + ex.message); }
+    btn.disabled = false; btn.textContent = 'Add';
+    hideSaving();
+  }
+
+  /* ── Delete item (admin) ───────────────────────────────────────────── */
+  async function deleteItem(id) {
+    var item = _items.find(function(i) { return i.id === id; });
+    if (!item || !confirm('Remove "' + item.text + '"?')) return;
+    showSaving();
+    try {
+      var res  = await fetch(API_BASE + '/api/zehra-routine/items/' + id, {
+        method: 'DELETE', headers: authHeaders()
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      _items = _items.filter(function(i) { return i.id !== id; });
+      render();
+    } catch(ex) { alert('Error: ' + ex.message); }
+    hideSaving();
+  }
+
+  /* ── XSS ───────────────────────────────────────────────────────────── */
+  function esc(str) {
+    return String(str == null ? '' : str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  /* ── Init ──────────────────────────────────────────────────────────── */
+  if (isAdmin) document.getElementById('addRow').style.display = 'flex';
+
+  (async function() {
+    try {
+      await fetchAll();
+      render();
+    } catch(err) {
+      document.getElementById('listWrap').innerHTML =
+        '<div class="empty-card">Error loading: ' + esc(err.message) + '</div>';
+    }
+  })();
+</script>
+<script src="session-guard.js"></script>
+</body>
+</html>
