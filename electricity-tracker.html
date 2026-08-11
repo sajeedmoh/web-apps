@@ -700,6 +700,8 @@
 </div>
 
 <script src="config.js"></script>
+<script src="permissions.js"></script>
+<script>window.addEventListener('load',function(){checkAppAccess('electricity-tracker');});</script>
 <script>
   const token    = localStorage.getItem('auth_token');
   const API_BASE = window.API_BASE || '';

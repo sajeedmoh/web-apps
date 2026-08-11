@@ -371,6 +371,7 @@
     #row-calc       { --row-accent: #06b6d4; --row-icon-bg: rgba(6,182,212,0.12); }
     #row-funds      { --row-accent: #8b5cf6; --row-icon-bg: rgba(139,92,246,0.12); }
     #row-tripshare  { --row-accent: #0284c7; --row-icon-bg: rgba(2,132,199,0.12); }
+    #row-zehra      { --row-accent: #ec4899; --row-icon-bg: rgba(236,72,153,0.12); }
 
     .page-footer {
       font-size: 0.72rem;
@@ -449,7 +450,7 @@
     <div class="avatar" id="avatarInitials">?</div>
     <div class="user-meta">
       <div class="name" id="sidebarName">User</div>
-      <div class="role" id="sidebarRole">Developer</div>
+      <div class="role" id="sidebarRole">User</div>
     </div>
   </div>
 
@@ -556,6 +557,15 @@
         <span class="proj-row-arrow">&#8599;</span>
       </a>
 
+      <a href="zehra-daily-routine.html" id="row-zehra" class="proj-row" style="display:none">
+        <div class="proj-row-icon">&#128203;</div>
+        <div class="proj-row-text">
+          <div class="proj-row-title">Zehra's Daily Routine</div>
+          <div class="proj-row-desc">Daily checklist for Zehra</div>
+        </div>
+        <span class="proj-row-arrow">&#8599;</span>
+      </a>
+
     </div>
 
   </div>
@@ -563,6 +573,7 @@
   <div class="page-footer">My Projects Dashboard &bull; &copy; 2026</div>
 </div>
 
+<script src="config.js"></script>
 <script>
   /* ── Auth guard ─────────────────────────────── */
   const session = JSON.parse(localStorage.getItem('auth_session') || 'null');
@@ -576,15 +587,47 @@
     const first   = session.firstName || '';
     const last    = session.lastName  || '';
     const display = first || session.email?.split('@')[0] || 'there';
-    const role    = session.role || 'developer';
+    const role    = session.role || 'user';
+    const displayRole = (role === 'developer') ? 'User' : role.charAt(0).toUpperCase() + role.slice(1);
 
     document.getElementById('userName').textContent       = display;
     document.getElementById('sidebarName').textContent    = display;
     document.getElementById('avatarInitials').textContent = getInitials(first, last);
-    document.getElementById('sidebarRole').textContent    = role.charAt(0).toUpperCase() + role.slice(1);
+    document.getElementById('sidebarRole').textContent    = displayRole;
 
     if (role === 'admin') {
       document.getElementById('admin-nav-section').style.display = '';
+      document.getElementById('row-zehra').style.display = '';
+    } else {
+      // Map app IDs to dashboard row element IDs
+      const APP_ROWS = {
+        'todo-list':              'row-todo',
+        'prayer-times':           'row-prayer',
+        'rates-tracker':          'row-utils',
+        'electricity-calculator': 'row-calc',
+        'electricity-tracker':    'row-kseb',
+        'funds':                  'row-funds',
+        'tripshare':              'row-tripshare',
+        'zehra-daily-routine':    'row-zehra',
+      };
+      const RESTRICTED_BY_DEFAULT = ['zehra-daily-routine'];
+
+      const token = localStorage.getItem('auth_token');
+      fetch(window.API_BASE + '/api/me', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      }).then(r => r.json()).then(data => {
+        Object.entries(APP_ROWS).forEach(([appId, rowId]) => {
+          const el = document.getElementById(rowId);
+          if (!el) return;
+          if (Array.isArray(data.permissions)) {
+            // Explicit list: show only what's permitted
+            el.style.display = data.permissions.indexOf(appId) !== -1 ? '' : 'none';
+          } else {
+            // No explicit config: hide restricted-by-default, show everything else
+            el.style.display = RESTRICTED_BY_DEFAULT.indexOf(appId) !== -1 ? 'none' : '';
+          }
+        });
+      }).catch(() => {});
     }
   }
 

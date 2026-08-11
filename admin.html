@@ -158,7 +158,13 @@
 <script>
   var _token = localStorage.getItem('auth_token');
 
+  // Apps that are OFF by default (must be explicitly granted)
+  var RESTRICTED_BY_DEFAULT = ['zehra-daily-routine'];
+
   var APPS = [
+    { id: 'todo-list',              name: 'Todo List',              icon: '✅', url: 'todo-list.html'              },
+    { id: 'prayer-times',           name: 'Prayer Times',           icon: '🕌', url: 'prayer-times.html'           },
+    { id: 'rates-tracker',          name: 'Rates Tracker',          icon: '💱', url: 'rates-tracker.html'          },
     { id: 'electricity-calculator', name: 'Electricity Calculator', icon: '⚡', url: 'electricity-calculator.html' },
     { id: 'electricity-tracker',    name: 'Electricity Tracker',    icon: '📊', url: 'electricity-tracker.html'    },
     { id: 'funds',                  name: 'Funds Manager',          icon: '💰', url: 'funds.html'                  },
@@ -198,16 +204,21 @@
     wrap.innerHTML = _users.map(function(u) {
       var initials = ((u.firstName || '')[0] || '') + ((u.lastName || '')[0] || '');
       var isAdmin  = u.role === 'admin';
-      var perms    = u.permissions || null; // null = all apps
+      var perms    = Array.isArray(u.permissions) ? u.permissions : null; // null = no explicit config
 
       var appRows = isAdmin
         ? '<p class="full-access-note">Admin accounts have full access to all apps.</p>'
         : APPS.map(function(app) {
-            var allowed = perms === null || perms.indexOf(app.id) !== -1;
-            return '<div class="app-row' + (allowed ? ' allowed' : '') + '" id="row_' + u.email.replace(/[@.]/g,'_') + '_' + app.id + '">'
+            // null permissions: regular apps ON, restricted apps OFF by default
+            var allowed = perms !== null
+              ? perms.indexOf(app.id) !== -1
+              : RESTRICTED_BY_DEFAULT.indexOf(app.id) === -1;
+            var rowKey = u.email.replace(/[@.]/g,'_');
+            return '<div class="app-row' + (allowed ? ' allowed' : '') + '" id="row_' + rowKey + '_' + app.id + '">'
               + '<span class="app-icon">' + app.icon + '</span>'
               + '<div style="flex:1"><div class="app-name">' + esc(app.name) + '</div>'
               + '<div class="app-url">' + esc(app.url) + '</div></div>'
+              + '<span id="ind_' + rowKey + '_' + app.id + '" style="font-size:0.72rem;min-width:52px;text-align:right"></span>'
               + '<label class="toggle"><input type="checkbox"' + (allowed ? ' checked' : '')
               + ' onchange="togglePerm(\'' + esc(u.email) + '\',\'' + app.id + '\',this.checked)" />'
               + '<span class="toggle-slider"></span></label>'
@@ -242,8 +253,17 @@
     var user = _users.find(function(u) { return u.email === email; });
     if (!user) return;
 
-    // Build current permissions array; null means "all" → convert to explicit list first
-    var currentPerms = user.permissions !== null ? user.permissions.slice() : APPS.map(function(a) { return a.id; });
+    var key = email.replace(/[@.]/g, '_');
+    var row = document.getElementById('row_' + key + '_' + appId);
+    var ind = document.getElementById('ind_' + key + '_' + appId);
+
+    // Show saving state
+    if (ind) { ind.textContent = 'Saving…'; ind.style.color = 'var(--muted)'; }
+
+    // Build current permissions array — handle undefined/null both as "all apps"
+    var currentPerms = Array.isArray(user.permissions)
+      ? user.permissions.slice()
+      : APPS.map(function(a) { return a.id; });
 
     if (checked) {
       if (currentPerms.indexOf(appId) === -1) currentPerms.push(appId);
@@ -257,17 +277,15 @@
       });
       var data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed');
+
       user.permissions = currentPerms;
-
-      // Update row highlight
-      var key  = email.replace(/[@.]/g, '_');
-      var row  = document.getElementById('row_' + key + '_' + appId);
       if (row) row.classList.toggle('allowed', checked);
-
-      showToast(checked ? '✓ Access granted' : '✗ Access removed');
+      if (ind) { ind.textContent = 'Saved ✓'; ind.style.color = 'var(--green)'; }
+      setTimeout(function() { if (ind) ind.textContent = ''; }, 2000);
     } catch(ex) {
-      alert('Error: ' + ex.message);
-      // Revert checkbox
+      if (ind) { ind.textContent = 'Failed ✗'; ind.style.color = 'var(--red)'; }
+      setTimeout(function() { if (ind) ind.textContent = ''; }, 2500);
+      alert('Error saving permissions: ' + ex.message);
       await loadUsers();
     }
   }
@@ -284,7 +302,7 @@
     try {
       var res  = await fetch(API_BASE + '/api/admin/users', {
         method: 'POST', headers: authHeaders(),
-        body: JSON.stringify({ firstName: fn, lastName: ln, email: em, password: pw, role: 'developer' })
+        body: JSON.stringify({ firstName: fn, lastName: ln, email: em, password: pw, role: 'user' })
       });
       var data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed');

@@ -700,6 +700,8 @@
 </div>
 
 <script src="config.js"></script>
+<script src="permissions.js"></script>
+<script>window.addEventListener('load',function(){checkAppAccess('electricity-tracker');});</script>
 <script>
   const token    = localStorage.getItem('auth_token');
   const API_BASE = window.API_BASE || '';
@@ -804,12 +806,16 @@
 
   function getEntriesForConsumer(id) {
     const isFirst = _consumers.length > 0 && _consumers[0].id === id;
-    return _entries.filter(function(e) {
-      if (String(e.consumerId) === id) return true;
-      // Entries without consumerId belong to the first consumer (backward compat)
-      if (isFirst && !e.consumerId) return true;
-      return false;
-    });
+    return _entries
+      .filter(function(e) {
+        if (String(e.consumerId) === id) return true;
+        // Entries without consumerId belong to the first consumer (backward compat)
+        if (isFirst && !e.consumerId) return true;
+        return false;
+      })
+      // Cycle detection, per-entry usage and the day-span average all assume
+      // chronological order — sort by date so we don't rely on API ordering.
+      .sort(function(a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
   }
 
   function getActiveEntries() {
@@ -1083,10 +1089,13 @@
       ? 'Since ' + fmtDate(cycleEntries[0].date) + ' · ' + cycleEntries.length + ' entr' + (cycleEntries.length === 1 ? 'y' : 'ies')
       : 'New cycle started';
 
-    const totalUsage = entries.reduce(function(sum, e) { return sum + (e.usage > 0 ? e.usage : 0); }, 0);
-    const totalDays  = daysBetween(entries[0].date, last.date);
+    // Avg daily usage for the CURRENT cycle only: usage accrued since the last
+    // bill, divided by the days since that bill (or since the first reading if
+    // no bill has been logged yet). The average resets whenever a bill is added.
+    const cycleStartDate = cycleStartIdx > 0 ? entries[cycleStartIdx - 1].date : entries[0].date;
+    const cycleDays      = daysBetween(cycleStartDate, last.date);
     document.getElementById('tillDateAvgVal').textContent =
-      totalDays > 0 ? (totalUsage / totalDays).toFixed(1) : '—';
+      cycleDays > 0 ? (cycleUsage / cycleDays).toFixed(1) : '—';
   }
 
   /* ── Render entries list ──────────────────────────────────────── */
@@ -1098,26 +1107,34 @@
     }
 
     const cycles = [];
-    let current  = [];
+    let current    = [];
+    let cycleStart = entries[0].date;   // first cycle is measured from the first reading
     for (const entry of entries) {
       current.push(entry);
-      if (entry.type === 'bill') { cycles.push([...current]); current = []; }
+      if (entry.type === 'bill') {
+        cycles.push({ items: [...current], start: cycleStart });
+        cycleStart = entry.date;        // the next cycle starts at this bill's date
+        current = [];
+      }
     }
-    if (current.length > 0) cycles.push([...current]);
+    if (current.length > 0) cycles.push({ items: [...current], start: cycleStart });
     cycles.reverse();
 
     const avgMap = computeAvgPerEntry(entries);
 
     let html = '';
-    cycles.forEach(function(cycle, ci) {
-      const isOpen = ci === 0 && cycle[cycle.length - 1].type !== 'bill';
-      const total  = cycle.reduce(function(sum, e) { return sum + (e.usage > 0 ? e.usage : 0); }, 0);
-      const from   = fmtDate(cycle[0].date);
-      const to     = fmtDate(cycle[cycle.length - 1].date);
+    cycles.forEach(function(c, ci) {
+      const cycle    = c.items;
+      const isOpen   = ci === 0 && cycle[cycle.length - 1].type !== 'bill';
+      const total    = cycle.reduce(function(sum, e) { return sum + (e.usage > 0 ? e.usage : 0); }, 0);
+      const from     = fmtDate(c.start);
+      const to       = fmtDate(cycle[cycle.length - 1].date);
+      const days     = daysBetween(c.start, cycle[cycle.length - 1].date);
+      const cycleAvg = days > 0 ? (total / days).toFixed(1) : null;
 
       html += isOpen
         ? '<div class="entry-col-headers"><span>Date</span><span>Comment</span><span>Meter</span><span>Usage</span><span>Avg/day</span><span></span></div>'
-        : '<div class="cycle-header"><div class="cycle-header-left">&#10003; Billing cycle &nbsp;&middot;&nbsp; ' + from + ' &rarr; ' + to + '</div><div class="cycle-header-right">Total: ' + total + ' units</div></div>';
+        : '<div class="cycle-header"><div class="cycle-header-left">&#10003; Billing cycle &nbsp;&middot;&nbsp; ' + from + ' &rarr; ' + to + '</div><div class="cycle-header-right">Total: ' + total + ' units' + (cycleAvg !== null ? ' &nbsp;&middot;&nbsp; Avg: ' + cycleAvg + ' u/d' : '') + '</div></div>';
 
       [...cycle].reverse().forEach(function(entry) {
         const isBill   = entry.type === 'bill';

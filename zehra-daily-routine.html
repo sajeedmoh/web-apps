@@ -9,322 +9,403 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #f5f5f7;
-      color: #1c1c1e;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #e5e5ea;
       min-height: 100vh;
-      padding: 0 0 60px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
     }
 
-    /* Top nav */
-    .top-nav {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      background: rgba(245,245,247,0.88);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid rgba(0,0,0,0.07);
+    .app-shell {
+      width: 100%;
+      max-width: 420px;
+      min-height: 100vh;
+      background: #f2f2f7;
+      box-shadow: 0 0 40px rgba(0,0,0,0.15);
+    }
+
+    /* ── Header ───────────────────────────── */
+    .header {
+      background: #1c1c2e;
+      padding: 48px 16px 0;
+      position: relative;
+    }
+    .header-top {
       display: flex;
       align-items: center;
-      padding: 0 20px;
-      height: 48px;
-      gap: 12px;
+      justify-content: space-between;
+      min-height: 28px;
     }
     .back-link {
+      color: rgba(255,255,255,0.55);
+      text-decoration: none;
+      font-size: 0.78rem;
       display: flex;
       align-items: center;
-      gap: 6px;
-      font-size: 0.82rem;
-      color: #636366;
-      text-decoration: none;
-      transition: color 0.15s;
+      gap: 3px;
+      flex-shrink: 0;
     }
-    .back-link:hover { color: #1c1c1e; }
-
+    .back-link:hover { color: #fff; }
     .save-badge {
-      margin-left: auto;
-      font-size: 0.72rem;
-      color: #636366;
+      font-size: 0.65rem;
+      color: rgba(255,255,255,0.45);
       opacity: 0;
-      transition: opacity 0.25s;
+      transition: opacity 0.2s;
+      text-align: center;
+      flex: 1;
     }
     .save-badge.visible { opacity: 1; }
 
-    /* Main content */
-    .page-wrap {
-      max-width: 640px;
-      margin: 0 auto;
-      padding: 36px 24px 0;
-    }
-
-    /* Progress strip */
-    .progress-strip {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 28px;
-    }
-    .progress-bar-bg {
-      flex: 1;
-      height: 4px;
-      background: #e5e5ea;
-      border-radius: 99px;
-      overflow: hidden;
-    }
-    .progress-bar-fg {
-      height: 100%;
-      background: #34c759;
-      border-radius: 99px;
-      transition: width 0.4s ease;
-    }
-    .progress-label {
-      font-size: 0.78rem;
-      color: #636366;
-      white-space: nowrap;
-    }
-
-    /* Date header */
-    .date-heading {
+    .header-center { text-align: center; margin-top: 6px; }
+    .today-label {
       font-size: 2rem;
-      font-weight: 700;
-      letter-spacing: -0.03em;
-      margin-bottom: 6px;
-      color: #1c1c1e;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      line-height: 1;
     }
-    .date-sub {
-      font-size: 0.85rem;
-      color: #aeaeb2;
-      margin-bottom: 28px;
+    .today-date {
+      font-size: 0.78rem;
+      color: rgba(255,255,255,0.45);
+      margin-top: 2px;
     }
 
-    /* Add item row (admin) */
-    .add-row {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 20px;
-      align-items: center;
-    }
-    .add-row-circle {
-      width: 28px;
-      height: 28px;
+    .btn-add-float {
+      width: 32px; height: 32px;
       border-radius: 50%;
-      background: #e5e5ea;
+      background: #4a90e2;
+      border: none;
+      color: #fff;
+      font-size: 1.3rem;
+      line-height: 1;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(74,144,226,0.4);
+      transition: filter 0.15s;
     }
-    .add-input {
+    .btn-add-float:hover { filter: brightness(1.15); }
+
+    /* ── Week strip ───────────────────────── */
+    .week-strip {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0 0;
+      gap: 0;
+    }
+    .day-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
       flex: 1;
+      cursor: pointer;
+      padding: 4px 2px 10px;
       border: none;
       background: none;
-      font-size: 0.95rem;
-      font-family: inherit;
-      color: #1c1c1e;
-      outline: none;
-      padding: 6px 0;
-      border-bottom: 1.5px solid #d1d1d6;
-      transition: border-color 0.15s;
+      border-radius: 10px;
+      transition: background 0.15s;
+      min-width: 0;
     }
-    .add-input:focus { border-color: #007aff; }
-    .add-input::placeholder { color: #c7c7cc; }
-    .btn-add {
-      padding: 7px 16px;
-      background: #007aff;
-      color: #fff;
-      border: none;
-      border-radius: 20px;
+    .day-btn:hover { background: rgba(255,255,255,0.05); }
+    .day-name {
+      font-size: 0.58rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.38);
+    }
+    .day-num {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
       font-size: 0.82rem;
       font-weight: 600;
+      color: rgba(255,255,255,0.5);
+    }
+    .day-btn.today .day-name { color: #fff; }
+    .day-btn.today .day-num {
+      background: #4a90e2;
+      color: #fff;
+      box-shadow: 0 0 0 2px rgba(74,144,226,0.35);
+    }
+    .day-btn.selected:not(.today) .day-num {
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+    }
+    .day-btn.selected:not(.today) .day-name { color: rgba(255,255,255,0.65); }
+    .day-btn.future { opacity: 0.3; cursor: default; }
+    .day-dot {
+      width: 4px; height: 4px; border-radius: 50%;
+      background: transparent;
+      margin-top: -2px;
+    }
+    .day-btn.has-data .day-dot { background: rgba(255,255,255,0.3); }
+    .day-btn.today .day-dot    { background: #4a90e2; }
+
+    /* ── Add item panel (admin) ────────────── */
+    .add-panel {
+      display: none;
+      background: #252538;
+      padding: 12px 16px;
+      gap: 10px;
+      align-items: center;
+    }
+    .add-panel.open { display: flex; }
+    .add-input {
+      flex: 1;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      padding: 9px 12px;
+      color: #fff;
+      font-size: 0.88rem;
       font-family: inherit;
+      outline: none;
+    }
+    .add-input::placeholder { color: rgba(255,255,255,0.3); }
+    .add-input:focus { border-color: rgba(74,144,226,0.6); }
+    .btn-save-item {
+      background: #4a90e2;
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 0.85rem;
+      font-weight: 700;
+      font-family: inherit;
+      padding: 9px 16px;
       cursor: pointer;
-      transition: background 0.15s;
       white-space: nowrap;
     }
-    .btn-add:hover { background: #0062cc; }
-    .btn-add:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-save-item:disabled { opacity: 0.5; }
 
-    /* Checklist */
-    .checklist {
-      background: #fff;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+    /* ── List ──────────────────────────────── */
+    .list-wrap {
+      padding: 10px 12px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
 
-    .routine-item {
+    .routine-card {
+      border-radius: 14px;
+      padding: 12px 14px;
       display: flex;
       align-items: center;
-      gap: 14px;
-      padding: 15px 18px;
-      border-bottom: 1px solid #f2f2f7;
-      transition: background 0.12s;
+      gap: 11px;
+      cursor: pointer;
+      user-select: none;
       position: relative;
+      overflow: hidden;
+      transition: transform 0.1s, filter 0.15s;
+      -webkit-tap-highlight-color: transparent;
     }
-    .routine-item:last-child { border-bottom: none; }
-    .routine-item:active { background: #f9f9fb; }
+    .routine-card:active { transform: scale(0.97); }
+    .routine-card.done { filter: brightness(0.72) saturate(0.55); }
 
-    /* Colored circle checkbox */
-    .check-circle {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      border: 2.5px solid var(--item-color, #aeaeb2);
-      background: none;
-      cursor: pointer;
+    .card-icon {
+      font-size: 1.2rem;
       flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.18s, border-color 0.18s, transform 0.12s;
-      padding: 0;
-    }
-    .check-circle:active { transform: scale(0.9); }
-    .routine-item.done .check-circle {
-      background: var(--item-color, #aeaeb2);
-      border-color: var(--item-color, #aeaeb2);
-    }
-    .check-circle svg { display: none; }
-    .routine-item.done .check-circle svg { display: block; }
-
-    .item-text {
-      flex: 1;
-      font-size: 0.95rem;
-      color: #1c1c1e;
-      line-height: 1.4;
-      transition: color 0.2s;
-    }
-    .routine-item.done .item-text {
-      color: #aeaeb2;
-      text-decoration: line-through;
-      text-decoration-color: #c7c7cc;
-    }
-
-    .btn-del-item {
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: #c7c7cc;
-      font-size: 1rem;
-      padding: 4px 6px;
-      border-radius: 50%;
       line-height: 1;
-      transition: color 0.15s, background 0.15s;
-      flex-shrink: 0;
     }
-    .btn-del-item:hover { color: #ff3b30; background: rgba(255,59,48,0.08); }
-
-    /* Empty state */
-    .empty-card {
-      background: #fff;
-      border-radius: 16px;
-      padding: 60px 24px;
-      text-align: center;
-      color: #aeaeb2;
+    .card-body { flex: 1; min-width: 0; }
+    .card-title {
       font-size: 0.9rem;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      font-weight: 700;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .empty-card .icon { font-size: 2.4rem; margin-bottom: 12px; }
-
-    /* All done banner */
-    .all-done {
-      margin-top: 16px;
-      background: #f0fdf4;
-      border: 1px solid #bbf7d0;
-      border-radius: 12px;
-      padding: 14px 18px;
-      text-align: center;
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: #15803d;
+    .card-done-label {
+      font-size: 0.65rem;
+      color: rgba(255,255,255,0.6);
+      margin-top: 1px;
       display: none;
     }
-    .all-done.visible { display: block; }
+    .routine-card.done .card-done-label { display: block; }
 
-    @media (max-width: 480px) {
-      .page-wrap { padding: 24px 16px 0; }
-      .date-heading { font-size: 1.6rem; }
+    .check-ring {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.5);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.18s, border-color 0.18s;
+      background: none;
     }
+    .routine-card.done .check-ring {
+      background: rgba(255,255,255,0.95);
+      border-color: rgba(255,255,255,0.95);
+    }
+    .check-ring svg { display: none; }
+    .routine-card.done .check-ring svg { display: block; }
+
+    .btn-del-card {
+      position: absolute;
+      top: 5px; right: 5px;
+      background: rgba(0,0,0,0.18);
+      border: none;
+      color: rgba(255,255,255,0.65);
+      font-size: 0.72rem;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      line-height: 1;
+      transition: background 0.15s;
+    }
+    .btn-del-card:hover { background: rgba(255,0,0,0.4); color: #fff; }
+
+    /* ── Viewing past day ──────────────────── */
+    .past-banner {
+      background: rgba(74,144,226,0.1);
+      border: 1px solid rgba(74,144,226,0.22);
+      border-radius: 8px;
+      margin: 8px 12px 0;
+      padding: 6px 12px;
+      font-size: 0.72rem;
+      color: rgba(74,144,226,0.9);
+      text-align: center;
+      display: none;
+    }
+    .past-banner.visible { display: block; }
+
+    /* ── Empty / all-done ──────────────────── */
+    .empty-card {
+      text-align: center;
+      padding: 48px 20px;
+      color: #8e8e93;
+      font-size: 0.88rem;
+    }
+    .empty-card .icon { font-size: 2.4rem; margin-bottom: 10px; }
+
+    .all-done-card {
+      border-radius: 12px;
+      background: linear-gradient(135deg, #1dd1a1, #00b894);
+      color: #fff;
+      text-align: center;
+      padding: 12px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      display: none;
+      box-shadow: 0 3px 12px rgba(29,209,161,0.3);
+      margin: 0 12px;
+    }
+    .all-done-card.visible { display: block; }
+
+    /* ── History (admin, past days) ────────── */
+    .history-section { padding: 0 14px 40px; }
+    .hist-title {
+      font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: #8e8e93; margin-bottom: 10px;
+    }
+    .hist-card {
+      background: #fff; border-radius: 12px;
+      padding: 12px 14px; margin-bottom: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+    }
+    .hist-card-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 6px;
+    }
+    .hist-date { font-size: 0.78rem; font-weight: 600; color: #1c1c1e; }
+    .hist-count {
+      font-size: 0.68rem; background: #f2f2f7; color: #636366;
+      padding: 2px 8px; border-radius: 10px; font-weight: 600;
+    }
+    .hist-count.hist-full { background: #dcfce7; color: #15803d; }
+    .hist-items { display: flex; flex-wrap: wrap; gap: 4px; }
+    .hist-item {
+      font-size: 0.68rem; color: #c0392b; background: #fff5f5;
+      padding: 2px 7px; border-radius: 6px;
+    }
+    .hist-empty { font-size: 0.8rem; color: #8e8e93; text-align: center; padding: 12px 0; }
   </style>
 </head>
 <body>
+<div class="app-shell">
 
-<nav class="top-nav">
-  <a href="dashboard.html" class="back-link">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-    Dashboard
-  </a>
-  <span class="save-badge" id="saveBadge">Saving…</span>
-</nav>
-
-<div class="page-wrap">
-
-  <!-- Progress -->
-  <div class="progress-strip">
-    <div class="progress-bar-bg">
-      <div class="progress-bar-fg" id="progressFg" style="width:0%"></div>
-    </div>
-    <span class="progress-label" id="progressLabel">0 / 0</span>
+<!-- ── Header ─────────────────────────────────── -->
+<div class="header">
+  <div class="header-top">
+    <a href="dashboard.html" class="back-link">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Dashboard
+    </a>
+    <span class="save-badge" id="saveBadge">Saving…</span>
+    <button class="btn-add-float" id="btnAddFloat" style="display:none" onclick="toggleAddPanel()" title="Add item">+</button>
   </div>
 
-  <!-- Date -->
-  <div class="date-heading" id="dateHeading">Today</div>
-  <div class="date-sub" id="dateSub"></div>
-
-  <!-- Admin: add item -->
-  <div class="add-row" id="addRow" style="display:none">
-    <div class="add-row-circle"></div>
-    <input class="add-input" id="newItemText"
-           placeholder="Add a routine item…"
-           maxlength="120"
-           onkeydown="if(event.key==='Enter') addItem()" />
-    <button class="btn-add" id="btnAdd" onclick="addItem()">Add</button>
+  <div class="header-center">
+    <div class="today-label" id="viewingLabel">TODAY</div>
+    <div class="today-date" id="viewingDate"></div>
   </div>
 
-  <!-- List -->
-  <div id="listWrap">
-    <div class="empty-card"><div>Loading…</div></div>
-  </div>
-
-  <div class="all-done" id="allDone">🎉 Amazing! All tasks done for today!</div>
-
+  <!-- Week strip -->
+  <div class="week-strip" id="weekStrip"></div>
 </div>
 
+<!-- Add item panel (admin) -->
+<div class="add-panel" id="addPanel">
+  <input class="add-input" id="newItemText" placeholder="Add a routine item…" maxlength="120"
+         onkeydown="if(event.key==='Enter') addItem()" />
+  <button class="btn-save-item" id="btnSaveItem" onclick="addItem()">Save</button>
+</div>
+
+<!-- Past-day banner -->
+<div class="past-banner" id="pastBanner"></div>
+
+<!-- Checklist -->
+<div class="list-wrap" id="listWrap">
+  <div class="empty-card"><div>Loading…</div></div>
+</div>
+
+<div class="all-done-card" id="allDone">🎉 Amazing! All done for today!</div>
+
+<!-- History (admin) -->
+<div class="history-section" id="historySection" style="display:none">
+  <div class="hist-title">Completion History</div>
+  <div id="historyWrap"></div>
+</div>
+
+</div><!-- /.app-shell -->
 <script src="config.js"></script>
 <script src="permissions.js"></script>
+<script>window.addEventListener('load', function() { checkAppAccess('zehra-daily-routine'); });</script>
 <script>
-  /* ── Access check ──────────────────────────────────────────────────── */
+  /* ── Session ───────────────────────────────────────────────────────── */
   var _session = JSON.parse(localStorage.getItem('auth_session') || 'null');
   var _token   = localStorage.getItem('auth_token');
   var isAdmin  = _session && _session.role === 'admin';
 
-  // Permission check runs after config.js sets API_BASE
-  window.addEventListener('load', function() {
-    checkAppAccess('zehra-daily-routine');
-  });
-
-  /* ── Color palette for circles ─────────────────────────────────────── */
-  var COLORS = ['#ff6b6b','#ff9f43','#54a0ff','#5f27cd','#00d2d3',
-                '#1dd1a1','#feca57','#ff6b81','#48dbfb','#ff9ff3'];
+  /* ── Colors ────────────────────────────────────────────────────────── */
+  var COLORS = ['#e74c3c','#e67e22','#2980b9','#8e44ad','#16a085',
+                '#27ae60','#f39c12','#c0392b','#1abc9c','#d35400'];
 
   /* ── State ─────────────────────────────────────────────────────────── */
   var _items       = [];
   var _completions = {};
-  var _today       = new Date().toISOString().slice(0, 10);
 
-  /* ── Date header ───────────────────────────────────────────────────── */
-  (function() {
-    var d = new Date();
-    var days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    var months = ['January','February','March','April','May','June',
-                  'July','August','September','October','November','December'];
-    document.getElementById('dateSub').textContent =
-      days[d.getDay()] + ', ' + d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
-  })();
+  function localDateStr(d) {
+    var dt = d || new Date();
+    return dt.getFullYear() + '-'
+      + String(dt.getMonth() + 1).padStart(2, '0') + '-'
+      + String(dt.getDate()).padStart(2, '0');
+  }
+
+  var _today      = localDateStr();
+  var _viewDate   = _today; // may differ when navigating past days
 
   /* ── Auth ──────────────────────────────────────────────────────────── */
   function authHeaders() {
     return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _token };
   }
 
-  /* ── Save indicator ────────────────────────────────────────────────── */
+  /* ── Save badge ────────────────────────────────────────────────────── */
   var _hideTimer = null;
   function showSaving() {
     clearTimeout(_hideTimer);
@@ -338,6 +419,76 @@
     }, 900);
   }
 
+  /* ── Date helpers ──────────────────────────────────────────────────── */
+  var DAY_NAMES   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var DAYS_LONG   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var MONTHS      = ['January','February','March','April','May','June',
+                     'July','August','September','October','November','December'];
+  var MONTHS_S    = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  function formatLong(dateStr) {
+    var d = new Date(dateStr + 'T00:00:00');
+    return DAYS_LONG[d.getDay()] + ', ' + d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear();
+  }
+  function formatShort(dateStr) {
+    var d = new Date(dateStr + 'T00:00:00');
+    return d.getDate() + ' ' + MONTHS_S[d.getMonth()] + ' ' + d.getFullYear();
+  }
+
+  /* ── Build week (3 days before today, today, 3 after) ─────────────── */
+  function buildWeek() {
+    var strip = document.getElementById('weekStrip');
+    strip.innerHTML = '';
+    for (var offset = -3; offset <= 3; offset++) {
+      var d = new Date();
+      d.setDate(d.getDate() + offset);
+      var ds = localDateStr(d);
+      var isFuture = ds > _today;
+      var isToday  = ds === _today;
+      var isSelected = ds === _viewDate;
+      var hasData  = !!_completions[ds] && _completions[ds].length > 0;
+
+      var btn = document.createElement('button');
+      btn.className = 'day-btn'
+        + (isToday    ? ' today'    : '')
+        + (isSelected ? ' selected' : '')
+        + (isFuture   ? ' future'   : '')
+        + (hasData    ? ' has-data' : '');
+      btn.dataset.date = ds;
+      btn.disabled = isFuture;
+      btn.innerHTML =
+        '<span class="day-name">' + DAY_NAMES[d.getDay()] + '</span>'
+        + '<span class="day-num">' + d.getDate() + '</span>'
+        + '<span class="day-dot"></span>';
+      btn.addEventListener('click', function() { navigateTo(this.dataset.date); });
+      strip.appendChild(btn);
+    }
+  }
+
+  function navigateTo(dateStr) {
+    if (dateStr > _today) return;
+    _viewDate = dateStr;
+    updateViewHeader();
+    buildWeek();
+    render();
+  }
+
+  function updateViewHeader() {
+    var isToday = _viewDate === _today;
+    document.getElementById('viewingLabel').textContent = isToday ? 'TODAY' : DAY_NAMES[new Date(_viewDate + 'T00:00:00').getDay()].toUpperCase();
+    document.getElementById('viewingDate').textContent = isToday
+      ? formatShort(_today)
+      : formatLong(_viewDate);
+
+    var banner = document.getElementById('pastBanner');
+    if (!isToday) {
+      banner.textContent = 'Viewing ' + formatLong(_viewDate) + ' — read only';
+      banner.classList.add('visible');
+    } else {
+      banner.classList.remove('visible');
+    }
+  }
+
   /* ── Fetch ─────────────────────────────────────────────────────────── */
   async function fetchAll() {
     var res  = await fetch(API_BASE + '/api/zehra-routine', { headers: authHeaders() });
@@ -347,52 +498,61 @@
     _completions = data.completions || {};
   }
 
-  function todayDone() { return _completions[_today] || []; }
-  function isDone(id)  { return todayDone().indexOf(id) !== -1; }
+  function viewDone()   { return _completions[_viewDate] || []; }
+  function isDone(id)   { var done = viewDone(); return done.indexOf(id) !== -1 || done.map(Number).indexOf(Number(id)) !== -1; }
 
   /* ── Render ────────────────────────────────────────────────────────── */
   function render() {
     var wrap = document.getElementById('listWrap');
+    var isViewingToday = _viewDate === _today;
 
     if (_items.length === 0) {
       wrap.innerHTML = '<div class="empty-card"><div class="icon">📋</div>'
-        + (isAdmin ? 'No items yet — add one above.' : 'No routine items added yet.') + '</div>';
-      setProgress(0, 0);
+        + (isAdmin ? 'No items yet — tap + to add one.' : 'No routine items added yet.') + '</div>';
+      document.getElementById('allDone').classList.remove('visible');
       return;
     }
 
     var doneCount = 0;
-    var html = '<div class="checklist">';
+    var html = '';
     _items.forEach(function(item, i) {
       var done  = isDone(item.id);
       var color = COLORS[i % COLORS.length];
       if (done) doneCount++;
-      html += '<div class="routine-item' + (done ? ' done' : '') + '" id="ri_' + item.id + '" style="--item-color:' + color + '">'
-        + '<button class="check-circle" onclick="toggleItem(' + item.id + ')" title="' + (done ? 'Uncheck' : 'Mark done') + '">'
-        + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
-        + '</button>'
-        + '<span class="item-text">' + esc(item.text) + '</span>'
-        + (isAdmin ? '<button class="btn-del-item" onclick="deleteItem(' + item.id + ')" title="Remove">×</button>' : '')
+
+      // Checkmark SVG (colored to match card background)
+      var checkSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="' + color + '" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
+      html += '<div class="routine-card' + (done ? ' done' : '') + '" id="rc_' + item.id + '"'
+        + ' style="background:' + color + '"'
+        + (isViewingToday ? ' onclick="toggleItem(' + item.id + ')"' : '')
+        + '>'
+        + '<div class="card-icon">' + iconFor(i) + '</div>'
+        + '<div class="card-body">'
+        + '<div class="card-title">' + esc(item.text) + '</div>'
+        + '<div class="card-done-label">Completed ✓</div>'
+        + '</div>'
+        + '<div class="check-ring">' + checkSvg + '</div>'
+        + (isAdmin && isViewingToday ? '<button class="btn-del-card" onclick="event.stopPropagation();deleteItem(' + item.id + ')" title="Remove">×</button>' : '')
         + '</div>';
     });
-    html += '</div>';
+
     wrap.innerHTML = html;
-    setProgress(doneCount, _items.length);
 
-    var banner = document.getElementById('allDone');
-    banner.classList.toggle('visible', doneCount === _items.length && _items.length > 0);
+    var allDoneEl = document.getElementById('allDone');
+    allDoneEl.classList.toggle('visible', isViewingToday && doneCount === _items.length && _items.length > 0);
   }
 
-  function setProgress(done, total) {
-    var pct = total > 0 ? Math.round(done / total * 100) : 0;
-    document.getElementById('progressFg').style.width    = pct + '%';
-    document.getElementById('progressLabel').textContent = done + ' / ' + total;
-  }
+  /* ── Icon mapping ──────────────────────────────────────────────────── */
+  var ICONS = ['🌅','☀️','🌤️','🌇','🌙','📖','🏃','💧','🛏️','🪥',
+               '🍽️','📝','🙏','✨','🎯','🧹','💪','🎨','📚','⭐'];
+  function iconFor(i) { return ICONS[i % ICONS.length]; }
 
-  /* ── Toggle ────────────────────────────────────────────────────────── */
+  /* ── Toggle (today only) ───────────────────────────────────────────── */
   async function toggleItem(id) {
-    var row = document.getElementById('ri_' + id);
-    if (row) row.style.opacity = '0.5';
+    if (_viewDate !== _today) return;
+    var card = document.getElementById('rc_' + id);
+    if (card) card.style.opacity = '0.6';
     showSaving();
     try {
       var res  = await fetch(API_BASE + '/api/zehra-routine/toggle', {
@@ -403,18 +563,25 @@
       if (!res.ok) throw new Error(data.error || 'Failed');
       _completions[_today] = data.completed;
       render();
+      buildWeek();
     } catch(ex) {
       alert('Could not save: ' + ex.message);
-      if (row) row.style.opacity = '1';
+      if (card) card.style.opacity = '1';
     }
     hideSaving();
   }
 
-  /* ── Add item (admin) ──────────────────────────────────────────────── */
+  /* ── Add item ──────────────────────────────────────────────────────── */
+  function toggleAddPanel() {
+    var panel = document.getElementById('addPanel');
+    panel.classList.toggle('open');
+    if (panel.classList.contains('open')) document.getElementById('newItemText').focus();
+  }
+
   async function addItem() {
     var text = document.getElementById('newItemText').value.trim();
     if (!text) { document.getElementById('newItemText').focus(); return; }
-    var btn = document.getElementById('btnAdd');
+    var btn = document.getElementById('btnSaveItem');
     btn.disabled = true; btn.textContent = '…';
     showSaving();
     try {
@@ -426,14 +593,14 @@
       if (!res.ok) throw new Error(data.error || 'Failed');
       _items.push(data.item);
       document.getElementById('newItemText').value = '';
+      document.getElementById('addPanel').classList.remove('open');
       render();
-      document.getElementById('newItemText').focus();
     } catch(ex) { alert('Error: ' + ex.message); }
-    btn.disabled = false; btn.textContent = 'Add';
+    btn.disabled = false; btn.textContent = 'Save';
     hideSaving();
   }
 
-  /* ── Delete item (admin) ───────────────────────────────────────────── */
+  /* ── Delete item ───────────────────────────────────────────────────── */
   async function deleteItem(id) {
     var item = _items.find(function(i) { return i.id === id; });
     if (!item || !confirm('Remove "' + item.text + '"?')) return;
@@ -450,6 +617,48 @@
     hideSaving();
   }
 
+  /* ── History (admin) ───────────────────────────────────────────────── */
+  function renderHistory() {
+    if (!isAdmin) return;
+    document.getElementById('historySection').style.display = '';
+    var wrap = document.getElementById('historyWrap');
+
+    var dates = Object.keys(_completions)
+      .filter(function(d) { return d !== _today; })
+      .sort(function(a, b) { return b.localeCompare(a); });
+
+    if (dates.length === 0) {
+      wrap.innerHTML = '<p class="hist-empty">No history yet.</p>';
+      return;
+    }
+
+    var html = '';
+    dates.forEach(function(date) {
+      var completedIds = _completions[date] || [];
+      var total = _items.length;
+      var isFull = total > 0 && completedIds.length >= total;
+
+      var missed = _items.filter(function(item) {
+        return completedIds.indexOf(item.id) === -1 && completedIds.map(Number).indexOf(Number(item.id)) === -1;
+      });
+
+      html += '<div class="hist-card">'
+        + '<div class="hist-card-header">'
+        + '<span class="hist-date">' + esc(formatLong(date)) + '</span>'
+        + '<span class="hist-count' + (isFull ? ' hist-full' : '') + '">'
+        + completedIds.length + ' / ' + total + ' done</span>'
+        + '</div>';
+
+      if (missed.length > 0) {
+        html += '<div class="hist-items">'
+          + missed.map(function(item) { return '<span class="hist-item">✗ ' + esc(item.text) + '</span>'; }).join('')
+          + '</div>';
+      }
+      html += '</div>';
+    });
+    wrap.innerHTML = html;
+  }
+
   /* ── XSS ───────────────────────────────────────────────────────────── */
   function esc(str) {
     return String(str == null ? '' : str)
@@ -457,13 +666,30 @@
       .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
 
+  /* ── Midnight auto-reset ───────────────────────────────────────────── */
+  setInterval(function() {
+    var newToday = localDateStr();
+    if (newToday !== _today) {
+      _today    = newToday;
+      _viewDate = newToday;
+      updateViewHeader();
+      buildWeek();
+      render();
+      renderHistory();
+    }
+  }, 60000);
+
   /* ── Init ──────────────────────────────────────────────────────────── */
-  if (isAdmin) document.getElementById('addRow').style.display = 'flex';
+  if (isAdmin) document.getElementById('btnAddFloat').style.display = 'flex';
+
+  updateViewHeader();
 
   (async function() {
     try {
       await fetchAll();
+      buildWeek();
       render();
+      renderHistory();
     } catch(err) {
       document.getElementById('listWrap').innerHTML =
         '<div class="empty-card">Error loading: ' + esc(err.message) + '</div>';
