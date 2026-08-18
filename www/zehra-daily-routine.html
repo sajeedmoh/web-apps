@@ -25,10 +25,43 @@
       box-shadow: 0 0 40px rgba(0,0,0,0.15);
     }
 
+    /* ── Fixed nav bar (matches other pages) ── */
+    .back-bar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      background: rgba(15,17,23,0.92);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      height: 44px;
+    }
+    .back-link {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.82rem;
+      color: rgba(255,255,255,0.55);
+      text-decoration: none;
+      transition: color 0.18s;
+    }
+    .back-link:hover { color: #fff; }
+    .save-badge {
+      font-size: 0.65rem;
+      color: rgba(255,255,255,0.45);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .save-badge.visible { opacity: 1; }
+
     /* ── Header ───────────────────────────── */
     .header {
       background: #1c1c2e;
-      padding: 48px 16px 0;
+      padding: 54px 16px 0;
       position: relative;
     }
     .header-top {
@@ -37,29 +70,10 @@
       justify-content: space-between;
       min-height: 28px;
     }
-    .back-link {
-      color: rgba(255,255,255,0.55);
-      text-decoration: none;
-      font-size: 0.78rem;
-      display: flex;
-      align-items: center;
-      gap: 3px;
-      flex-shrink: 0;
-    }
-    .back-link:hover { color: #fff; }
-    .save-badge {
-      font-size: 0.65rem;
-      color: rgba(255,255,255,0.45);
-      opacity: 0;
-      transition: opacity 0.2s;
-      text-align: center;
-      flex: 1;
-    }
-    .save-badge.visible { opacity: 1; }
 
     .header-center { text-align: center; margin-top: 6px; }
     .today-label {
-      font-size: 2rem;
+      font-size: 1.6rem;
       font-weight: 800;
       color: #fff;
       letter-spacing: 0.04em;
@@ -67,10 +81,37 @@
       line-height: 1;
     }
     .today-date {
-      font-size: 0.78rem;
+      font-size: 0.72rem;
       color: rgba(255,255,255,0.45);
       margin-top: 2px;
     }
+
+    /* ── Earnings circle ──────────────────── */
+    .earnings-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      padding: 14px 16px 4px;
+    }
+    .earn-circle-wrap { position: relative; flex-shrink: 0; }
+    .earn-svg { display: block; transform: rotate(-90deg); }
+    .earn-track { fill: none; stroke: rgba(255,255,255,0.1); }
+    .earn-fill  { fill: none; stroke-linecap: round; transition: stroke-dashoffset 0.5s ease, stroke 0.4s; }
+    .earn-center {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+    }
+    .earn-amount {
+      font-size: 1.15rem; font-weight: 800; color: #fff; line-height: 1;
+    }
+    .earn-unit { font-size: 0.58rem; color: rgba(255,255,255,0.5); margin-top: 1px; }
+
+    .earn-pos  { color: #1dd1a1; }
+    .earn-neg  { color: #ff6b6b; }
+    .earn-zero { color: rgba(255,255,255,0.4); }
+
 
     .btn-add-float {
       width: 32px; height: 32px;
@@ -87,6 +128,20 @@
       transition: filter 0.15s;
     }
     .btn-add-float:hover { filter: brightness(1.15); }
+    .btn-reset-float {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: rgba(255,59,48,0.15);
+      border: none;
+      color: #ff3b30;
+      font-size: 1.1rem;
+      line-height: 1;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    .btn-reset-float:hover { background: rgba(255,59,48,0.28); }
 
     /* ── Week strip ───────────────────────── */
     .week-strip {
@@ -297,52 +352,129 @@
     .all-done-card.visible { display: block; }
 
     /* ── History (admin, past days) ────────── */
-    .history-section { padding: 0 14px 40px; }
+    .history-section { padding: 0 0 40px; }
     .hist-title {
       font-size: 0.68rem; font-weight: 700;
       letter-spacing: 0.08em; text-transform: uppercase;
-      color: #8e8e93; margin-bottom: 10px;
+      color: #8e8e93; padding: 0 16px; margin-bottom: 8px;
     }
-    .hist-card {
-      background: #fff; border-radius: 12px;
-      padding: 12px 14px; margin-bottom: 8px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+
+    /* Month navigator */
+    .hist-month-nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 10px 4px;
     }
-    .hist-card-header {
+    .hist-month-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: 1.1rem; color: #636366; padding: 6px 10px;
+      border-radius: 8px; line-height: 1;
+    }
+    .hist-month-btn:hover { background: rgba(0,0,0,0.06); }
+    .hist-month-label { font-size: 0.88rem; font-weight: 700; color: #1c1c1e; }
+
+    /* Calendar grid */
+    .hist-cal { padding: 0 10px 4px; }
+    .hist-cal-head {
+      display: grid; grid-template-columns: repeat(7, 1fr);
+      margin-bottom: 2px;
+    }
+    .hist-cal-head span {
+      text-align: center; font-size: 0.6rem; font-weight: 700;
+      color: #aeaeb2; padding: 2px 0; display: block;
+    }
+    .hist-cal-grid {
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px;
+    }
+    .hist-day {
+      aspect-ratio: 1; border-radius: 8px; border: none; background: transparent;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; cursor: pointer; position: relative;
+      font-size: 0.72rem; font-weight: 600; color: #c7c7cc;
+    }
+    .hist-day.has-data { cursor: pointer; }
+    .hist-day.hist-full  { background: rgba(29,209,161,0.15); color: #0a8a6a; }
+    .hist-day.hist-partial { background: rgba(255,159,67,0.15); color: #c47a00; }
+    .hist-day.hist-miss  { background: rgba(255,107,107,0.13); color: #c0392b; }
+    .hist-day.hist-today-cal { box-shadow: inset 0 0 0 2px #4f8ef7; color: #4f8ef7; }
+    .hist-day.hist-selected { box-shadow: inset 0 0 0 2px #1c1c1e; }
+    .hist-day-num { line-height: 1; }
+    .hist-day-dot {
+      width: 4px; height: 4px; border-radius: 50%; margin-top: 2px;
+      background: currentColor; opacity: 0.6;
+    }
+
+    /* Day detail */
+    .hist-detail {
+      margin: 6px 14px 0; background: #fff; border-radius: 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08); overflow: hidden;
+    }
+    .hist-detail-hdr {
       display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 6px;
+      padding: 10px 14px 8px;
+      border-bottom: 1px solid rgba(0,0,0,0.06);
     }
-    .hist-date { font-size: 0.78rem; font-weight: 600; color: #1c1c1e; }
-    .hist-count {
-      font-size: 0.68rem; background: #f2f2f7; color: #636366;
-      padding: 2px 8px; border-radius: 10px; font-weight: 600;
+    .hist-detail-date { font-size: 0.78rem; font-weight: 700; color: #1c1c1e; }
+    .hist-detail-badge {
+      font-size: 0.65rem; font-weight: 700; padding: 2px 8px;
+      border-radius: 10px; background: #f2f2f7; color: #636366;
     }
-    .hist-count.hist-full { background: #dcfce7; color: #15803d; }
-    .hist-items { display: flex; flex-wrap: wrap; gap: 4px; }
-    .hist-item {
-      font-size: 0.68rem; color: #c0392b; background: #fff5f5;
-      padding: 2px 7px; border-radius: 6px;
+    .hist-detail-badge.full { background: #dcfce7; color: #15803d; }
+    .hist-detail-list { padding: 4px 0 6px; }
+    .hist-detail-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 14px; font-size: 0.78rem; color: #1c1c1e;
     }
-    .hist-empty { font-size: 0.8rem; color: #8e8e93; text-align: center; padding: 12px 0; }
+    .hist-detail-row + .hist-detail-row { border-top: 1px solid rgba(0,0,0,0.04); }
+    .hist-detail-icon { font-size: 0.7rem; width: 16px; text-align: center; flex-shrink: 0; }
+    .hist-detail-icon.done { color: #1dd1a1; }
+    .hist-detail-icon.miss { color: #ff6b6b; }
+    .hist-empty { font-size: 0.8rem; color: #8e8e93; text-align: center; padding: 16px 0; }
   </style>
 </head>
 <body>
 <div class="app-shell">
 
+<!-- ── Fixed nav bar ──────────────────────────── -->
+<nav class="back-bar">
+  <a href="dashboard.html" class="back-link">&#8592; Back to Dashboard</a>
+  <span class="save-badge" id="saveBadge">Saving…</span>
+</nav>
+
 <!-- ── Header ─────────────────────────────────── -->
 <div class="header">
   <div class="header-top">
-    <a href="dashboard.html" class="back-link">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-      Dashboard
-    </a>
-    <span class="save-badge" id="saveBadge">Saving…</span>
+    <button class="btn-reset-float" id="btnResetEarn" style="display:none" onclick="resetEarnings()" title="Reset earnings to ₹0">↺</button>
+    <div class="header-center" style="flex:1">
+      <div class="today-label" id="viewingLabel">TODAY</div>
+      <div class="today-date" id="viewingDate"></div>
+    </div>
     <button class="btn-add-float" id="btnAddFloat" style="display:none" onclick="toggleAddPanel()" title="Add item">+</button>
   </div>
 
-  <div class="header-center">
-    <div class="today-label" id="viewingLabel">TODAY</div>
-    <div class="today-date" id="viewingDate"></div>
+  <!-- Earnings circles -->
+  <div class="earnings-row">
+    <div class="earn-circle-wrap">
+      <svg class="earn-svg" width="88" height="88" viewBox="0 0 88 88">
+        <circle class="earn-track" cx="44" cy="44" r="36" stroke-width="7"/>
+        <circle class="earn-fill" cx="44" cy="44" r="36" stroke-width="7"
+                id="earnFill" stroke-dasharray="226" stroke-dashoffset="226" stroke="#1dd1a1"/>
+      </svg>
+      <div class="earn-center">
+        <div class="earn-amount" id="earnTotal">₹0</div>
+        <div class="earn-unit">total</div>
+      </div>
+    </div>
+    <div class="earn-circle-wrap">
+      <svg class="earn-svg" width="88" height="88" viewBox="0 0 88 88">
+        <circle class="earn-track" cx="44" cy="44" r="36" stroke-width="7"/>
+        <circle class="earn-fill" cx="44" cy="44" r="36" stroke-width="7"
+                id="earnTodayFill" stroke-dasharray="226" stroke-dashoffset="226" stroke="#1dd1a1"/>
+      </svg>
+      <div class="earn-center">
+        <div class="earn-amount" id="earnToday">₹0</div>
+        <div class="earn-unit">today</div>
+      </div>
+    </div>
   </div>
 
   <!-- Week strip -->
@@ -369,7 +501,18 @@
 <!-- History (admin) -->
 <div class="history-section" id="historySection" style="display:none">
   <div class="hist-title">Completion History</div>
-  <div id="historyWrap"></div>
+  <div class="hist-month-nav">
+    <button class="hist-month-btn" onclick="histPrevMonth()">&#8249;</button>
+    <span class="hist-month-label" id="histMonthLabel"></span>
+    <button class="hist-month-btn" onclick="histNextMonth()">&#8250;</button>
+  </div>
+  <div class="hist-cal">
+    <div class="hist-cal-head">
+      <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+    </div>
+    <div class="hist-cal-grid" id="histCalGrid"></div>
+  </div>
+  <div id="histDetail"></div>
 </div>
 
 </div><!-- /.app-shell -->
@@ -397,8 +540,10 @@
       + String(dt.getDate()).padStart(2, '0');
   }
 
-  var _today      = localDateStr();
-  var _viewDate   = _today; // may differ when navigating past days
+  var _today          = localDateStr();
+  var _viewDate       = _today;
+  var _totalEarned    = 0;
+  var _processedDates = [];
 
   /* ── Auth ──────────────────────────────────────────────────────────── */
   function authHeaders() {
@@ -494,12 +639,86 @@
     var res  = await fetch(API_BASE + '/api/zehra-routine', { headers: authHeaders() });
     var data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to load');
-    _items       = data.items       || [];
-    _completions = data.completions || {};
+    _items          = data.items          || [];
+    _completions    = data.completions    || {};
+    _totalEarned    = data.totalEarned    || 0;
+    _processedDates = data.processedDates || [];
   }
 
   function viewDone()   { return _completions[_viewDate] || []; }
   function isDone(id)   { var done = viewDone(); return done.indexOf(id) !== -1 || done.map(Number).indexOf(Number(id)) !== -1; }
+
+  /* ── Earnings helpers ──────────────────────────────────────────────── */
+  function dailyEarning(dateStr) {
+    var completedIds = _completions[dateStr] || [];
+    var completed    = completedIds.length;
+    var total        = _items.length;
+    return completed - (total - completed); // +1 per done, -1 per missed
+  }
+
+  function rupeeStr(val) {
+    return (val >= 0 ? '+' : '') + '₹' + val;
+  }
+
+  function updateEarningsUI() {
+    var todayEarning = dailyEarning(_today);
+    var circumf = 226;
+    var pct = _items.length > 0 ? ((_completions[_today] || []).length / _items.length) : 0;
+
+    // Total circle: finalized historical total only, updated at midnight
+    var totalFillEl = document.getElementById('earnFill');
+    var totalIsPos = _totalEarned >= 0;
+    totalFillEl.style.strokeDashoffset = _totalEarned === 0 ? circumf : circumf - pct * circumf;
+    totalFillEl.style.stroke = totalIsPos ? '#1dd1a1' : '#ff6b6b';
+    var totalEl = document.getElementById('earnTotal');
+    totalEl.textContent = '₹' + _totalEarned;
+    totalEl.style.color = totalIsPos ? '#1dd1a1' : '#ff6b6b';
+
+    // Today circle: live today earning, resets to ₹0 at midnight
+    var todayFillEl = document.getElementById('earnTodayFill');
+    var todayIsPos = todayEarning >= 0;
+    todayFillEl.style.strokeDashoffset = circumf - pct * circumf;
+    todayFillEl.style.stroke = todayIsPos ? '#1dd1a1' : '#ff6b6b';
+    var todayEl = document.getElementById('earnToday');
+    todayEl.textContent = rupeeStr(todayEarning);
+    todayEl.style.color = todayIsPos ? '#1dd1a1' : '#ff6b6b';
+  }
+
+  /* ── Finalize yesterday (auto) ─────────────────────────────────────── */
+  async function finalizeUnprocessedDays() {
+    // Get yesterday's date string
+    var yd = new Date(); yd.setDate(yd.getDate() - 1);
+    var yesterday = localDateStr(yd);
+    if (_processedDates.indexOf(yesterday) !== -1) return; // already done
+    try {
+      var res  = await fetch(API_BASE + '/api/zehra-routine/finalize-day', {
+        method: 'POST', headers: authHeaders(),
+        body: JSON.stringify({ date: yesterday })
+      });
+      var data = await res.json();
+      if (res.ok && !data.alreadyProcessed) {
+        _totalEarned = data.totalEarned;
+        _processedDates.push(yesterday);
+        updateEarningsUI();
+      }
+    } catch(e) { /* silently skip */ }
+  }
+
+  /* ── Reset earnings (admin) ────────────────────────────────────────── */
+  async function resetEarnings() {
+    if (!confirm('Reset total earned to ₹0? This cannot be undone.')) return;
+    showSaving();
+    try {
+      var res  = await fetch(API_BASE + '/api/zehra-routine/reset-earnings', {
+        method: 'POST', headers: authHeaders()
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      _totalEarned = 0;
+      updateEarningsUI();
+    } catch(ex) { alert('Error: ' + ex.message); }
+    hideSaving();
+  }
 
   /* ── Render ────────────────────────────────────────────────────────── */
   function render() {
@@ -564,6 +783,7 @@
       _completions[_today] = data.completed;
       render();
       buildWeek();
+      updateEarningsUI();
     } catch(ex) {
       alert('Could not save: ' + ex.message);
       if (card) card.style.opacity = '1';
@@ -617,46 +837,119 @@
     hideSaving();
   }
 
-  /* ── History (admin) ───────────────────────────────────────────────── */
+  /* ── History calendar ──────────────────────────────────────────────── */
+  var _histYear  = new Date().getFullYear();
+  var _histMonth = new Date().getMonth(); // 0-based
+  var _histSelectedDate = null;
+
+  var MONTH_NAMES = ['January','February','March','April','May','June',
+                     'July','August','September','October','November','December'];
+
   function renderHistory() {
     if (!isAdmin) return;
     document.getElementById('historySection').style.display = '';
-    var wrap = document.getElementById('historyWrap');
+    buildHistCalendar();
+  }
 
-    var dates = Object.keys(_completions)
-      .filter(function(d) { return d !== _today; })
-      .sort(function(a, b) { return b.localeCompare(a); });
+  function histPrevMonth() {
+    _histMonth--;
+    if (_histMonth < 0) { _histMonth = 11; _histYear--; }
+    buildHistCalendar();
+  }
 
-    if (dates.length === 0) {
-      wrap.innerHTML = '<p class="hist-empty">No history yet.</p>';
-      return;
-    }
+  function histNextMonth() {
+    _histMonth++;
+    if (_histMonth > 11) { _histMonth = 0; _histYear++; }
+    buildHistCalendar();
+  }
+
+  function buildHistCalendar() {
+    document.getElementById('histMonthLabel').textContent = MONTH_NAMES[_histMonth] + ' ' + _histYear;
+
+    var grid = document.getElementById('histCalGrid');
+    var firstDay = new Date(_histYear, _histMonth, 1).getDay(); // 0=Sun
+    var daysInMonth = new Date(_histYear, _histMonth + 1, 0).getDate();
 
     var html = '';
-    dates.forEach(function(date) {
-      var completedIds = _completions[date] || [];
+    // Leading blank cells
+    for (var b = 0; b < firstDay; b++) {
+      html += '<div class="hist-day"></div>';
+    }
+
+    for (var d = 1; d <= daysInMonth; d++) {
+      var dateStr = _histYear + '-'
+        + String(_histMonth + 1).padStart(2, '0') + '-'
+        + String(d).padStart(2, '0');
+
+      var completedIds = (_completions[dateStr] || []).map(Number);
       var total = _items.length;
-      var isFull = total > 0 && completedIds.length >= total;
+      var done  = completedIds.length;
+      var hasData = _completions[dateStr] !== undefined;
+      var isToday = dateStr === _today;
+      var isSelected = dateStr === _histSelectedDate;
+      var isFuture = dateStr > _today;
 
-      var missed = _items.filter(function(item) {
-        return completedIds.indexOf(item.id) === -1 && completedIds.map(Number).indexOf(Number(item.id)) === -1;
-      });
-
-      html += '<div class="hist-card">'
-        + '<div class="hist-card-header">'
-        + '<span class="hist-date">' + esc(formatLong(date)) + '</span>'
-        + '<span class="hist-count' + (isFull ? ' hist-full' : '') + '">'
-        + completedIds.length + ' / ' + total + ' done</span>'
-        + '</div>';
-
-      if (missed.length > 0) {
-        html += '<div class="hist-items">'
-          + missed.map(function(item) { return '<span class="hist-item">✗ ' + esc(item.text) + '</span>'; }).join('')
-          + '</div>';
+      var cls = 'hist-day';
+      if (hasData && !isFuture) {
+        cls += ' has-data';
+        if (total > 0 && done >= total)          cls += ' hist-full';
+        else if (done > 0)                       cls += ' hist-partial';
+        else                                     cls += ' hist-miss';
       }
-      html += '</div>';
-    });
-    wrap.innerHTML = html;
+      if (isToday)    cls += ' hist-today-cal';
+      if (isSelected) cls += ' hist-selected';
+
+      var dot = (hasData && !isFuture) ? '<div class="hist-day-dot"></div>' : '';
+      var click = (!isFuture) ? 'onclick="showHistDay(\'' + dateStr + '\')"' : '';
+
+      html += '<button class="' + cls + '" ' + click + '>'
+            + '<span class="hist-day-num">' + d + '</span>'
+            + dot
+            + '</button>';
+    }
+
+    grid.innerHTML = html;
+
+    // Render detail for currently selected date
+    renderHistDetail();
+  }
+
+  function showHistDay(dateStr) {
+    _histSelectedDate = dateStr;
+    buildHistCalendar(); // rebuilds grid with new selection highlighted, then calls renderHistDetail
+  }
+
+  function renderHistDetail() {
+    var el = document.getElementById('histDetail');
+    if (!_histSelectedDate) { el.innerHTML = ''; return; }
+    var dateStr = _histSelectedDate;
+    var completedIds = (_completions[dateStr] || []).map(Number);
+    var total = _items.length;
+    var done  = completedIds.length;
+    var isFull = total > 0 && done >= total;
+
+    var dateObj = new Date(dateStr + 'T00:00:00');
+    var label = dateObj.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
+
+    var rows = _items.map(function(item) {
+      var isDone = completedIds.indexOf(Number(item.id)) !== -1;
+      return '<div class="hist-detail-row">'
+        + '<span class="hist-detail-icon ' + (isDone ? 'done' : 'miss') + '">' + (isDone ? '✓' : '✗') + '</span>'
+        + '<span>' + esc(item.text) + '</span>'
+        + '</div>';
+    }).join('');
+
+    var badge = '<span class="hist-detail-badge' + (isFull ? ' full' : '') + '">'
+              + done + ' / ' + total + ' done</span>';
+
+    el.innerHTML =
+      '<div class="hist-detail">'
+      + '<div class="hist-detail-hdr">'
+      + '<span class="hist-detail-date">' + esc(label) + '</span>'
+      + badge
+      + '</div>'
+      + '<div class="hist-detail-list">' + (rows || '<div class="hist-empty">No data</div>') + '</div>'
+      + '</div>';
   }
 
   /* ── XSS ───────────────────────────────────────────────────────────── */
@@ -676,11 +969,15 @@
       buildWeek();
       render();
       renderHistory();
+      finalizeUnprocessedDays();
     }
   }, 60000);
 
   /* ── Init ──────────────────────────────────────────────────────────── */
-  if (isAdmin) document.getElementById('btnAddFloat').style.display = 'flex';
+  if (isAdmin) {
+    document.getElementById('btnAddFloat').style.display = 'flex';
+    document.getElementById('btnResetEarn').style.display = 'flex';
+  }
 
   updateViewHeader();
 
@@ -690,6 +987,8 @@
       buildWeek();
       render();
       renderHistory();
+      updateEarningsUI();
+      await finalizeUnprocessedDays();
     } catch(err) {
       document.getElementById('listWrap').innerHTML =
         '<div class="empty-card">Error loading: ' + esc(err.message) + '</div>';
